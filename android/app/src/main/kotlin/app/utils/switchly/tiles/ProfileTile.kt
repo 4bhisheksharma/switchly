@@ -57,6 +57,8 @@ class ProfileTile : BaseTile() {
     private fun runInBackground(work: () -> Unit) {
         thread(name = "profile-apply") {
             work()
+            // A profile can change any tile's state.
+            TileRefresher.refreshAll(this)
             mainExecutor.execute { refresh() }
         }
     }

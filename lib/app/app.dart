@@ -6,9 +6,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../core/platform/qs_channel.dart';
 import '../features/display/bloc/display_bloc.dart';
 import '../features/display/data/display_repository.dart';
+import '../features/calendar/data/bs_format.dart';
 import '../features/dns/bloc/dns_bloc.dart';
 import '../features/network/bloc/network_bloc.dart';
 import '../features/network/data/network_repository.dart';
+import '../features/payment_qr/bloc/payment_qr_bloc.dart';
+import '../features/payment_qr/data/payment_qr.dart';
 import '../features/profiles/bloc/profiles_bloc.dart';
 import '../features/profiles/data/profile_models.dart';
 import '../features/quick_texts/bloc/quick_texts_bloc.dart';
@@ -44,6 +47,9 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     ..add(const QuickTextsStarted());
   late final ProfilesBloc _profilesBloc = ProfilesBloc(ProfilesRepository(widget.channel))
     ..add(const ProfilesStarted());
+  late final PaymentQrBloc _paymentQrBloc = PaymentQrBloc(const PaymentQrRepository())
+    ..add(const PaymentQrsStarted());
+  final BsScriptCubit _bsScriptCubit = BsScriptCubit();
   late final StreamSubscription<String> _launchSub;
   late final AppLifecycleListener _lifecycle;
 
@@ -92,6 +98,8 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     _networkBloc.close();
     _quickTextsBloc.close();
     _profilesBloc.close();
+    _paymentQrBloc.close();
+    _bsScriptCubit.close();
     widget.channel.dispose();
     super.dispose();
   }
@@ -108,6 +116,8 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
           BlocProvider.value(value: _networkBloc),
           BlocProvider.value(value: _quickTextsBloc),
           BlocProvider.value(value: _profilesBloc),
+          BlocProvider.value(value: _paymentQrBloc),
+          BlocProvider.value(value: _bsScriptCubit),
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,

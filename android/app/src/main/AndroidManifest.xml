@@ -47,6 +47,10 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
             </intent-filter>
+            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
         </service>
 
         <service
@@ -58,6 +62,10 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
             </intent-filter>
+            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
             <!-- API 33+: announced as an on/off switch by accessibility services. -->
             <meta-data
                 android:name="android.service.quicksettings.TOGGLEABLE_TILE"
@@ -73,6 +81,10 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
             </intent-filter>
+            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
         </service>
 
         <service
@@ -84,6 +96,10 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
             </intent-filter>
+            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
             <meta-data
                 android:name="android.service.quicksettings.TOGGLEABLE_TILE"
                 android:value="true" />
@@ -98,6 +114,10 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
             </intent-filter>
+            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
             <meta-data
                 android:name="android.service.quicksettings.TOGGLEABLE_TILE"
                 android:value="true" />
@@ -112,6 +132,10 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
             </intent-filter>
+            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
         </service>
 
         <service
@@ -123,6 +147,37 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
             </intent-filter>
+            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <!-- Not an active tile: re-renders on every panel open so the date rolls over. -->
+        <service
+            android:name=".tiles.BsDateTile"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_calendar"
+            android:label="@string/tile_bs_date"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".tiles.PaymentQrTile"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_qr"
+            android:label="@string/tile_payment_qr"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
         </service>
 
         <!-- Kill switch: a local VPN that drops all traffic. -->
@@ -134,15 +189,6 @@
                 <action android:name="android.net.VpnService"/>
             </intent-filter>
         </service>
-
-        <!-- Quick texts picker, shown over whatever app is open. -->
-        <activity
-            android:name=".texts.QuickTextsActivity"
-            android:excludeFromRecents="true"
-            android:exported="false"
-            android:noHistory="true"
-            android:taskAffinity=""
-            android:theme="@style/TransparentTheme" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

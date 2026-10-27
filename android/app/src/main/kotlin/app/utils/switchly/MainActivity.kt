@@ -2,6 +2,7 @@ package app.utils.switchly
 
 import android.content.Intent
 import app.utils.switchly.channel.QsTogglesChannel
+import app.utils.switchly.tiles.TileRefresher
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 
@@ -24,6 +25,12 @@ class MainActivity : FlutterActivity() {
         if (channel?.onActivityResult(requestCode, resultCode) == true) return
         @Suppress("DEPRECATION")
         super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Push config edits (provider names, saved texts, profiles) to the active tiles.
+        TileRefresher.refreshAll(this)
     }
 
     override fun onNewIntent(intent: Intent) {

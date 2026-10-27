@@ -11,7 +11,10 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
+  image_picker: ^1.2.4
   material_symbols_icons: ^4.2960.0
+  nepali_utils: ^3.0.8
+  path_provider: ^2.1.6
   shared_preferences: ^2.5.6
   
 dev_dependencies:

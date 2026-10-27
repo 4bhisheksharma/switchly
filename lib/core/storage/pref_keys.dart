@@ -19,4 +19,10 @@ abstract final class PrefKeys {
 
   /// JSON array of profiles; see lib/features/profiles/data/profile_models.dart.
   static const profiles = 'profiles';
+
+  /// JSON: `{"nepali": bool}`: Devanagari or English for the BS date.
+  static const bsConfig = 'bs_config';
+
+  /// JSON array of `{"id", "name", "path"}`; path is an image in the app's files dir.
+  static const paymentQrs = 'payment_qrs';
 }

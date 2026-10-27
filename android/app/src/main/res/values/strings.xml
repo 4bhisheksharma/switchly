@@ -7,4 +7,6 @@
     <string name="tile_kill_switch">Kill switch</string>
     <string name="tile_profiles">Profiles</string>
     <string name="tile_quick_texts">Quick texts</string>
+    <string name="tile_bs_date">Nepali date</string>
+    <string name="tile_payment_qr">Payment QR</string>
 </resources>

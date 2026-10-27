@@ -19,6 +19,12 @@ object PrefKeys {
 
     /** JSON array of profiles; see profiles/Profiles.kt for the shape. */
     const val PROFILES = "profiles"
+
+    /** JSON: `{"nepali": Boolean}`: Devanagari or English for the BS date. */
+    const val BS_CONFIG = "bs_config"
+
+    /** JSON array of `{"id", "name", "path"}`; path is an image in the app's files dir. */
+    const val PAYMENT_QRS = "payment_qrs"
 }
 
 /**

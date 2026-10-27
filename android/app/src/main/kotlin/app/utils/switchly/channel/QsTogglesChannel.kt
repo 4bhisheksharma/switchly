@@ -21,6 +21,7 @@ import app.utils.switchly.network.KillSwitch
 import app.utils.switchly.network.LaunchableApps
 import app.utils.switchly.network.WirelessDebugging
 import app.utils.switchly.profiles.Profiles
+import app.utils.switchly.tiles.TileRefresher
 import app.utils.switchly.tiles.TileRegistry
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -65,7 +66,7 @@ class QsTogglesChannel(
                 val state = PrivateDns.read(activity)
                 result.success(mapOf("mode" to state.mode, "host" to state.hostname))
             }
-            "setPrivateDns" -> result.success(setPrivateDns(call.argument("mode"), call.argument("host")))
+            "setPrivateDns" -> result.success(setPrivateDns(call.argument("mode"), call.argument("host")).alsoRefresh())
             "grantWithRoot" -> grantWithRoot(result)
             "getDisplayState" -> {
                 val scales = AnimationScale.read(activity)
@@ -78,10 +79,10 @@ class QsTogglesChannel(
                     ),
                 )
             }
-            "setGrayscale" -> result.success(Grayscale.set(activity, call.argument<Boolean>("on") == true))
+            "setGrayscale" -> result.success(Grayscale.set(activity, call.argument<Boolean>("on") == true).alsoRefresh())
             "setAnimationScale" -> {
                 val scale = call.argument<Double>("scale")
-                result.success(scale != null && AnimationScale.set(activity, scale.toFloat()))
+                result.success((scale != null && AnimationScale.set(activity, scale.toFloat())).alsoRefresh())
             }
             "getNetworkState" -> result.success(
                 mapOf(
@@ -93,11 +94,11 @@ class QsTogglesChannel(
                 ),
             )
             "setWirelessDebugging" -> result.success(
-                WirelessDebugging.set(activity, call.argument<Boolean>("on") == true),
+                WirelessDebugging.set(activity, call.argument<Boolean>("on") == true).alsoRefresh(),
             )
             "startKillSwitch" -> startKillSwitch(result)
             "stopKillSwitch" -> background(result) {
-                KillSwitch.stop(activity).also { KillSwitch.awaitState(false) }
+                KillSwitch.stop(activity).also { KillSwitch.awaitState(false) }.alsoRefresh()
             }
             // Re-applies the exception list if the VPN is running.
             "reloadKillSwitch" -> result.success(!KillSwitch.isOn() || KillSwitch.start(activity))
@@ -105,12 +106,20 @@ class QsTogglesChannel(
             "getActiveProfile" -> result.success(Profiles.activeId(activity))
             "applyProfile" -> {
                 val profile = Profiles.all(activity).firstOrNull { it.id == call.argument<String>("id") }
-                if (profile == null) result.success(false) else background(result) { Profiles.apply(activity, profile) }
+                if (profile == null) {
+                    result.success(false)
+                } else {
+                    background(result) { Profiles.apply(activity, profile).alsoRefresh() }
+                }
             }
-            "restoreProfile" -> background(result) { Profiles.restore(activity) }
+            "restoreProfile" -> background(result) { Profiles.restore(activity).alsoRefresh() }
+            "refreshTiles" -> result.success(true.alsoRefresh())
             else -> result.notImplemented()
         }
     }
+
+    /** Tiles are active tiles, so any state change must be pushed to them. */
+    private fun <T> T.alsoRefresh(): T = also { TileRefresher.refreshAll(activity) }
 
     /** Runs [work] off the main thread and replies on it. */
     private fun background(result: MethodChannel.Result, work: () -> Any?) {
@@ -134,7 +143,7 @@ class QsTogglesChannel(
             background(result) {
                 KillSwitch.start(activity) && run {
                     KillSwitch.awaitState(true)
-                    KillSwitch.isOn()
+                    KillSwitch.isOn().alsoRefresh()
                 }
             }
             return

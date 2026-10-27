@@ -15,8 +15,4 @@
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
-    <!-- Invisible host for dialogs opened from tiles (e.g. Quick texts). -->
-    <style name="TransparentTheme" parent="@android:style/Theme.Translucent.NoTitleBar">
-        <item name="android:windowAnimationStyle">@null</item>
-    </style>
 </resources>

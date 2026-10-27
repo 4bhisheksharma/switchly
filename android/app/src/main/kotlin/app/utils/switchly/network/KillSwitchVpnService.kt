@@ -6,6 +6,8 @@ import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import app.utils.switchly.tiles.KillSwitchTile
+import app.utils.switchly.tiles.TileRefresher
 
 /**
  * The kill switch's VPN. It claims every IPv4 and IPv6 route and never reads the tunnel, so
@@ -50,12 +52,14 @@ class KillSwitchVpnService : VpnService() {
         tunnel?.close()
         tunnel = next
         running = true
+        TileRefresher.refresh(this, KillSwitchTile::class.java)
     }
 
     private fun stopTunnel() {
         tunnel?.close()
         tunnel = null
         running = false
+        TileRefresher.refresh(this, KillSwitchTile::class.java)
         stopSelf()
     }
 

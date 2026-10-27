@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:nepali_utils/nepali_utils.dart';
 
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
@@ -9,10 +10,12 @@ import '../../../core/tiles/tile_catalog.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/status_pill.dart';
 import '../../../core/widgets/tile_icon.dart';
+import '../../calendar/data/bs_format.dart';
 import '../../display/bloc/display_bloc.dart';
 import '../../display/data/display_models.dart';
 import '../../dns/bloc/dns_bloc.dart';
 import '../../network/bloc/network_bloc.dart';
+import '../../payment_qr/bloc/payment_qr_bloc.dart';
 import '../../profiles/bloc/profiles_bloc.dart';
 import '../../quick_texts/bloc/quick_texts_bloc.dart';
 import '../../setup/bloc/setup_bloc.dart';
@@ -72,7 +75,17 @@ class HomeScreen extends StatelessWidget {
                 const _GrayscaleCard(),
                 const SizedBox(height: 10),
                 const _AnimationCard(),
-                const SectionHeader('Productivity'),
+                const SectionHeader('Everyday'),
+                const _BsDateCard(),
+                const SizedBox(height: 10),
+                _TileCard(
+                  tile: paymentQrTile,
+                  status: _countLabel(context.select((PaymentQrBloc b) => b.state.qrs.length), 'QR code'),
+                  active: false,
+                  onTap: () => Navigator.of(context).pushNamed(AppRouter.paymentQr),
+                  trailing: Icon(Symbols.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 10),
                 _TileCard(
                   tile: quickTextsTile,
                   status: _countLabel(context.select((QuickTextsBloc b) => b.state.texts.length), 'text'),
@@ -331,6 +344,23 @@ class _WirelessDebuggingCard extends StatelessWidget {
                 : Icon(Symbols.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
         ],
       ),
+    );
+  }
+}
+
+class _BsDateCard extends StatelessWidget {
+  const _BsDateCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final nepali = context.watch<BsScriptCubit>().state;
+    final today = DateTime.now().toNepaliDateTime();
+    return _TileCard(
+      tile: bsDateTile,
+      status: '${BsFormat.weekday(today, nepali)}, ${BsFormat.date(today, nepali)}',
+      active: true,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.calendar),
+      trailing: Icon(Symbols.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
   }
 }

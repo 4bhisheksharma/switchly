@@ -64,3 +64,17 @@ const profilesTile = TileDefinition(
   description: 'Apply a bundle of settings at once.',
   icon: Symbols.tune_rounded,
 );
+
+const bsDateTile = TileDefinition(
+  id: 'bs_date',
+  name: 'Nepali date',
+  description: "Today's Bikram Sambat date at a glance.",
+  icon: Symbols.calendar_month_rounded,
+);
+
+const paymentQrTile = TileDefinition(
+  id: 'payment_qr',
+  name: 'Payment QR',
+  description: 'Show your QR to get paid, even from the lock screen.',
+  icon: Symbols.qr_code_2_rounded,
+);

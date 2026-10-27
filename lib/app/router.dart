@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/display/presentation/animation_screen.dart';
 import '../features/dns/presentation/dns_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/network/presentation/kill_switch_screen.dart';
+import '../features/payment_qr/presentation/payment_qr_screen.dart';
 import '../features/profiles/data/profile_models.dart';
 import '../features/profiles/presentation/profile_editor_screen.dart';
 import '../features/profiles/presentation/profiles_screen.dart';
@@ -16,6 +18,8 @@ abstract final class AppRouter {
   static const killSwitch = '/kill-switch';
   static const quickTexts = '/quick-texts';
   static const profiles = '/profiles';
+  static const calendar = '/calendar';
+  static const paymentQr = '/payment-qr';
 
   /// Pass the [Profile] to edit as `arguments`, or nothing to create one.
   static const profileEditor = '/profiles/edit';
@@ -31,6 +35,8 @@ abstract final class AppRouter {
         'kill_switch' => killSwitch,
         'quick_texts' => quickTexts,
         'profiles' => profiles,
+        'bs_date' => calendar,
+        'payment_qr' => paymentQr,
         _ => null,
       };
 
@@ -42,6 +48,8 @@ abstract final class AppRouter {
       killSwitch => const KillSwitchScreen(),
       quickTexts => const QuickTextsScreen(),
       profiles => const ProfilesScreen(),
+      calendar => const CalendarScreen(),
+      paymentQr => const PaymentQrScreen(),
       profileEditor => ProfileEditorScreen(editing: settings.arguments as Profile?),
       _ => null,
     };
