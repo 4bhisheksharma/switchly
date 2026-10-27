@@ -132,6 +132,30 @@ The tiles that need it are Private DNS, Wireless debugging, Grayscale, Animation
 
 The command only grants permission to change settings. It does not root the phone or give the app any other access. You may turn USB debugging off again afterwards.
 
+#### If the command fails
+
+**`adb: more than one device/emulator`**
+
+ADB can see more than one device, for example your phone and an emulator. Run `adb devices` to list them, then send the command to your phone by its serial number:
+
+```sh
+adb devices
+adb -s <serial> shell pm grant app.utils.switchly android.permission.WRITE_SECURE_SETTINGS
+```
+
+Alternatively, use `adb -d shell ...` to target the only device connected by USB, or close the emulator.
+
+**`SecurityException: ... has android.permission.GRANT_RUNTIME_PERMISSIONS`**
+
+Some manufacturers block this command until an additional developer setting is enabled.
+
+- **Xiaomi, Redmi and POCO (MIUI and HyperOS):** in **Settings > Additional settings > Developer options**, turn on **USB debugging (Security settings)**. This option requires a SIM card and a signed-in Mi account. Then **restart the phone**, or turn **USB debugging** off and on again and reconnect the cable. The setting only takes effect for a new debugging connection, so running the command again immediately after enabling it will still fail.
+- **OPPO, Realme and OnePlus (ColorOS and OxygenOS):** in **Developer options**, turn on **Disable permission monitoring**, then disconnect and reconnect the cable.
+
+Run the command again afterwards. When it succeeds, it prints nothing. On Xiaomi devices, leave **USB debugging (Security settings)** turned on; on some versions, turning it off removes the permission again.
+
+After these changes it will be best to restart your phone once to align the changes perfectly.
+
 **Rooted devices:** tap **Set up now** on the Switchly home screen and choose **Grant with root** instead of using a computer.
 
 ### 2. Add tiles to Quick Settings
@@ -164,6 +188,12 @@ There is no `INTERNET` permission. The kill switch uses Android's VPN feature, w
 
 **A tile says "Tap to set up".**
 The one-time permission has not been granted yet. Tap the tile, or follow [Grant the one-time permission](#1-grant-the-one-time-permission).
+
+**The ADB command shows an error.**
+See [If the command fails](#if-the-command-fails). On Xiaomi, Redmi, POCO, OPPO, Realme and OnePlus phones, an extra developer setting is required.
+
+**How do I know what a small tile just did?**
+When a tile is shown at its small, icon-only size, the result of each tap is shown in a short message at the bottom of the screen, for example "Private DNS: AdGuard".
 
 **Why does the kill switch replace my VPN?**
 Android allows only one VPN at a time. While the kill switch is on, any other VPN app is disconnected.

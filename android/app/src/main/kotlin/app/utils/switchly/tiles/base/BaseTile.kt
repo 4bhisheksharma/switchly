@@ -7,6 +7,7 @@ import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import android.util.Log
+import android.widget.Toast
 import app.utils.switchly.LaunchRoutes
 import app.utils.switchly.MainActivity
 import app.utils.switchly.core.Permissions
@@ -26,10 +27,13 @@ import kotlinx.coroutines.withContext
  * - shows the predicted state instantly ([predict]), runs [toggle] off the main thread, then
  *   redraws with the real state; taps during a toggle are ignored so a double tap can't undo it
  * - optionally asks for unlock first ([requiresUnlock])
+ * - after a toggle, briefly shows the result as a toast ("Private DNS: AdGuard"), because
+ *   small icon-only tiles have no room for the subtitle
  */
 abstract class BaseTile : TileService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var toggling = false
+    private var toast: Toast? = null
 
     /** Set to false for tiles that don't touch Settings (e.g. the VPN kill switch). */
     protected open val requiresSecureSettings: Boolean = true
@@ -86,7 +90,15 @@ abstract class BaseTile : TileService() {
                 toggling = false
             }
             refresh()
+            qsTile?.let(::announce)
         }
+    }
+
+    /** "Label: subtitle" as a toast. Replaces the previous one so rapid taps don't queue up. */
+    private fun announce(tile: Tile) {
+        val text = listOfNotNull(tile.label, tile.subtitle).joinToString(": ")
+        toast?.cancel()
+        toast = Toast.makeText(this, text, Toast.LENGTH_SHORT).also { it.show() }
     }
 
     protected fun refresh() {
