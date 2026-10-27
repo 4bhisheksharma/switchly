@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:nepali_utils/nepali_utils.dart';
-
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
 import '../../../core/platform/qs_channel.dart';
@@ -37,6 +36,7 @@ class HomeScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final setup = context.watch<SetupBloc>().state;
     final needsSetup = setup.status == SetupStatus.ready && !setup.hasPermission;
+    final canAddTiles = canRequestAddTile(context);
 
     return Scaffold(
       body: CustomScrollView(
@@ -112,7 +112,13 @@ class HomeScreen extends StatelessWidget {
                   status: 'Scan any QR code',
                   active: false,
                   onTap: () => context.read<QsChannel>().openQrScanner(),
-                  trailing: Icon(Symbols.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
+                  // No settings screen to hold the usual "Add to Quick Settings" button, so it lives here.
+                  trailing: IconButton.filledTonal(
+                    tooltip: 'Add to Quick Settings',
+                    icon: const Icon(Symbols.add_to_home_screen_rounded),
+                    onPressed: () =>
+                        canAddTiles ? requestAddTile(context, qrScannerTile) : showAddTilesHelp(context),
+                  ),
                 ),
                 const SizedBox(height: 10),
                 _TileCard(
