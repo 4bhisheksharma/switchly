@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -8,6 +9,8 @@ import '../../../core/tiles/tile_catalog.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/status_pill.dart';
 import '../../../core/widgets/tile_icon.dart';
+import '../../display/bloc/display_bloc.dart';
+import '../../display/data/display_models.dart';
 import '../../dns/bloc/dns_bloc.dart';
 import '../../setup/bloc/setup_bloc.dart';
 import '../../setup/presentation/add_tiles.dart';
@@ -58,6 +61,10 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SectionHeader('Your tiles'),
                 const _PrivateDnsCard(),
+                const SizedBox(height: 10),
+                const _GrayscaleCard(),
+                const SizedBox(height: 10),
+                const _AnimationCard(),
                 const SectionHeader('Coming soon'),
                 Card(
                   child: Column(
@@ -121,35 +128,45 @@ class _SetupBanner extends StatelessWidget {
   }
 }
 
-class _PrivateDnsCard extends StatelessWidget {
-  const _PrivateDnsCard();
+/// One row per tile: icon, live status, and either a chevron or an inline [trailing] control.
+class _TileCard extends StatelessWidget {
+  const _TileCard({
+    required this.tile,
+    required this.status,
+    required this.active,
+    required this.onTap,
+    this.trailing,
+  });
+
+  final TileDefinition tile;
+  final String status;
+  final bool active;
+  final VoidCallback onTap;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dns = context.watch<DnsBloc>().state;
-    final active = dns.live?.isEncrypted ?? false;
-
     return Card(
       child: InkWell(
-        onTap: () => Navigator.of(context).pushNamed(AppRouter.dns),
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Row(
             children: [
-              TileIcon(privateDnsTile.icon, active: active, size: 52),
+              TileIcon(tile.icon, active: active, size: 52),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(privateDnsTile.name, style: theme.textTheme.titleMedium),
+                    Text(tile.name, style: theme.textTheme.titleMedium),
                     const SizedBox(height: 2),
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 250),
                       child: Text(
-                        active ? dns.liveLabel : 'Encrypted DNS is ${dns.liveLabel.toLowerCase()}',
-                        key: ValueKey(dns.liveLabel),
+                        status,
+                        key: ValueKey(status),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: active ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
                           fontWeight: active ? FontWeight.w600 : null,
@@ -159,13 +176,81 @@ class _PrivateDnsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              StatusPill(active ? 'On' : 'Off', highlighted: active),
-              const SizedBox(width: 4),
-              Icon(Symbols.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
+              ...trailing != null
+                  ? [trailing!]
+                  : [
+                      StatusPill(active ? 'On' : 'Off', highlighted: active),
+                      const SizedBox(width: 4),
+                      Icon(Symbols.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
+                    ],
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PrivateDnsCard extends StatelessWidget {
+  const _PrivateDnsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final dns = context.watch<DnsBloc>().state;
+    final active = dns.live?.isEncrypted ?? false;
+    return _TileCard(
+      tile: privateDnsTile,
+      status: active ? dns.liveLabel : 'Encrypted DNS is ${dns.liveLabel.toLowerCase()}',
+      active: active,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.dns),
+    );
+  }
+}
+
+/// Grayscale has no settings, so it toggles right here.
+class _GrayscaleCard extends StatelessWidget {
+  const _GrayscaleCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final on = context.select((DisplayBloc bloc) => bloc.state.grayscale ?? false);
+
+    void toggle() {
+      if (!context.read<SetupBloc>().state.hasPermission) {
+        showPermissionSheet(context);
+        return;
+      }
+      HapticFeedback.selectionClick();
+      context.read<DisplayBloc>().add(GrayscaleSet(!on));
+    }
+
+    return _TileCard(
+      tile: grayscaleTile,
+      status: on ? 'Screen is in grayscale' : 'Full colour',
+      active: on,
+      onTap: toggle,
+      trailing: Switch(value: on, onChanged: (_) => toggle()),
+    );
+  }
+}
+
+class _AnimationCard extends StatelessWidget {
+  const _AnimationCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<DisplayBloc>().state;
+    final speed = state.speed;
+    return _TileCard(
+      tile: animationSpeedTile,
+      status: switch (state.scales) {
+        null => '—',
+        _ when speed == null => 'Custom speeds',
+        _ when sameSpeed(speed, 0) => 'Animations off',
+        _ => '${speedLabel(speed)} · ${speedDescription(speed)}',
+      },
+      active: state.animationModified,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.animation),
     );
   }
 }

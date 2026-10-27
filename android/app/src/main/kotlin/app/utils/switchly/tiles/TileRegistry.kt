@@ -18,6 +18,8 @@ data class TileInfo(
 object TileRegistry {
     val all = listOf(
         TileInfo("private_dns", PrivateDnsTile::class.java, R.string.tile_private_dns, R.drawable.ic_tile_dns),
+        TileInfo("grayscale", GrayscaleTile::class.java, R.string.tile_grayscale, R.drawable.ic_tile_grayscale),
+        TileInfo("animation_speed", AnimationSpeedTile::class.java, R.string.tile_animation_speed, R.drawable.ic_tile_speed),
     )
 
     fun byId(id: String?): TileInfo? = all.firstOrNull { it.id == id }

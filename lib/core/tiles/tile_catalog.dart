@@ -27,27 +27,29 @@ const privateDnsTile = TileDefinition(
   icon: Symbols.dns_rounded,
 );
 
+const grayscaleTile = TileDefinition(
+  id: 'grayscale',
+  name: 'Grayscale',
+  description: 'A monochrome screen to cut distraction.',
+  icon: Symbols.contrast_rounded,
+);
+
+const animationSpeedTile = TileDefinition(
+  id: 'animation_speed',
+  name: 'Animation speed',
+  description: 'Cycle through animation speeds.',
+  icon: Symbols.speed_rounded,
+);
+
 const tileCatalog = <TileDefinition>[
   privateDnsTile,
-  TileDefinition(
-    id: 'grayscale',
-    name: 'Grayscale',
-    description: 'A monochrome screen to cut distraction.',
-    icon: Symbols.contrast_rounded,
-    available: false,
-  ),
+  grayscaleTile,
+  animationSpeedTile,
   TileDefinition(
     id: 'wireless_debugging',
     name: 'Wireless debugging',
     description: 'ADB over Wi-Fi in one tap.',
     icon: Symbols.developer_mode_rounded,
-    available: false,
-  ),
-  TileDefinition(
-    id: 'animation_speed',
-    name: 'Animation speed',
-    description: 'Switch between 0×, 0.5× and 1×.',
-    icon: Symbols.speed_rounded,
     available: false,
   ),
   TileDefinition(

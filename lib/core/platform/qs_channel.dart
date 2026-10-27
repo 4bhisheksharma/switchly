@@ -80,6 +80,24 @@ class QsChannel {
   Future<bool> grantWithRoot() async =>
       await _channel.invokeMethod<bool>('grantWithRoot') ?? false;
 
+  /// Grayscale on/off and the three animation scales.
+  Future<({bool grayscale, double window, double transition, double animator})> getDisplayState() async {
+    final state = await _channel.invokeMapMethod<String, Object?>('getDisplayState');
+    return (
+      grayscale: state!['grayscale']! as bool,
+      window: state['windowScale']! as double,
+      transition: state['transitionScale']! as double,
+      animator: state['animatorScale']! as double,
+    );
+  }
+
+  Future<bool> setGrayscale(bool on) async =>
+      await _channel.invokeMethod<bool>('setGrayscale', {'on': on}) ?? false;
+
+  /// Sets window, transition and animator scales together.
+  Future<bool> setAnimationScale(double scale) async =>
+      await _channel.invokeMethod<bool>('setAnimationScale', {'scale': scale}) ?? false;
+
   Future<Object?> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onLaunchRoute') {
       _launchRoutes.add(call.arguments as String);

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../core/platform/qs_channel.dart';
+import '../features/display/bloc/display_bloc.dart';
+import '../features/display/data/display_repository.dart';
 import '../features/dns/bloc/dns_bloc.dart';
 import '../features/dns/data/dns_repository.dart';
 import '../features/setup/bloc/setup_bloc.dart';
@@ -28,6 +30,8 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     ..add(const SetupStarted());
   late final DnsBloc _dnsBloc = DnsBloc(DnsRepository(widget.channel))
     ..add(const DnsStarted());
+  late final DisplayBloc _displayBloc = DisplayBloc(DisplayRepository(widget.channel))
+    ..add(const DisplayStarted());
   late final StreamSubscription<String> _launchSub;
   late final AppLifecycleListener _lifecycle;
 
@@ -40,6 +44,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
       onResume: () {
         _setupBloc.add(const SetupPermissionCheckRequested());
         _dnsBloc.add(const DnsLiveStateRefreshed());
+        _displayBloc.add(const DisplayRefreshed());
       },
     );
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -69,6 +74,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     _launchSub.cancel();
     _setupBloc.close();
     _dnsBloc.close();
+    _displayBloc.close();
     widget.channel.dispose();
     super.dispose();
   }
@@ -81,6 +87,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
         providers: [
           BlocProvider.value(value: _setupBloc),
           BlocProvider.value(value: _dnsBloc),
+          BlocProvider.value(value: _displayBloc),
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,

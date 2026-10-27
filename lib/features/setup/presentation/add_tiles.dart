@@ -30,6 +30,29 @@ Future<void> requestAddTile(BuildContext context, TileDefinition tile) async {
   );
 }
 
+/// "Add to Quick Settings" for a tile screen's hero card. Only show it when
+/// [canRequestAddTile] is true.
+class AddTileButton extends StatelessWidget {
+  const AddTileButton(this.tile, {super.key, this.onGradient = false});
+
+  final TileDefinition tile;
+
+  /// White button for use on the brand gradient.
+  final bool onGradient;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.icon(
+      style: onGradient
+          ? FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF4F46E5))
+          : null,
+      onPressed: () => requestAddTile(context, tile),
+      icon: const Icon(Symbols.add_to_home_screen_rounded, size: 20),
+      label: const Text('Add to Quick Settings'),
+    );
+  }
+}
+
 /// Manual steps for adding tiles; works on every Android version and OEM.
 Future<void> showAddTilesHelp(BuildContext context) {
   return showModalBottomSheet<void>(

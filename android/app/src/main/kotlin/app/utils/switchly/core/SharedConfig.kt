@@ -7,6 +7,9 @@ import android.content.SharedPreferences
 object PrefKeys {
     /** JSON: `{"includeOff", "includeAutomatic", "providers": [{"id", "name", "host", "enabled"}]}`. */
     const val DNS_CONFIG = "dns_config"
+
+    /** JSON: `{"speeds": [Double]}` in tap order. */
+    const val ANIMATION_CONFIG = "animation_config"
 }
 
 /**

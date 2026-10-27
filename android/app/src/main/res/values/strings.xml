@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="tile_private_dns">Private DNS</string>
+    <string name="tile_grayscale">Grayscale</string>
+    <string name="tile_animation_speed">Animations</string>
 </resources>

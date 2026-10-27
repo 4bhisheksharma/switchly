@@ -13,6 +13,8 @@ import android.os.Looper
 import android.provider.Settings
 import androidx.annotation.RequiresApi
 import app.utils.switchly.core.Permissions
+import app.utils.switchly.display.AnimationScale
+import app.utils.switchly.display.Grayscale
 import app.utils.switchly.dns.PrivateDns
 import app.utils.switchly.tiles.TileRegistry
 import io.flutter.plugin.common.BinaryMessenger
@@ -60,6 +62,22 @@ class QsTogglesChannel(
             }
             "setPrivateDns" -> result.success(setPrivateDns(call.argument("mode"), call.argument("host")))
             "grantWithRoot" -> grantWithRoot(result)
+            "getDisplayState" -> {
+                val scales = AnimationScale.read(activity)
+                result.success(
+                    mapOf(
+                        "grayscale" to Grayscale.isOn(activity),
+                        "windowScale" to scales.window.toDouble(),
+                        "transitionScale" to scales.transition.toDouble(),
+                        "animatorScale" to scales.animator.toDouble(),
+                    ),
+                )
+            }
+            "setGrayscale" -> result.success(Grayscale.set(activity, call.argument<Boolean>("on") == true))
+            "setAnimationScale" -> {
+                val scale = call.argument<Double>("scale")
+                result.success(scale != null && AnimationScale.set(activity, scale.toFloat()))
+            }
             else -> result.notImplemented()
         }
     }

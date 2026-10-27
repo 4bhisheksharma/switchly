@@ -7,4 +7,7 @@
 abstract final class PrefKeys {
   /// JSON: `{"includeOff", "includeAutomatic", "providers": [{"id", "name", "host", "enabled"}]}`.
   static const dnsConfig = 'dns_config';
+
+  /// JSON: `{"speeds": [double]}` in tap order.
+  static const animationConfig = 'animation_config';
 }

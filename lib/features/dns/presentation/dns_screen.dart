@@ -3,9 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../app/theme.dart';
 import '../../../core/tiles/tile_catalog.dart';
+import '../../../core/widgets/hero_status_card.dart';
 import '../../../core/widgets/section_header.dart';
+import '../../../core/widgets/select_chip.dart';
 import '../../../core/widgets/status_pill.dart';
 import '../../../core/widgets/tile_icon.dart';
 import '../../setup/bloc/setup_bloc.dart';
@@ -146,80 +147,21 @@ class _LiveCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final state = context.watch<DnsBloc>().state;
     final active = state.live?.isEncrypted ?? false;
-    final onCard = active ? Colors.white : colors.onSurface;
-    final onCardMuted = active ? Colors.white.withValues(alpha: 0.8) : colors.onSurfaceVariant;
-
-    final detail = switch (state.live?.mode) {
-      PrivateDnsMode.hostname => state.live!.host ?? '',
-      PrivateDnsMode.off => 'DNS queries are not encrypted',
-      PrivateDnsMode.automatic => 'Encrypted only when the network supports it',
-      null => '',
-    };
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        color: active ? null : colors.surfaceContainerLow,
-        border: active ? null : Border.all(color: colors.outlineVariant),
-        gradient: active ? AppTheme.brandGradient : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: active ? Colors.white.withValues(alpha: 0.18) : colors.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Icon(
-                  active ? Symbols.encrypted_rounded : Symbols.dns_rounded,
-                  fill: active ? 1 : 0,
-                  color: active ? Colors.white : colors.onSurfaceVariant,
-                  size: 28,
-                ),
-              ),
-              const Spacer(),
-              if (state.applying)
-                SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2, color: onCard)),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Text('CURRENTLY USING', style: theme.textTheme.labelSmall?.copyWith(color: onCardMuted, letterSpacing: 1.2)),
-          const SizedBox(height: 4),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            child: Text(
-              state.liveLabel,
-              key: ValueKey(state.liveLabel),
-              style: theme.textTheme.headlineMedium?.copyWith(color: onCard),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(detail, style: theme.textTheme.bodyMedium?.copyWith(color: onCardMuted)),
-          if (canRequestAddTile(context)) ...[
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              style: active
-                  ? FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF4F46E5))
-                  : null,
-              onPressed: () => requestAddTile(context, privateDnsTile),
-              icon: const Icon(Symbols.add_to_home_screen_rounded, size: 20),
-              label: const Text('Add to Quick Settings'),
-            ),
-          ],
-        ],
-      ),
+    return HeroStatusCard(
+      icon: active ? Symbols.encrypted_rounded : Symbols.dns_rounded,
+      label: 'Currently using',
+      value: state.liveLabel,
+      detail: switch (state.live?.mode) {
+        PrivateDnsMode.hostname => state.live!.host ?? '',
+        PrivateDnsMode.off => 'DNS queries are not encrypted',
+        PrivateDnsMode.automatic => 'Encrypted only when the network supports it',
+        null => '',
+      },
+      active: active,
+      busy: state.applying,
+      action: canRequestAddTile(context) ? AddTileButton(privateDnsTile, onGradient: active) : null,
     );
   }
 }
@@ -247,67 +189,23 @@ class _QuickSwitcher extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        _StateChip(
+        SelectChip(
           label: 'Off',
           selected: live?.mode == PrivateDnsMode.off,
           onTap: () => apply(const PrivateDnsState(PrivateDnsMode.off)),
         ),
-        _StateChip(
+        SelectChip(
           label: 'Automatic',
           selected: live?.mode == PrivateDnsMode.automatic,
           onTap: () => apply(const PrivateDnsState(PrivateDnsMode.automatic)),
         ),
         for (final p in state.config.providers)
-          _StateChip(
+          SelectChip(
             label: p.name,
             selected: live?.isProvider(p) ?? false,
             onTap: () => apply(PrivateDnsState(PrivateDnsMode.hostname, p.host)),
           ),
       ],
-    );
-  }
-}
-
-class _StateChip extends StatelessWidget {
-  const _StateChip({required this.label, required this.selected, required this.onTap});
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: selected ? null : onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? colors.primary : colors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: selected ? colors.primary : colors.outlineVariant),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (selected) ...[
-                Icon(Symbols.check_rounded, size: 16, color: colors.onPrimary, weight: 600),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                label,
-                style: theme.textTheme.labelLarge?.copyWith(color: selected ? colors.onPrimary : colors.onSurface),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

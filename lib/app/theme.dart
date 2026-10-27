@@ -102,7 +102,8 @@ abstract final class AppTheme {
       ),
       switchTheme: SwitchThemeData(
         thumbIcon: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected) ? const Icon(Icons.check_rounded, size: 16) : null,
+          (states) =>
+              states.contains(WidgetState.selected) ? Icon(Icons.check_rounded, size: 16, color: scheme.primary) : null,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
