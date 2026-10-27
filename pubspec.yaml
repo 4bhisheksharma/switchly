@@ -25,6 +25,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  assets:
+    - assets/logo/
+    
   # Bundled so the app stays offline (no runtime font fetching). OFL licensed.
   fonts:
     - family: PlusJakartaSans
