@@ -10,6 +10,9 @@ import app.utils.switchly.tiles.base.BaseTile
  */
 class AnimationSpeedTile : BaseTile() {
 
+    // Harmless display change: works straight from the lock screen.
+    override val requiresUnlock = false
+
     override fun render(tile: Tile) {
         val scale = AnimationScale.read(this).uniform
         tile.state = if (scale != null && AnimationScale.same(scale, 1f)) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE

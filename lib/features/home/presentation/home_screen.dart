@@ -12,7 +12,11 @@ import '../../../core/widgets/tile_icon.dart';
 import '../../display/bloc/display_bloc.dart';
 import '../../display/data/display_models.dart';
 import '../../dns/bloc/dns_bloc.dart';
+import '../../network/bloc/network_bloc.dart';
+import '../../profiles/bloc/profiles_bloc.dart';
+import '../../quick_texts/bloc/quick_texts_bloc.dart';
 import '../../setup/bloc/setup_bloc.dart';
+import '../../setup/data/setup_repository.dart';
 import '../../setup/presentation/add_tiles.dart';
 import '../../setup/presentation/permission_sheet.dart';
 
@@ -25,7 +29,6 @@ class HomeScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final setup = context.watch<SetupBloc>().state;
     final needsSetup = setup.status == SetupStatus.ready && !setup.hasPermission;
-    final upcoming = tileCatalog.where((t) => !t.available).toList();
 
     return Scaffold(
       body: CustomScrollView(
@@ -59,28 +62,27 @@ class HomeScreen extends StatelessWidget {
                       ? const Padding(padding: EdgeInsets.only(top: 20), child: _SetupBanner())
                       : const SizedBox(width: double.infinity),
                 ),
-                const SectionHeader('Your tiles'),
+                const SectionHeader('Network'),
                 const _PrivateDnsCard(),
                 const SizedBox(height: 10),
+                const _KillSwitchCard(),
+                const SizedBox(height: 10),
+                const _WirelessDebuggingCard(),
+                const SectionHeader('Display'),
                 const _GrayscaleCard(),
                 const SizedBox(height: 10),
                 const _AnimationCard(),
-                const SectionHeader('Coming soon'),
-                Card(
-                  child: Column(
-                    children: [
-                      for (final (i, tile) in upcoming.indexed) ...[
-                        if (i > 0) const Divider(height: 1, indent: 76),
-                        ListTile(
-                          leading: TileIcon(tile.icon, size: 40),
-                          title: Text(tile.name),
-                          subtitle: Text(tile.description),
-                          trailing: const StatusPill('Soon'),
-                        ),
-                      ],
-                    ],
-                  ),
+                const SectionHeader('Productivity'),
+                _TileCard(
+                  tile: quickTextsTile,
+                  status: _countLabel(context.select((QuickTextsBloc b) => b.state.texts.length), 'text'),
+                  active: false,
+                  onTap: () => Navigator.of(context).pushNamed(AppRouter.quickTexts),
+                  // Not an on/off tile, so no status pill.
+                  trailing: Icon(Symbols.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
                 ),
+                const SizedBox(height: 10),
+                const _ProfilesCard(),
                 const SizedBox(height: 32),
                 const _PrivacyFooter(),
               ],
@@ -251,6 +253,100 @@ class _AnimationCard extends StatelessWidget {
       },
       active: state.animationModified,
       onTap: () => Navigator.of(context).pushNamed(AppRouter.animation),
+    );
+  }
+}
+
+String _countLabel(int count, String noun) => switch (count) {
+      0 => 'No ${noun}s saved',
+      1 => '1 $noun saved',
+      _ => '$count ${noun}s saved',
+    };
+
+class _KillSwitchCard extends StatelessWidget {
+  const _KillSwitchCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<NetworkBloc>().state;
+    final on = state.killSwitchOn;
+    final allowed = state.allowedApps.length;
+    return _TileCard(
+      tile: killSwitchTile,
+      status: on ? (allowed == 0 ? 'Internet blocked' : 'Blocked · $allowed allowed') : 'Internet on',
+      active: on,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.killSwitch),
+    );
+  }
+}
+
+/// Toggles inline; while on, shows the address to connect to with a copy button.
+class _WirelessDebuggingCard extends StatelessWidget {
+  const _WirelessDebuggingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final status = context.select((NetworkBloc bloc) => bloc.state.status);
+    final on = status?.wirelessDebugging ?? false;
+
+    Future<void> toggle() async {
+      if (status == null || !status.wirelessSupported) return;
+      if (!status.devOptions) {
+        await context.read<SetupRepository>().openDeveloperOptions();
+        return;
+      }
+      if (!context.read<SetupBloc>().state.hasPermission) {
+        await showPermissionSheet(context);
+        return;
+      }
+      HapticFeedback.selectionClick();
+      context.read<NetworkBloc>().add(WirelessDebuggingSet(!on));
+    }
+
+    Future<void> copyAddress() async {
+      await Clipboard.setData(ClipboardData(text: 'adb connect ${status!.address}'));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Copied adb connect ${status.address}')));
+    }
+
+    return _TileCard(
+      tile: wirelessDebuggingTile,
+      status: switch (status) {
+        null => '—',
+        _ when !status.wirelessSupported => 'Needs Android 11 or newer',
+        _ when !status.devOptions => 'Turn on Developer options first',
+        _ when !on => 'Off',
+        _ => status.address ?? 'Waiting for Wi-Fi',
+      },
+      active: on,
+      onTap: toggle,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (on && (status?.hasPort ?? false))
+            IconButton(tooltip: 'Copy adb connect', icon: const Icon(Symbols.content_copy_rounded), onPressed: copyAddress),
+          if (status?.wirelessSupported ?? false)
+            status!.devOptions
+                ? Switch(value: on, onChanged: (_) => toggle())
+                : Icon(Symbols.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfilesCard extends StatelessWidget {
+  const _ProfilesCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<ProfilesBloc>().state;
+    final active = state.active;
+    return _TileCard(
+      tile: profilesTile,
+      status: active != null ? '${active.name} is active' : _countLabel(state.profiles.length, 'profile'),
+      active: active != null,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.profiles),
     );
   }
 }

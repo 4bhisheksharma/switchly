@@ -7,6 +7,12 @@ import '../core/platform/qs_channel.dart';
 import '../features/display/bloc/display_bloc.dart';
 import '../features/display/data/display_repository.dart';
 import '../features/dns/bloc/dns_bloc.dart';
+import '../features/network/bloc/network_bloc.dart';
+import '../features/network/data/network_repository.dart';
+import '../features/profiles/bloc/profiles_bloc.dart';
+import '../features/profiles/data/profile_models.dart';
+import '../features/quick_texts/bloc/quick_texts_bloc.dart';
+import '../features/quick_texts/data/quick_text.dart';
 import '../features/dns/data/dns_repository.dart';
 import '../features/setup/bloc/setup_bloc.dart';
 import '../features/setup/data/setup_repository.dart';
@@ -32,6 +38,12 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     ..add(const DnsStarted());
   late final DisplayBloc _displayBloc = DisplayBloc(DisplayRepository(widget.channel))
     ..add(const DisplayStarted());
+  late final NetworkBloc _networkBloc = NetworkBloc(NetworkRepository(widget.channel))
+    ..add(const NetworkStarted());
+  late final QuickTextsBloc _quickTextsBloc = QuickTextsBloc(const QuickTextsRepository())
+    ..add(const QuickTextsStarted());
+  late final ProfilesBloc _profilesBloc = ProfilesBloc(ProfilesRepository(widget.channel))
+    ..add(const ProfilesStarted());
   late final StreamSubscription<String> _launchSub;
   late final AppLifecycleListener _lifecycle;
 
@@ -45,6 +57,8 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
         _setupBloc.add(const SetupPermissionCheckRequested());
         _dnsBloc.add(const DnsLiveStateRefreshed());
         _displayBloc.add(const DisplayRefreshed());
+        _networkBloc.add(const NetworkRefreshed());
+        _profilesBloc.add(const ProfilesRefreshed());
       },
     );
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -75,6 +89,9 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     _setupBloc.close();
     _dnsBloc.close();
     _displayBloc.close();
+    _networkBloc.close();
+    _quickTextsBloc.close();
+    _profilesBloc.close();
     widget.channel.dispose();
     super.dispose();
   }
@@ -88,6 +105,9 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
           BlocProvider.value(value: _setupBloc),
           BlocProvider.value(value: _dnsBloc),
           BlocProvider.value(value: _displayBloc),
+          BlocProvider.value(value: _networkBloc),
+          BlocProvider.value(value: _quickTextsBloc),
+          BlocProvider.value(value: _profilesBloc),
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,

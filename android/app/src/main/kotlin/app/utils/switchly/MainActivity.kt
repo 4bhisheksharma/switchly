@@ -19,6 +19,13 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    @Deprecated("Needed for the VpnService consent dialog")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (channel?.onActivityResult(requestCode, resultCode) == true) return
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)

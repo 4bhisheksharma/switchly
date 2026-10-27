@@ -7,6 +7,7 @@ import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
 import android.graphics.drawable.Icon
+import android.net.VpnService
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -16,6 +17,10 @@ import app.utils.switchly.core.Permissions
 import app.utils.switchly.display.AnimationScale
 import app.utils.switchly.display.Grayscale
 import app.utils.switchly.dns.PrivateDns
+import app.utils.switchly.network.KillSwitch
+import app.utils.switchly.network.LaunchableApps
+import app.utils.switchly.network.WirelessDebugging
+import app.utils.switchly.profiles.Profiles
 import app.utils.switchly.tiles.TileRegistry
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -78,8 +83,75 @@ class QsTogglesChannel(
                 val scale = call.argument<Double>("scale")
                 result.success(scale != null && AnimationScale.set(activity, scale.toFloat()))
             }
+            "getNetworkState" -> result.success(
+                mapOf(
+                    "wirelessSupported" to WirelessDebugging.supported,
+                    "wirelessDebugging" to WirelessDebugging.isOn(activity),
+                    "devOptions" to WirelessDebugging.devOptionsEnabled(activity),
+                    "address" to WirelessDebugging.address(activity),
+                    "killSwitch" to KillSwitch.isOn(),
+                ),
+            )
+            "setWirelessDebugging" -> result.success(
+                WirelessDebugging.set(activity, call.argument<Boolean>("on") == true),
+            )
+            "startKillSwitch" -> startKillSwitch(result)
+            "stopKillSwitch" -> background(result) {
+                KillSwitch.stop(activity).also { KillSwitch.awaitState(false) }
+            }
+            // Re-applies the exception list if the VPN is running.
+            "reloadKillSwitch" -> result.success(!KillSwitch.isOn() || KillSwitch.start(activity))
+            "getLaunchableApps" -> background(result) { LaunchableApps.load(activity) }
+            "getActiveProfile" -> result.success(Profiles.activeId(activity))
+            "applyProfile" -> {
+                val profile = Profiles.all(activity).firstOrNull { it.id == call.argument<String>("id") }
+                if (profile == null) result.success(false) else background(result) { Profiles.apply(activity, profile) }
+            }
+            "restoreProfile" -> background(result) { Profiles.restore(activity) }
             else -> result.notImplemented()
         }
+    }
+
+    /** Runs [work] off the main thread and replies on it. */
+    private fun background(result: MethodChannel.Result, work: () -> Any?) {
+        thread(name = "qs-channel") {
+            val value = try {
+                work()
+            } catch (e: Exception) {
+                mainHandler.post { result.error("failed", e.message, null) }
+                return@thread
+            }
+            mainHandler.post { result.success(value) }
+        }
+    }
+
+    private var pendingVpnConsent: MethodChannel.Result? = null
+
+    /** Starts the kill switch, showing Android's one-time VPN consent dialog first if needed. */
+    private fun startKillSwitch(result: MethodChannel.Result) {
+        val consent = VpnService.prepare(activity)
+        if (consent == null) {
+            background(result) {
+                KillSwitch.start(activity) && run {
+                    KillSwitch.awaitState(true)
+                    KillSwitch.isOn()
+                }
+            }
+            return
+        }
+        pendingVpnConsent?.success(false)
+        pendingVpnConsent = result
+        @Suppress("DEPRECATION")
+        activity.startActivityForResult(consent, REQUEST_VPN_CONSENT)
+    }
+
+    /** Forwarded from MainActivity. Returns true if the result was ours. */
+    fun onActivityResult(requestCode: Int, resultCode: Int): Boolean {
+        if (requestCode != REQUEST_VPN_CONSENT) return false
+        val result = pendingVpnConsent ?: return true
+        pendingVpnConsent = null
+        if (resultCode == Activity.RESULT_OK) startKillSwitch(result) else result.success(false)
+        return true
     }
 
     private fun setPrivateDns(mode: String?, host: String?): Boolean = when (mode) {
@@ -151,5 +223,6 @@ class QsTogglesChannel(
 
     companion object {
         const val NAME = "qs_toggles"
+        private const val REQUEST_VPN_CONSENT = 4711
     }
 }

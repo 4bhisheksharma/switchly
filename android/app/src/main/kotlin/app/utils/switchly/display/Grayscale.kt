@@ -3,6 +3,7 @@ package app.utils.switchly.display
 import android.content.Context
 import app.utils.switchly.core.SecureSettings
 import app.utils.switchly.core.SettingsTable
+import app.utils.switchly.core.SharedConfig
 
 /**
  * System-wide grayscale via the accessibility colour-correction ("daltonizer") settings in
@@ -16,7 +17,6 @@ object Grayscale {
     private const val KEY_MODE = "accessibility_display_daltonizer"
     private const val MODE_MONOCHROMACY = "0"
 
-    private const val STATE_FILE = "switchly_tile_state"
     private const val PREV_ENABLED = "grayscale_prev_enabled"
     private const val PREV_MODE = "grayscale_prev_mode"
 
@@ -26,7 +26,7 @@ object Grayscale {
     /** Returns true if the system accepted the change. */
     fun set(context: Context, on: Boolean): Boolean {
         if (on == isOn(context)) return true
-        val saved = context.getSharedPreferences(STATE_FILE, Context.MODE_PRIVATE)
+        val saved = SharedConfig.nativeState(context)
         return if (on) {
             saved.edit()
                 .putString(PREV_ENABLED, get(context, KEY_ENABLED))

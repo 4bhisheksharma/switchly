@@ -20,6 +20,10 @@ object TileRegistry {
         TileInfo("private_dns", PrivateDnsTile::class.java, R.string.tile_private_dns, R.drawable.ic_tile_dns),
         TileInfo("grayscale", GrayscaleTile::class.java, R.string.tile_grayscale, R.drawable.ic_tile_grayscale),
         TileInfo("animation_speed", AnimationSpeedTile::class.java, R.string.tile_animation_speed, R.drawable.ic_tile_speed),
+        TileInfo("wireless_debugging", WirelessDebuggingTile::class.java, R.string.tile_wireless_debugging, R.drawable.ic_tile_adb),
+        TileInfo("kill_switch", KillSwitchTile::class.java, R.string.tile_kill_switch, R.drawable.ic_tile_block),
+        TileInfo("profiles", ProfileTile::class.java, R.string.tile_profiles, R.drawable.ic_tile_profiles),
+        TileInfo("quick_texts", QuickTextsTile::class.java, R.string.tile_quick_texts, R.drawable.ic_tile_texts),
     )
 
     fun byId(id: String?): TileInfo? = all.firstOrNull { it.id == id }

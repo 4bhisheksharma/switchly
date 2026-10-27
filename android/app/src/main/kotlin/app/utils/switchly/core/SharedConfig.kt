@@ -10,6 +10,15 @@ object PrefKeys {
 
     /** JSON: `{"speeds": [Double]}` in tap order. */
     const val ANIMATION_CONFIG = "animation_config"
+
+    /** JSON array of `{"id", "title", "text"}`. */
+    const val QUICK_TEXTS = "quick_texts"
+
+    /** JSON: `{"allowedApps": [packageName]}`: apps that stay online. */
+    const val KILL_SWITCH_CONFIG = "kill_switch_config"
+
+    /** JSON array of profiles; see profiles/Profiles.kt for the shape. */
+    const val PROFILES = "profiles"
 }
 
 /**
@@ -27,4 +36,8 @@ object SharedConfig {
 
     fun getString(context: Context, key: String): String? =
         prefs(context).getString(PREFIX + key, null)
+
+    /** Native-only state (snapshots, active profile). Flutter never reads this file. */
+    fun nativeState(context: Context): SharedPreferences =
+        context.getSharedPreferences("switchly_tile_state", Context.MODE_PRIVATE)
 }

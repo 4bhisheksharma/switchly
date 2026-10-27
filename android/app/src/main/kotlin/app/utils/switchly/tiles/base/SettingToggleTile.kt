@@ -28,12 +28,18 @@ abstract class SettingToggleTile : BaseTile() {
     /** Hook for tiles that need companion keys written before switching on (e.g. grayscale mode). */
     protected open fun beforeEnable() {}
 
-    private fun currentlyOn(): Boolean = isOn(SecureSettings.getString(this, table, key))
+    protected fun currentlyOn(): Boolean = isOn(SecureSettings.getString(this, table, key))
 
     override fun render(tile: Tile) {
         val on = currentlyOn()
         tile.state = if (on) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
         tile.subtitle = if (on) "On" else "Off"
+    }
+
+    override fun predict(tile: Tile) {
+        val turningOn = tile.state != Tile.STATE_ACTIVE
+        tile.state = if (turningOn) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
+        tile.subtitle = if (turningOn) "On" else "Off"
     }
 
     override fun toggle() {

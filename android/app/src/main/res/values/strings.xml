@@ -3,4 +3,8 @@
     <string name="tile_private_dns">Private DNS</string>
     <string name="tile_grayscale">Grayscale</string>
     <string name="tile_animation_speed">Animations</string>
+    <string name="tile_wireless_debugging">Wireless debugging</string>
+    <string name="tile_kill_switch">Kill switch</string>
+    <string name="tile_profiles">Profiles</string>
+    <string name="tile_quick_texts">Quick texts</string>
 </resources>

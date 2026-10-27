@@ -98,6 +98,53 @@ class QsChannel {
   Future<bool> setAnimationScale(double scale) async =>
       await _channel.invokeMethod<bool>('setAnimationScale', {'scale': scale}) ?? false;
 
+  /// Wireless debugging and kill switch state. [address] is `ip:port`, just the IP, or null.
+  Future<
+      ({
+        bool wirelessSupported,
+        bool wirelessDebugging,
+        bool devOptions,
+        String? address,
+        bool killSwitch,
+      })> getNetworkState() async {
+    final state = await _channel.invokeMapMethod<String, Object?>('getNetworkState');
+    return (
+      wirelessSupported: state!['wirelessSupported']! as bool,
+      wirelessDebugging: state['wirelessDebugging']! as bool,
+      devOptions: state['devOptions']! as bool,
+      address: state['address'] as String?,
+      killSwitch: state['killSwitch']! as bool,
+    );
+  }
+
+  Future<bool> setWirelessDebugging(bool on) async =>
+      await _channel.invokeMethod<bool>('setWirelessDebugging', {'on': on}) ?? false;
+
+  /// Shows Android's one-time VPN consent dialog if needed. False if declined or refused.
+  Future<bool> startKillSwitch() async => await _channel.invokeMethod<bool>('startKillSwitch') ?? false;
+
+  Future<bool> stopKillSwitch() async => await _channel.invokeMethod<bool>('stopKillSwitch') ?? false;
+
+  /// Re-applies the exception list to a running kill switch.
+  Future<bool> reloadKillSwitch() async => await _channel.invokeMethod<bool>('reloadKillSwitch') ?? false;
+
+  /// Apps with a launcher icon, sorted by label. Icons are 96px PNGs.
+  Future<List<({String package, String label, Uint8List icon})>> getLaunchableApps() async {
+    final apps = await _channel.invokeListMethod<Map<Object?, Object?>>('getLaunchableApps') ?? const [];
+    return [
+      for (final app in apps)
+        (package: app['package']! as String, label: app['label']! as String, icon: app['icon']! as Uint8List),
+    ];
+  }
+
+  Future<String?> getActiveProfile() => _channel.invokeMethod<String>('getActiveProfile');
+
+  /// Returns false if any part of the profile was refused.
+  Future<bool> applyProfile(String id) async =>
+      await _channel.invokeMethod<bool>('applyProfile', {'id': id}) ?? false;
+
+  Future<bool> restoreProfile() async => await _channel.invokeMethod<bool>('restoreProfile') ?? false;
+
   Future<Object?> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onLaunchRoute') {
       _launchRoutes.add(call.arguments as String);
