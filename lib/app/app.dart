@@ -12,6 +12,8 @@ import '../features/network/bloc/network_bloc.dart';
 import '../features/network/data/network_repository.dart';
 import '../features/payment_qr/bloc/payment_qr_bloc.dart';
 import '../features/payment_qr/data/payment_qr.dart';
+import '../features/power/bloc/power_cubits.dart';
+import '../features/power/data/power_models.dart';
 import '../features/profiles/bloc/profiles_bloc.dart';
 import '../features/profiles/data/profile_models.dart';
 import '../features/quick_texts/bloc/quick_texts_bloc.dart';
@@ -49,6 +51,9 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     ..add(const ProfilesStarted());
   late final PaymentQrBloc _paymentQrBloc = PaymentQrBloc(const PaymentQrRepository())
     ..add(const PaymentQrsStarted());
+  late final PowerRepository _powerRepository = PowerRepository(widget.channel);
+  late final CaffeineCubit _caffeineCubit = CaffeineCubit(_powerRepository)..load();
+  late final BatteryCubit _batteryCubit = BatteryCubit(_powerRepository)..resume();
   final BsScriptCubit _bsScriptCubit = BsScriptCubit();
   late final StreamSubscription<String> _launchSub;
   late final AppLifecycleListener _lifecycle;
@@ -65,7 +70,10 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
         _displayBloc.add(const DisplayRefreshed());
         _networkBloc.add(const NetworkRefreshed());
         _profilesBloc.add(const ProfilesRefreshed());
+        _caffeineCubit.refresh();
+        _batteryCubit.resume();
       },
+      onPause: () => _batteryCubit.pause(),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final route = await widget.channel.takeLaunchRoute();
@@ -100,6 +108,8 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     _profilesBloc.close();
     _paymentQrBloc.close();
     _bsScriptCubit.close();
+    _caffeineCubit.close();
+    _batteryCubit.close();
     widget.channel.dispose();
     super.dispose();
   }
@@ -118,6 +128,8 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
           BlocProvider.value(value: _profilesBloc),
           BlocProvider.value(value: _paymentQrBloc),
           BlocProvider.value(value: _bsScriptCubit),
+          BlocProvider.value(value: _caffeineCubit),
+          BlocProvider.value(value: _batteryCubit),
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,

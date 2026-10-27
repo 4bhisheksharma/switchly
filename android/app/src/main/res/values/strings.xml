@@ -9,4 +9,7 @@
     <string name="tile_quick_texts">Quick texts</string>
     <string name="tile_bs_date">Nepali date</string>
     <string name="tile_payment_qr">Payment QR</string>
+    <string name="tile_battery">Battery</string>
+    <string name="tile_font_size">Font size</string>
+    <string name="tile_caffeine">Caffeine</string>
 </resources>

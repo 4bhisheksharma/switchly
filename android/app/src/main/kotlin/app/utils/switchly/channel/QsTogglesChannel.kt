@@ -15,11 +15,14 @@ import android.provider.Settings
 import androidx.annotation.RequiresApi
 import app.utils.switchly.core.Permissions
 import app.utils.switchly.display.AnimationScale
+import app.utils.switchly.display.FontScale
 import app.utils.switchly.display.Grayscale
 import app.utils.switchly.dns.PrivateDns
 import app.utils.switchly.network.KillSwitch
 import app.utils.switchly.network.LaunchableApps
 import app.utils.switchly.network.WirelessDebugging
+import app.utils.switchly.power.BatteryInfo
+import app.utils.switchly.power.Caffeine
 import app.utils.switchly.profiles.Profiles
 import app.utils.switchly.tiles.TileRefresher
 import app.utils.switchly.tiles.TileRegistry
@@ -76,6 +79,7 @@ class QsTogglesChannel(
                         "windowScale" to scales.window.toDouble(),
                         "transitionScale" to scales.transition.toDouble(),
                         "animatorScale" to scales.animator.toDouble(),
+                        "fontScale" to FontScale.read(activity).toDouble(),
                     ),
                 )
             }
@@ -83,6 +87,31 @@ class QsTogglesChannel(
             "setAnimationScale" -> {
                 val scale = call.argument<Double>("scale")
                 result.success((scale != null && AnimationScale.set(activity, scale.toFloat())).alsoRefresh())
+            }
+            "setFontScale" -> {
+                val scale = call.argument<Double>("scale")
+                result.success((scale != null && FontScale.set(activity, scale.toFloat())).alsoRefresh())
+            }
+            "getCaffeine" -> result.success(caffeineState())
+            "startCaffeine" -> {
+                Caffeine.start(activity, call.argument<Int>("minutes") ?: 0)
+                result.success(caffeineState())
+            }
+            "stopCaffeine" -> {
+                Caffeine.stop(activity)
+                result.success(caffeineState())
+            }
+            "getBatteryInfo" -> {
+                val battery = BatteryInfo.read(activity)
+                result.success(
+                    mapOf(
+                        "level" to battery.level,
+                        "plugged" to battery.plugged,
+                        "full" to battery.full,
+                        "temperature" to battery.temperatureC?.toDouble(),
+                        "watts" to battery.chargingWatts?.toDouble(),
+                    ),
+                )
             }
             "getNetworkState" -> result.success(
                 mapOf(
@@ -117,6 +146,9 @@ class QsTogglesChannel(
             else -> result.notImplemented()
         }
     }
+
+    /** `endsAt` is epoch millis, or 0 when there is no time limit. */
+    private fun caffeineState() = mapOf("on" to Caffeine.isOn, "minutes" to Caffeine.minutes, "endsAt" to Caffeine.endsAt)
 
     /** Tiles are active tiles, so any state change must be pushed to them. */
     private fun <T> T.alsoRefresh(): T = also { TileRefresher.refreshAll(activity) }

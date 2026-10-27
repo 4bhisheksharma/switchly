@@ -72,6 +72,27 @@ const bsDateTile = TileDefinition(
   icon: Symbols.calendar_month_rounded,
 );
 
+const batteryTile = TileDefinition(
+  id: 'battery',
+  name: 'Battery',
+  description: 'Temperature and charging speed at a glance.',
+  icon: Symbols.battery_charging_full_rounded,
+);
+
+const fontSizeTile = TileDefinition(
+  id: 'font_size',
+  name: 'Font size',
+  description: 'Make text bigger in one tap.',
+  icon: Symbols.format_size_rounded,
+);
+
+const caffeineTile = TileDefinition(
+  id: 'caffeine',
+  name: 'Caffeine',
+  description: 'Keep the screen awake for a while.',
+  icon: Symbols.coffee_rounded,
+);
+
 const paymentQrTile = TileDefinition(
   id: 'payment_qr',
   name: 'Payment QR',

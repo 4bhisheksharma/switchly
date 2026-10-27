@@ -2,6 +2,7 @@ package app.utils.switchly.tiles.base
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.drawable.Icon
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
@@ -9,6 +10,7 @@ import android.util.Log
 import app.utils.switchly.LaunchRoutes
 import app.utils.switchly.MainActivity
 import app.utils.switchly.core.Permissions
+import app.utils.switchly.tiles.TileRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -90,6 +92,10 @@ abstract class BaseTile : TileService() {
     protected fun refresh() {
         // qsTile is null when the panel has already closed; it is redrawn on next open.
         val tile = qsTile ?: return
+        // SystemUI caches the icon across app updates; setting it here keeps it correct.
+        TileRegistry.all.firstOrNull { it.service == javaClass }?.let {
+            tile.icon = Icon.createWithResource(this, it.icon)
+        }
         if (requiresSecureSettings && !Permissions.hasWriteSecureSettings(this)) {
             tile.state = Tile.STATE_INACTIVE
             tile.subtitle = "Tap to set up"

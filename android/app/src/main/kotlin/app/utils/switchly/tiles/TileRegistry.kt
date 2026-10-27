@@ -26,6 +26,9 @@ object TileRegistry {
         TileInfo("quick_texts", QuickTextsTile::class.java, R.string.tile_quick_texts, R.drawable.ic_tile_texts),
         TileInfo("bs_date", BsDateTile::class.java, R.string.tile_bs_date, R.drawable.ic_tile_calendar),
         TileInfo("payment_qr", PaymentQrTile::class.java, R.string.tile_payment_qr, R.drawable.ic_tile_qr),
+        TileInfo("battery", BatteryTile::class.java, R.string.tile_battery, R.drawable.ic_tile_battery),
+        TileInfo("font_size", FontSizeTile::class.java, R.string.tile_font_size, R.drawable.ic_tile_font),
+        TileInfo("caffeine", CaffeineTile::class.java, R.string.tile_caffeine, R.drawable.ic_tile_coffee),
     )
 
     fun byId(id: String?): TileInfo? = all.firstOrNull { it.id == id }

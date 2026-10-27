@@ -8,6 +8,8 @@ final class DisplayState extends Equatable {
     this.grayscale,
     this.scales,
     this.animationConfig = AnimationConfig.defaults,
+    this.fontScale,
+    this.fontConfig = FontConfig.defaults,
     this.applying = false,
     this.applyFailures = 0,
   });
@@ -18,10 +20,16 @@ final class DisplayState extends Equatable {
   final bool? grayscale;
   final AnimationScales? scales;
   final AnimationConfig animationConfig;
+
+  /// Null until read, or when not running on Android.
+  final double? fontScale;
+  final FontConfig fontConfig;
   final bool applying;
 
   /// Incremented on each refused change, so the UI can react once per failure.
   final int applyFailures;
+
+  bool get fontModified => fontScale != null && !sameSpeed(fontScale!, 1);
 
   /// The uniform speed, or null when unknown or the scales differ.
   double? get speed => scales?.uniform;
@@ -40,6 +48,8 @@ final class DisplayState extends Equatable {
     bool? grayscale,
     AnimationScales? scales,
     AnimationConfig? animationConfig,
+    double? fontScale,
+    FontConfig? fontConfig,
     bool? applying,
     int? applyFailures,
   }) {
@@ -48,11 +58,14 @@ final class DisplayState extends Equatable {
       grayscale: grayscale ?? this.grayscale,
       scales: scales ?? this.scales,
       animationConfig: animationConfig ?? this.animationConfig,
+      fontScale: fontScale ?? this.fontScale,
+      fontConfig: fontConfig ?? this.fontConfig,
       applying: applying ?? this.applying,
       applyFailures: applyFailures ?? this.applyFailures,
     );
   }
 
   @override
-  List<Object?> get props => [status, grayscale, scales, animationConfig, applying, applyFailures];
+  List<Object?> get props =>
+      [status, grayscale, scales, animationConfig, fontScale, fontConfig, applying, applyFailures];
 }

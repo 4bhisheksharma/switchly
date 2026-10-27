@@ -7,7 +7,7 @@ import '../data/display_repository.dart';
 part 'display_event.dart';
 part 'display_state.dart';
 
-/// Grayscale and animation speed: live system state plus the animation tile's cycle.
+/// Grayscale, animation speed and font size: live system state plus the tiles' cycles.
 class DisplayBloc extends Bloc<DisplayEvent, DisplayState> {
   DisplayBloc(this._repository) : super(const DisplayState()) {
     on<DisplayStarted>(_onStarted);
@@ -15,13 +15,16 @@ class DisplayBloc extends Bloc<DisplayEvent, DisplayState> {
     on<GrayscaleSet>(_onGrayscaleSet);
     on<AnimationSpeedSet>(_onAnimationSpeedSet);
     on<AnimationCycleSpeedToggled>(_onCycleSpeedToggled);
+    on<FontScaleSet>(_onFontScaleSet);
+    on<FontCycleScaleToggled>(_onFontCycleScaleToggled);
   }
 
   final DisplayRepository _repository;
 
   Future<void> _onStarted(DisplayStarted event, Emitter<DisplayState> emit) async {
     final config = await _repository.loadAnimationConfig();
-    emit(state.copyWith(status: DisplayStatus.ready, animationConfig: config));
+    final fontConfig = await _repository.loadFontConfig();
+    emit(state.copyWith(status: DisplayStatus.ready, animationConfig: config, fontConfig: fontConfig));
     await _refresh(emit);
   }
 
@@ -50,10 +53,25 @@ class DisplayBloc extends Bloc<DisplayEvent, DisplayState> {
     await _repository.saveAnimationConfig(updated);
   }
 
+  Future<void> _onFontScaleSet(FontScaleSet event, Emitter<DisplayState> emit) async {
+    emit(state.copyWith(fontScale: event.scale));
+    final ok = await _repository.setFontScale(event.scale);
+    if (!ok) emit(state.copyWith(applyFailures: state.applyFailures + 1));
+    await _refresh(emit);
+  }
+
+  Future<void> _onFontCycleScaleToggled(FontCycleScaleToggled event, Emitter<DisplayState> emit) async {
+    final config = state.fontConfig;
+    if (config.includes(event.scale) && !config.canRemove) return;
+    final updated = config.toggled(event.scale);
+    emit(state.copyWith(fontConfig: updated));
+    await _repository.saveFontConfig(updated);
+  }
+
   Future<void> _refresh(Emitter<DisplayState> emit) async {
     try {
       final live = await _repository.readLive();
-      emit(state.copyWith(grayscale: live.grayscale, scales: live.scales));
+      emit(state.copyWith(grayscale: live.grayscale, scales: live.scales, fontScale: live.fontScale));
     } on Exception {
       // Not on Android (tests, desktop preview).
     }

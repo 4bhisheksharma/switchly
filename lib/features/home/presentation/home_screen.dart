@@ -16,6 +16,9 @@ import '../../display/data/display_models.dart';
 import '../../dns/bloc/dns_bloc.dart';
 import '../../network/bloc/network_bloc.dart';
 import '../../payment_qr/bloc/payment_qr_bloc.dart';
+import '../../power/bloc/power_cubits.dart';
+import '../../power/data/power_models.dart';
+import '../../power/presentation/caffeine_screen.dart';
 import '../../profiles/bloc/profiles_bloc.dart';
 import '../../quick_texts/bloc/quick_texts_bloc.dart';
 import '../../setup/bloc/setup_bloc.dart';
@@ -93,6 +96,12 @@ class HomeScreen extends StatelessWidget {
                 const _GrayscaleCard(),
                 const SizedBox(height: 10),
                 const _AnimationCard(),
+                const SizedBox(height: 10),
+                const _FontSizeCard(),
+                const SectionHeader('Power'),
+                const _CaffeineCard(),
+                const SizedBox(height: 10),
+                const _BatteryCard(),
                 const SectionHeader('Everyday'),
                 const _BsDateCard(),
                 const SizedBox(height: 10),
@@ -287,6 +296,75 @@ class _AnimationCard extends StatelessWidget {
     );
   }
 }
+
+class _FontSizeCard extends StatelessWidget {
+  const _FontSizeCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<DisplayBloc>().state;
+    final scale = state.fontScale;
+    return _TileCard(
+      tile: fontSizeTile,
+      status: scale == null ? '—' : '${fontLabel(scale)} · ${fontDescription(scale)}',
+      active: state.fontModified,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.fontSize),
+    );
+  }
+}
+
+/// The switch starts the first duration in the tile cycle; tap the card for the rest.
+class _CaffeineCard extends StatelessWidget {
+  const _CaffeineCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<CaffeineCubit>().state;
+    final on = state.status.on;
+    final cubit = context.read<CaffeineCubit>();
+    return _TileCard(
+      tile: caffeineTile,
+      status: on ? caffeineDetail(context, state.status) : 'Off',
+      active: on,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.caffeine),
+      trailing: Switch(
+        value: on,
+        onChanged: (v) {
+          HapticFeedback.selectionClick();
+          v ? cubit.start(state.config.minutes.first) : cubit.stop();
+        },
+      ),
+    );
+  }
+}
+
+/// Live readings. Nothing to configure, so tapping offers to add the tile.
+class _BatteryCard extends StatelessWidget {
+  const _BatteryCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final battery = context.watch<BatteryCubit>().state;
+    final canAdd = canRequestAddTile(context);
+    return _TileCard(
+      tile: batteryTile,
+      status: battery == null ? '—' : batterySummary(battery),
+      active: battery?.plugged ?? false,
+      onTap: () => canAdd ? requestAddTile(context, batteryTile) : showAddTilesHelp(context),
+      trailing: Icon(Symbols.add_circle_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
+    );
+  }
+}
+
+/// "85% · Charging 12.3 W · 31.2°C", matching the tile.
+String batterySummary(BatteryStatus b) => [
+      '${b.level}%',
+      if (b.plugged && b.full)
+        'Full'
+      else if (b.plugged)
+        b.watts != null ? 'Charging ${b.watts!.toStringAsFixed(1)} W' : 'Charging',
+      if (b.temperature != null) '${b.temperature!.toStringAsFixed(1)}°C',
+    ].join(' · ');
 
 String _countLabel(int count, String noun) => switch (count) {
       0 => 'No ${noun}s saved',

@@ -5,6 +5,10 @@
         tools:ignore="ProtectedPermissions" />
     <!-- Reads the Wi-Fi IP shown by the wireless debugging tile. No internet access. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Caffeine: a foreground service holds a screen wake lock while it is on. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <application
         android:label="Switchly"
@@ -41,7 +45,7 @@
         <service
             android:name=".tiles.PrivateDnsTile"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@drawable/ic_tile_dns"
             android:label="@string/tile_private_dns"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -56,7 +60,7 @@
         <service
             android:name=".tiles.GrayscaleTile"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@drawable/ic_tile_grayscale"
             android:label="@string/tile_grayscale"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -75,7 +79,7 @@
         <service
             android:name=".tiles.AnimationSpeedTile"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@drawable/ic_tile_speed"
             android:label="@string/tile_animation_speed"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -90,7 +94,7 @@
         <service
             android:name=".tiles.WirelessDebuggingTile"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@drawable/ic_tile_adb"
             android:label="@string/tile_wireless_debugging"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -108,7 +112,7 @@
         <service
             android:name=".tiles.KillSwitchTile"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@drawable/ic_tile_block"
             android:label="@string/tile_kill_switch"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -126,7 +130,7 @@
         <service
             android:name=".tiles.ProfileTile"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@drawable/ic_tile_profiles"
             android:label="@string/tile_profiles"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -141,7 +145,7 @@
         <service
             android:name=".tiles.QuickTextsTile"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@drawable/ic_tile_texts"
             android:label="@string/tile_quick_texts"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -157,7 +161,7 @@
         <service
             android:name=".tiles.BsDateTile"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@drawable/ic_tile_calendar"
             android:label="@string/tile_bs_date"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -168,7 +172,7 @@
         <service
             android:name=".tiles.PaymentQrTile"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@drawable/ic_tile_qr"
             android:label="@string/tile_payment_qr"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -179,6 +183,66 @@
                 android:name="android.service.quicksettings.ACTIVE_TILE"
                 android:value="true" />
         </service>
+
+        <!-- Not an active tile: reads fresh values each time the panel opens. -->
+        <service
+            android:name=".tiles.BatteryTile"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_battery"
+            android:label="@string/tile_battery"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".tiles.FontSizeTile"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_font"
+            android:label="@string/tile_font_size"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name=".tiles.CaffeineTile"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_coffee"
+            android:label="@string/tile_caffeine"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name=".power.CaffeineService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps the screen on for a user-chosen time after the user taps the Caffeine Quick Settings tile." />
+        </service>
+
+        <!-- Re-pushes tile state after an app update; SystemUI keeps the old state otherwise. -->
+        <receiver
+            android:name=".tiles.TileUpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Kill switch: a local VPN that drops all traffic. -->
         <service

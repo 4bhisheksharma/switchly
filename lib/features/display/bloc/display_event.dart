@@ -36,6 +36,26 @@ final class AnimationSpeedSet extends DisplayEvent {
   List<Object?> get props => [speed];
 }
 
+/// Applies the system font [scale] now.
+final class FontScaleSet extends DisplayEvent {
+  const FontScaleSet(this.scale);
+
+  final double scale;
+
+  @override
+  List<Object?> get props => [scale];
+}
+
+/// Adds or removes [scale] from the font tile's cycle.
+final class FontCycleScaleToggled extends DisplayEvent {
+  const FontCycleScaleToggled(this.scale);
+
+  final double scale;
+
+  @override
+  List<Object?> get props => [scale];
+}
+
 /// Adds or removes [speed] from the tile's cycle.
 final class AnimationCycleSpeedToggled extends DisplayEvent {
   const AnimationCycleSpeedToggled(this.speed);

@@ -80,14 +80,16 @@ class QsChannel {
   Future<bool> grantWithRoot() async =>
       await _channel.invokeMethod<bool>('grantWithRoot') ?? false;
 
-  /// Grayscale on/off and the three animation scales.
-  Future<({bool grayscale, double window, double transition, double animator})> getDisplayState() async {
+  /// Grayscale on/off, the three animation scales and the font scale.
+  Future<({bool grayscale, double window, double transition, double animator, double fontScale})>
+      getDisplayState() async {
     final state = await _channel.invokeMapMethod<String, Object?>('getDisplayState');
     return (
       grayscale: state!['grayscale']! as bool,
       window: state['windowScale']! as double,
       transition: state['transitionScale']! as double,
       animator: state['animatorScale']! as double,
+      fontScale: state['fontScale']! as double,
     );
   }
 
@@ -97,6 +99,34 @@ class QsChannel {
   /// Sets window, transition and animator scales together.
   Future<bool> setAnimationScale(double scale) async =>
       await _channel.invokeMethod<bool>('setAnimationScale', {'scale': scale}) ?? false;
+
+  Future<bool> setFontScale(double scale) async =>
+      await _channel.invokeMethod<bool>('setFontScale', {'scale': scale}) ?? false;
+
+  /// Whether Caffeine is on, its duration (0 = no limit) and end time (epoch ms, 0 = none).
+  Future<({bool on, int? minutes, int endsAt})> getCaffeine() => _caffeine('getCaffeine');
+
+  Future<({bool on, int? minutes, int endsAt})> startCaffeine(int minutes) =>
+      _caffeine('startCaffeine', {'minutes': minutes});
+
+  Future<({bool on, int? minutes, int endsAt})> stopCaffeine() => _caffeine('stopCaffeine');
+
+  Future<({bool on, int? minutes, int endsAt})> _caffeine(String method, [Object? args]) async {
+    final state = await _channel.invokeMapMethod<String, Object?>(method, args);
+    return (on: state!['on']! as bool, minutes: state['minutes'] as int?, endsAt: state['endsAt']! as int);
+  }
+
+  /// Level (%), plug state, temperature (°C) and charging power (W); the last two may be null.
+  Future<({int level, bool plugged, bool full, double? temperature, double? watts})> getBatteryInfo() async {
+    final state = await _channel.invokeMapMethod<String, Object?>('getBatteryInfo');
+    return (
+      level: state!['level']! as int,
+      plugged: state['plugged']! as bool,
+      full: state['full']! as bool,
+      temperature: state['temperature'] as double?,
+      watts: state['watts'] as double?,
+    );
+  }
 
   /// Wireless debugging and kill switch state. [address] is `ip:port`, just the IP, or null.
   Future<

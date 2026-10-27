@@ -25,4 +25,10 @@ abstract final class PrefKeys {
 
   /// JSON array of `{"id", "name", "path"}`; path is an image in the app's files dir.
   static const paymentQrs = 'payment_qrs';
+
+  /// JSON: `{"scales": [double]}` in tap order.
+  static const fontConfig = 'font_config';
+
+  /// JSON: `{"minutes": [int], "stopOnLock": bool}`; 0 minutes means no time limit.
+  static const caffeineConfig = 'caffeine_config';
 }

@@ -44,6 +44,8 @@ flutter:
           weight: 800
 
 # Regenerate with: dart run flutter_launcher_icons
+# It rewrites EVERY android:icon in AndroidManifest.xml, including the tile services:
+# restore their @drawable/ic_tile_* icons afterwards (git diff the manifest).
 flutter_launcher_icons:
   android: true
   ios: false
