@@ -66,22 +66,20 @@ class QsTogglesChannel(
             }
             "requestAddTile" -> requestAddTile(call.argument("tile"), result)
             "openSystemPanel" -> result.success(openSystemPanel(call.argument("panel")))
-            "getPrivateDns" -> {
+            "getPrivateDns" -> background(result) {
                 val state = PrivateDns.read(activity)
-                result.success(mapOf("mode" to state.mode, "host" to state.hostname))
+                mapOf("mode" to state.mode, "host" to state.hostname)
             }
             "setPrivateDns" -> result.success(setPrivateDns(call.argument("mode"), call.argument("host")).alsoRefresh())
             "grantWithRoot" -> grantWithRoot(result)
-            "getDisplayState" -> {
+            "getDisplayState" -> background(result) {
                 val scales = AnimationScale.read(activity)
-                result.success(
-                    mapOf(
-                        "grayscale" to Grayscale.isOn(activity),
-                        "windowScale" to scales.window.toDouble(),
-                        "transitionScale" to scales.transition.toDouble(),
-                        "animatorScale" to scales.animator.toDouble(),
-                        "fontScale" to FontScale.read(activity).toDouble(),
-                    ),
+                mapOf(
+                    "grayscale" to Grayscale.isOn(activity),
+                    "windowScale" to scales.window.toDouble(),
+                    "transitionScale" to scales.transition.toDouble(),
+                    "animatorScale" to scales.animator.toDouble(),
+                    "fontScale" to FontScale.read(activity).toDouble(),
                 )
             }
             "setGrayscale" -> result.success(Grayscale.set(activity, call.argument<Boolean>("on") == true).alsoRefresh())
@@ -102,27 +100,27 @@ class QsTogglesChannel(
                 Caffeine.stop(activity)
                 result.success(caffeineState())
             }
-            "getBatteryInfo" -> {
+            "getBatteryInfo" -> background(result) {
                 val battery = BatteryInfo.read(activity)
-                result.success(
-                    mapOf(
-                        "level" to battery.level,
-                        "plugged" to battery.plugged,
-                        "full" to battery.full,
-                        "temperature" to battery.temperatureC?.toDouble(),
-                        "watts" to battery.chargingWatts?.toDouble(),
-                    ),
+                mapOf(
+                    "level" to battery.level,
+                    "plugged" to battery.plugged,
+                    "full" to battery.full,
+                    "temperature" to battery.temperatureC?.toDouble(),
+                    "watts" to battery.chargingWatts?.toDouble(),
                 )
             }
-            "getNetworkState" -> result.success(
+            // Off the main thread: the address lookup scans networks and runs `getprop`
+            // (~25 ms on a mid-range phone), which would delay the app's first frame.
+            "getNetworkState" -> background(result) {
                 mapOf(
                     "wirelessSupported" to WirelessDebugging.supported,
                     "wirelessDebugging" to WirelessDebugging.isOn(activity),
                     "devOptions" to WirelessDebugging.devOptionsEnabled(activity),
                     "address" to WirelessDebugging.address(activity),
                     "killSwitch" to KillSwitch.isOn(),
-                ),
-            )
+                )
+            }
             "setWirelessDebugging" -> result.success(
                 WirelessDebugging.set(activity, call.argument<Boolean>("on") == true).alsoRefresh(),
             )

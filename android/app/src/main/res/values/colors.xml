@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#100F13</color>
+    <!-- Matches the app background (lib/app/theme.dart), so splash and first frame blend. -->
+    <color name="splash_background">#F6F6F9</color>
 </resources>
