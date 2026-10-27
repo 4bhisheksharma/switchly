@@ -17,10 +17,12 @@ class PrivateDnsTile : BaseTile() {
         when (state.mode) {
             PrivateDns.MODE_HOSTNAME -> {
                 tile.state = Tile.STATE_ACTIVE
-                tile.subtitle = PrivateDns.config(this).providers
+                // The provider goes in the label so it shows on small tiles too.
+                tile.label = PrivateDns.config(this).providers
                     .firstOrNull { it.host.equals(state.hostname, ignoreCase = true) }?.name
                     ?: state.hostname
-                    ?: "Custom"
+                    ?: "Custom DNS"
+                tile.subtitle = "Private DNS"
             }
             PrivateDns.MODE_OFF -> {
                 tile.state = Tile.STATE_INACTIVE
@@ -28,6 +30,7 @@ class PrivateDnsTile : BaseTile() {
             }
             else -> {
                 tile.state = Tile.STATE_INACTIVE
+                tile.label = "DNS Auto"
                 tile.subtitle = "Automatic"
             }
         }

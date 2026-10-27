@@ -7,7 +7,6 @@ import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import android.util.Log
-import android.widget.Toast
 import app.utils.switchly.LaunchRoutes
 import app.utils.switchly.MainActivity
 import app.utils.switchly.core.Permissions
@@ -27,13 +26,13 @@ import kotlinx.coroutines.withContext
  * - shows the predicted state instantly ([predict]), runs [toggle] off the main thread, then
  *   redraws with the real state; taps during a toggle are ignored so a double tap can't undo it
  * - optionally asks for unlock first ([requiresUnlock])
- * - after a toggle, briefly shows the result as a toast ("Private DNS: AdGuard"), because
- *   small icon-only tiles have no room for the subtitle
+ * - [render] may put the current value in the label ("AdGuard", "Font 130%"): small tiles and
+ *   some launchers (e.g. MIUI's Control Center) show only the label, and toasts appear behind
+ *   the open panel, so the label is the only feedback that is always visible
  */
 abstract class BaseTile : TileService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var toggling = false
-    private var toast: Toast? = null
 
     /** Set to false for tiles that don't touch Settings (e.g. the VPN kill switch). */
     protected open val requiresSecureSettings: Boolean = true
@@ -90,23 +89,17 @@ abstract class BaseTile : TileService() {
                 toggling = false
             }
             refresh()
-            qsTile?.let(::announce)
         }
-    }
-
-    /** "Label: subtitle" as a toast. Replaces the previous one so rapid taps don't queue up. */
-    private fun announce(tile: Tile) {
-        val text = listOfNotNull(tile.label, tile.subtitle).joinToString(": ")
-        toast?.cancel()
-        toast = Toast.makeText(this, text, Toast.LENGTH_SHORT).also { it.show() }
     }
 
     protected fun refresh() {
         // qsTile is null when the panel has already closed; it is redrawn on next open.
         val tile = qsTile ?: return
-        // SystemUI caches the icon across app updates; setting it here keeps it correct.
+        // SystemUI caches the icon across app updates; setting it here keeps it correct. The
+        // label is reset too, so a value-in-label from an earlier render can't go stale.
         TileRegistry.all.firstOrNull { it.service == javaClass }?.let {
             tile.icon = Icon.createWithResource(this, it.icon)
+            tile.label = getString(it.label)
         }
         if (requiresSecureSettings && !Permissions.hasWriteSecureSettings(this)) {
             tile.state = Tile.STATE_INACTIVE

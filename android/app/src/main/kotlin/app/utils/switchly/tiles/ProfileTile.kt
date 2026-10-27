@@ -20,7 +20,9 @@ class ProfileTile : BaseTile() {
     override fun render(tile: Tile) {
         val active = Profiles.active(this)
         tile.state = if (active != null) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-        tile.subtitle = active?.name ?: "None"
+        // The active profile goes in the label so it shows on small tiles too.
+        if (active != null) tile.label = active.name
+        tile.subtitle = if (active != null) "Profile" else "None"
     }
 
     override fun onTap() {

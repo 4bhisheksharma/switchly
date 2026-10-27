@@ -2,6 +2,7 @@ package app.utils.switchly.tiles
 
 import android.service.quicksettings.Tile
 import app.utils.switchly.LaunchRoutes
+import app.utils.switchly.R
 import app.utils.switchly.network.KillSwitch
 import app.utils.switchly.tiles.base.BaseTile
 
@@ -15,12 +16,14 @@ class KillSwitchTile : BaseTile() {
     override fun render(tile: Tile) {
         val on = KillSwitch.isOn()
         tile.state = if (on) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
+        if (on) tile.label = "Internet off"
         tile.subtitle = if (on) "Internet blocked" else "Off"
     }
 
     override fun predict(tile: Tile) {
         val turningOn = tile.state != Tile.STATE_ACTIVE
         tile.state = if (turningOn) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
+        tile.label = if (turningOn) "Internet off" else getString(R.string.tile_kill_switch)
         tile.subtitle = if (turningOn) "Internet blocked" else "Off"
     }
 

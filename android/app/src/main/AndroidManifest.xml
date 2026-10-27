@@ -41,6 +41,16 @@
             </intent-filter>
         </activity>
 
+        <!-- Opened by the Payment QR tile; its own task so it never brings the main app along. -->
+        <activity
+            android:name=".payments.PaymentQrActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:theme="@style/QrTheme" />
+
         <!-- Quick Settings tiles. Keep in sync with tiles/TileRegistry.kt. -->
         <service
             android:name=".tiles.PrivateDnsTile"

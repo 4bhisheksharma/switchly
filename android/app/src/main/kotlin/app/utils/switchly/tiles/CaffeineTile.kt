@@ -15,10 +15,16 @@ class CaffeineTile : BaseTile() {
 
     override fun render(tile: Tile) {
         tile.state = if (Caffeine.isOn) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-        tile.subtitle = when {
-            !Caffeine.isOn -> "Off"
-            Caffeine.endsAt == 0L -> "No time limit"
-            else -> "Until ${DateFormat.getTimeFormat(this).format(Caffeine.endsAt)}"
+        if (Caffeine.isOn) {
+            // The end time goes in the label so it shows on small tiles too.
+            tile.label = if (Caffeine.endsAt == 0L) {
+                "Awake"
+            } else {
+                "Until ${DateFormat.getTimeFormat(this).format(Caffeine.endsAt)}"
+            }
+            tile.subtitle = if (Caffeine.endsAt == 0L) "No time limit" else "Caffeine"
+        } else {
+            tile.subtitle = "Off"
         }
     }
 

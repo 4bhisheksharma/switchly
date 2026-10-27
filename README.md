@@ -193,7 +193,7 @@ The one-time permission has not been granted yet. Tap the tile, or follow [Grant
 See [If the command fails](#if-the-command-fails). On Xiaomi, Redmi, POCO, OPPO, Realme and OnePlus phones, an extra developer setting is required.
 
 **How do I know what a small tile just did?**
-When a tile is shown at its small, icon-only size, the result of each tap is shown in a short message at the bottom of the screen, for example "Private DNS: AdGuard".
+Tiles show their current value in the tile name itself, for example "AdGuard" for Private DNS, "Anim 0.5x" for Animation speed or "Font 130%" for Font size. This name is visible even when a tile is shown at its small size, including in Control Center on Xiaomi phones.
 
 **Why does the kill switch replace my VPN?**
 Android allows only one VPN at a time. While the kill switch is on, any other VPN app is disconnected.

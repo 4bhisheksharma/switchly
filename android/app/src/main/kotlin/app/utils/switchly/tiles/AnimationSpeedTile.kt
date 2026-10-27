@@ -16,7 +16,15 @@ class AnimationSpeedTile : BaseTile() {
     override fun render(tile: Tile) {
         val scale = AnimationScale.read(this).uniform
         tile.state = if (scale != null && AnimationScale.same(scale, 1f)) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
-        tile.subtitle = scale?.let(AnimationScale::label) ?: "Custom"
+        // The value goes in the label so it shows on small tiles too.
+        tile.label = "Anim ${scale?.let(AnimationScale::label) ?: "Custom"}"
+        tile.subtitle = when {
+            scale == null -> "Custom speeds"
+            AnimationScale.same(scale, 0f) -> "No animations"
+            scale < 1f -> "Faster"
+            AnimationScale.same(scale, 1f) -> "Default"
+            else -> "Slower"
+        }
     }
 
     override fun toggle() {

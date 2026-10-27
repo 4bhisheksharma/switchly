@@ -48,15 +48,15 @@ class BatteryTile : BaseTile() {
         val temp = battery.temperatureC?.let { String.format(Locale.US, "%.1f°C", it) }
         val power = battery.chargingWatts?.let { String.format(Locale.US, "%.1f W", it) }
         tile.state = if (battery.plugged) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-        tile.label = "Battery ${battery.level}%"
-        tile.subtitle = listOfNotNull(
-            when {
-                battery.plugged && battery.full -> "Full"
-                battery.plugged -> power ?: "Charging"
-                else -> null
-            },
-            temp,
-        ).joinToString(" · ")
+        // Small tiles only show the label, so it carries the most useful reading:
+        // charging power while charging, temperature otherwise.
+        val charging = battery.plugged && !battery.full
+        tile.label = "${battery.level}% · ${(if (charging) power else temp) ?: "Battery"}"
+        tile.subtitle = when {
+            battery.plugged && battery.full -> listOfNotNull("Full", temp).joinToString(" · ")
+            charging -> temp ?: "Charging"
+            else -> "Battery"
+        }
     }
 
     override fun onTap() {

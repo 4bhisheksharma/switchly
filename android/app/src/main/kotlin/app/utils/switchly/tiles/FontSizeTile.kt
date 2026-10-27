@@ -16,7 +16,13 @@ class FontSizeTile : BaseTile() {
     override fun render(tile: Tile) {
         val scale = FontScale.read(this)
         tile.state = if (FontScale.same(scale, 1f)) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
-        tile.subtitle = FontScale.label(scale)
+        // The value goes in the label so it shows on small tiles too.
+        tile.label = "Font ${FontScale.label(scale)}"
+        tile.subtitle = when {
+            FontScale.same(scale, 1f) -> "Default"
+            scale < 1f -> "Smaller"
+            else -> "Larger"
+        }
     }
 
     override fun toggle() {
