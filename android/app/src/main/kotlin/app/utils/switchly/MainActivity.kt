@@ -1,4 +1,4 @@
-package com.example.switchly
+package app.utils.switchly
 
 import io.flutter.embedding.android.FlutterActivity
 
