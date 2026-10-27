@@ -62,6 +62,7 @@ Switchly is fully offline. It does not request the internet permission, contains
 | Tile | What it does |
 | --- | --- |
 | **Nepali date** | Shows today's Bikram Sambat (BS) date on the tile, in Nepali or English script. The app includes a full BS calendar and an AD to BS converter. |
+| **Scan QR** | Opens a QR scanner from anywhere. Links, phone numbers, email addresses and locations get an Open button, and Wi-Fi codes show the network name and password. Links are shown in full and are never opened automatically. Scanning happens entirely on the phone. |
 | **Payment QR** | Shows your saved payment QR codes (eSewa, Khalti, Fonepay, bank and others) full screen at maximum brightness, without opening any other app. Works from the lock screen. |
 | **Quick texts** | Saves text you type often, such as an address, account number or a standard reply. Tap the tile, pick a text, and it is copied to the clipboard. |
 | **Profiles** | Applies several settings at once, for example "Focus" = AdGuard DNS + Grayscale + faster animations. A "Restore" option puts everything back as it was. |
@@ -181,6 +182,7 @@ Switchly only declares permissions that a feature actively uses.
 | `WRITE_SECURE_SETTINGS` | Change Private DNS, grayscale, animation speed, font size and wireless debugging. Granted once over ADB. |
 | `ACCESS_NETWORK_STATE` | Read the Wi-Fi IP address shown by the Wireless debugging tile. |
 | `WAKE_LOCK`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE` | Keep the screen on while Caffeine is active. |
+| `CAMERA` | Scan QR codes. Requested the first time you open the scanner, and only used while it is open. |
 
 There is no `INTERNET` permission. The kill switch uses Android's VPN feature, which Android asks you to approve the first time; no traffic leaves the phone through it.
 

@@ -167,6 +167,9 @@ class QsChannel {
     ];
   }
 
+  /// Opens the native QR scanner (asks for camera permission the first time).
+  Future<void> openQrScanner() => _channel.invokeMethod<bool>('openQrScanner');
+
   Future<String?> getActiveProfile() => _channel.invokeMethod<String>('getActiveProfile');
 
   /// Returns false if any part of the profile was refused.

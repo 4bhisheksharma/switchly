@@ -24,6 +24,7 @@ import app.utils.switchly.network.WirelessDebugging
 import app.utils.switchly.power.BatteryInfo
 import app.utils.switchly.power.Caffeine
 import app.utils.switchly.profiles.Profiles
+import app.utils.switchly.scanner.ScannerActivity
 import app.utils.switchly.tiles.TileRefresher
 import app.utils.switchly.tiles.TileRegistry
 import io.flutter.plugin.common.BinaryMessenger
@@ -143,6 +144,10 @@ class QsTogglesChannel(
             }
             "restoreProfile" -> background(result) { Profiles.restore(activity).alsoRefresh() }
             "refreshTiles" -> result.success(true.alsoRefresh())
+            "openQrScanner" -> {
+                activity.startActivity(Intent(activity, ScannerActivity::class.java))
+                result.success(true)
+            }
             else -> result.notImplemented()
         }
     }

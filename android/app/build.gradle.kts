@@ -49,4 +49,12 @@ flutter {
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+
+    // QR scanner: CameraX for the camera, ZXing to decode. Both Apache 2.0 and fully offline
+    // (ML Kit would need Google Play Services and isn't open source).
+    implementation("androidx.activity:activity-ktx:1.10.1")
+    implementation("androidx.camera:camera-camera2:1.4.2")
+    implementation("androidx.camera:camera-lifecycle:1.4.2")
+    implementation("androidx.camera:camera-view:1.4.2")
+    implementation("com.google.zxing:core:3.5.3")
 }

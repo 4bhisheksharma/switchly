@@ -119,8 +119,11 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider.value(
-      value: _setupRepository,
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider.value(value: _setupRepository),
+        RepositoryProvider.value(value: widget.channel),
+      ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider.value(value: _setupBloc),

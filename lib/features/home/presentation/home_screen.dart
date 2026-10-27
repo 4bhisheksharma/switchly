@@ -6,6 +6,7 @@ import 'package:nepali_utils/nepali_utils.dart';
 
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
+import '../../../core/platform/qs_channel.dart';
 import '../../../core/tiles/tile_catalog.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/status_pill.dart';
@@ -105,6 +106,14 @@ class HomeScreen extends StatelessWidget {
                 const _BatteryCard(),
                 const SectionHeader('Everyday'),
                 const _BsDateCard(),
+                const SizedBox(height: 10),
+                _TileCard(
+                  tile: qrScannerTile,
+                  status: 'Scan any QR code',
+                  active: false,
+                  onTap: () => context.read<QsChannel>().openQrScanner(),
+                  trailing: Icon(Symbols.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
+                ),
                 const SizedBox(height: 10),
                 _TileCard(
                   tile: paymentQrTile,

@@ -93,6 +93,13 @@ const caffeineTile = TileDefinition(
   icon: Symbols.coffee_rounded,
 );
 
+const qrScannerTile = TileDefinition(
+  id: 'qr_scanner',
+  name: 'Scan QR',
+  description: 'Scan any QR code. Links open only when you choose.',
+  icon: Symbols.qr_code_scanner_rounded,
+);
+
 const paymentQrTile = TileDefinition(
   id: 'payment_qr',
   name: 'Payment QR',

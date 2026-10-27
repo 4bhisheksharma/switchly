@@ -29,6 +29,7 @@ object TileRegistry {
         TileInfo("battery", BatteryTile::class.java, R.string.tile_battery, R.drawable.ic_tile_battery),
         TileInfo("font_size", FontSizeTile::class.java, R.string.tile_font_size, R.drawable.ic_tile_font),
         TileInfo("caffeine", CaffeineTile::class.java, R.string.tile_caffeine, R.drawable.ic_tile_coffee),
+        TileInfo("qr_scanner", QrScannerTile::class.java, R.string.tile_qr_scanner, R.drawable.ic_tile_scan),
     )
 
     fun byId(id: String?): TileInfo? = all.firstOrNull { it.id == id }

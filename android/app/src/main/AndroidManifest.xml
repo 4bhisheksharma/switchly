@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- QR scanner. Asked for the first time the scanner opens; only used while it is open. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:label="Switchly"
@@ -41,6 +44,21 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name=".tiles.QrScannerTile"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_scan"
+            android:label="@string/tile_qr_scanner"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
         <!-- Opened by the Payment QR tile; its own task so it never brings the main app along. -->
         <activity
             android:name=".payments.PaymentQrActivity"
@@ -48,6 +66,15 @@
             android:excludeFromRecents="true"
             android:noHistory="true"
             android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:theme="@style/QrTheme" />
+
+        <!-- Opened by the Scan QR tile and the app. -->
+        <activity
+            android:name=".scanner.ScannerActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:screenOrientation="portrait"
             android:taskAffinity=""
             android:theme="@style/QrTheme" />
 
