@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../core/platform/qs_channel.dart';
+import '../features/dns/bloc/dns_bloc.dart';
+import '../features/dns/data/dns_repository.dart';
 import '../features/setup/bloc/setup_bloc.dart';
 import '../features/setup/data/setup_repository.dart';
+import '../features/setup/presentation/permission_sheet.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -23,6 +26,8 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
   late final SetupRepository _setupRepository = SetupRepository(widget.channel);
   late final SetupBloc _setupBloc = SetupBloc(_setupRepository)
     ..add(const SetupStarted());
+  late final DnsBloc _dnsBloc = DnsBloc(DnsRepository(widget.channel))
+    ..add(const DnsStarted());
   late final StreamSubscription<String> _launchSub;
   late final AppLifecycleListener _lifecycle;
 
@@ -30,9 +35,12 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
   void initState() {
     super.initState();
     _launchSub = widget.channel.launchRoutes.listen(_handleLaunchRoute);
-    // The user grants the permission outside the app, so re-check on every return.
+    // Permission grants and tile taps happen outside the app, so re-read on every return.
     _lifecycle = AppLifecycleListener(
-      onResume: () => _setupBloc.add(const SetupPermissionCheckRequested()),
+      onResume: () {
+        _setupBloc.add(const SetupPermissionCheckRequested());
+        _dnsBloc.add(const DnsLiveStateRefreshed());
+      },
     );
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final route = await widget.channel.takeLaunchRoute();
@@ -44,12 +52,15 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
   void _handleLaunchRoute(String route) {
     final navigator = _navigatorKey.currentState;
     if (navigator == null) return;
-    // The shell already shows onboarding when the permission is missing.
+    // Also closes any open sheet, so the target always ends up on top.
     navigator.popUntil((r) => r.isFirst);
     if (route == AppRouter.setupLaunch) {
       _setupBloc.add(const SetupPermissionCheckRequested());
+      showPermissionSheet(navigator.overlay!.context);
+    } else if (route.startsWith(AppRouter.tileLaunchPrefix)) {
+      final page = AppRouter.routeForTile(route.substring(AppRouter.tileLaunchPrefix.length));
+      if (page != null) navigator.pushNamed(page);
     }
-    // TODO(config-ui): push the matching config screen for AppRouter.tileLaunchPrefix routes.
   }
 
   @override
@@ -57,6 +68,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     _lifecycle.dispose();
     _launchSub.cancel();
     _setupBloc.close();
+    _dnsBloc.close();
     widget.channel.dispose();
     super.dispose();
   }
@@ -65,8 +77,11 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
   Widget build(BuildContext context) {
     return RepositoryProvider.value(
       value: _setupRepository,
-      child: BlocProvider.value(
-        value: _setupBloc,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: _setupBloc),
+          BlocProvider.value(value: _dnsBloc),
+        ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'Switchly',

@@ -5,6 +5,6 @@
 /// `FlutterSharedPreferences` file (prefixed with `flutter.`) that Kotlin reads. Store
 /// anything structured as a JSON string.
 abstract final class PrefKeys {
-  /// JSON array of `{"name": String, "host": String}`.
-  static const dnsProviders = 'dns_providers';
+  /// JSON: `{"includeOff", "includeAutomatic", "providers": [{"id", "name", "host", "enabled"}]}`.
+  static const dnsConfig = 'dns_config';
 }

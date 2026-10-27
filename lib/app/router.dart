@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
 
-import '../features/setup/presentation/add_tiles_screen.dart';
-import 'app_shell.dart';
+import '../features/dns/presentation/dns_screen.dart';
+import '../features/home/presentation/home_screen.dart';
 
 abstract final class AppRouter {
   static const root = '/';
-  static const addTiles = '/add-tiles';
+  static const dns = '/dns';
 
   /// Native launch routes (see LaunchRoutes.kt). These are handled by the app, not pushed.
   static const setupLaunch = '/setup';
   static const tileLaunchPrefix = '/tile/';
 
+  /// The config screen for a tile id from a long-press, if it has one.
+  static String? routeForTile(String tileId) => switch (tileId) {
+        'private_dns' => dns,
+        _ => null,
+      };
+
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final Widget? page = switch (settings.name) {
-      root => const AppShell(),
-      addTiles => const AddTilesScreen(),
+      root => const HomeScreen(),
+      dns => const DnsScreen(),
       _ => null,
     };
     if (page == null) return null;

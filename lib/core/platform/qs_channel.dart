@@ -66,6 +66,20 @@ class QsChannel {
     return await _channel.invokeMethod<bool>('openSystemPanel', {'panel': name}) ?? false;
   }
 
+  /// Raw Private DNS settings: `mode` is `off`, `opportunistic` or `hostname`.
+  Future<({String mode, String? host})> getPrivateDns() async {
+    final state = await _channel.invokeMapMethod<String, Object?>('getPrivateDns');
+    return (mode: state!['mode']! as String, host: state['host'] as String?);
+  }
+
+  /// Returns false when the write was refused (usually a missing permission).
+  Future<bool> setPrivateDns({required String mode, String? host}) async =>
+      await _channel.invokeMethod<bool>('setPrivateDns', {'mode': mode, 'host': host}) ?? false;
+
+  /// Runs `pm grant` through `su`. Returns true only if the permission is now held.
+  Future<bool> grantWithRoot() async =>
+      await _channel.invokeMethod<bool>('grantWithRoot') ?? false;
+
   Future<Object?> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onLaunchRoute') {
       _launchRoutes.add(call.arguments as String);

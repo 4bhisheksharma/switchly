@@ -5,8 +5,8 @@ import android.content.SharedPreferences
 
 /** Key names written by the Flutter side. Keep in sync with lib/core/storage/pref_keys.dart. */
 object PrefKeys {
-    /** JSON array of `{"name": String, "host": String}`. */
-    const val DNS_PROVIDERS = "dns_providers"
+    /** JSON: `{"includeOff", "includeAutomatic", "providers": [{"id", "name", "host", "enabled"}]}`. */
+    const val DNS_CONFIG = "dns_config"
 }
 
 /**

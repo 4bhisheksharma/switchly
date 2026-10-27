@@ -14,4 +14,6 @@ class SetupRepository {
 
   Future<bool> openDeveloperOptions() =>
       _channel.openSystemPanel(SystemPanel.developerOptions);
+
+  Future<bool> grantWithRoot() => _channel.grantWithRoot();
 }

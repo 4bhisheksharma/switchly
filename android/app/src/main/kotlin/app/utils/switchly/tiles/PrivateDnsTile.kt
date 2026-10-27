@@ -5,10 +5,10 @@ import app.utils.switchly.dns.PrivateDns
 import app.utils.switchly.tiles.base.BaseTile
 
 /**
- * Cycles Off → provider 1 → provider 2 → … → Off.
+ * Moves to the next state in the user's cycle (Off → Automatic → providers…, each optional).
  *
- * "Automatic" or a host that isn't in the list (set from system Settings) counts as Off,
- * so the next tap always goes to the first provider.
+ * If the current state isn't in the cycle (e.g. a host set from system Settings), the next
+ * tap goes to the first state.
  */
 class PrivateDnsTile : BaseTile() {
 
@@ -17,7 +17,10 @@ class PrivateDnsTile : BaseTile() {
         when (state.mode) {
             PrivateDns.MODE_HOSTNAME -> {
                 tile.state = Tile.STATE_ACTIVE
-                tile.subtitle = providerName(state.hostname) ?: state.hostname ?: "Custom"
+                tile.subtitle = PrivateDns.config(this).providers
+                    .firstOrNull { it.host.equals(state.hostname, ignoreCase = true) }?.name
+                    ?: state.hostname
+                    ?: "Custom"
             }
             PrivateDns.MODE_OFF -> {
                 tile.state = Tile.STATE_INACTIVE
@@ -31,18 +34,10 @@ class PrivateDnsTile : BaseTile() {
     }
 
     override fun toggle() {
-        val providers = PrivateDns.providers(this)
+        val cycle = PrivateDns.config(this).cycle()
+        if (cycle.isEmpty()) return
         val state = PrivateDns.read(this)
-        // Position 0 is Off; providers occupy 1..n.
-        val position = if (state.mode == PrivateDns.MODE_HOSTNAME) {
-            providers.indexOfFirst { it.host.equals(state.hostname, ignoreCase = true) } + 1
-        } else {
-            0
-        }
-        val next = (position + 1) % (providers.size + 1)
-        if (next == 0) PrivateDns.setOff(this) else PrivateDns.setHostname(this, providers[next - 1].host)
+        val current = cycle.indexOfFirst { state.matches(it) } // -1 → next is index 0
+        PrivateDns.apply(this, cycle[(current + 1) % cycle.size])
     }
-
-    private fun providerName(host: String?): String? =
-        PrivateDns.providers(this).firstOrNull { it.host.equals(host, ignoreCase = true) }?.name
 }

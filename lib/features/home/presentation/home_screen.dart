@@ -1,34 +1,189 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../app/router.dart';
+import '../../../app/theme.dart';
 import '../../../core/tiles/tile_catalog.dart';
+import '../../../core/widgets/section_header.dart';
+import '../../../core/widgets/status_pill.dart';
+import '../../../core/widgets/tile_icon.dart';
+import '../../dns/bloc/dns_bloc.dart';
+import '../../setup/bloc/setup_bloc.dart';
+import '../../setup/presentation/add_tiles.dart';
+import '../../setup/presentation/permission_sheet.dart';
 
-/// Lists the available tiles. Per-tile status and settings come with the config UI.
+/// Overview of every tile with its live status.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final setup = context.watch<SetupBloc>().state;
+    final needsSetup = setup.status == SetupStatus.ready && !setup.hasPermission;
+    final upcoming = tileCatalog.where((t) => !t.available).toList();
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Switchly')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-        children: [
-          for (final tile in tileCatalog)
-            Card(
-              child: ListTile(
-                leading: Icon(tile.icon),
-                title: Text(tile.name),
-                subtitle: Text(tile.description),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar.large(
+            title: const Text('Switchly'),
+            actions: [
+              IconButton(
+                tooltip: 'How to add tiles',
+                icon: const Icon(Symbols.help_rounded),
+                onPressed: () => showAddTilesHelp(context),
               ),
+              const SizedBox(width: 8),
+            ],
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+            sliver: SliverList.list(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    "One-tap Quick Settings toggles Android doesn't give you.",
+                    style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  child: needsSetup
+                      ? const Padding(padding: EdgeInsets.only(top: 20), child: _SetupBanner())
+                      : const SizedBox(width: double.infinity),
+                ),
+                const SectionHeader('Your tiles'),
+                const _PrivateDnsCard(),
+                const SectionHeader('Coming soon'),
+                Card(
+                  child: Column(
+                    children: [
+                      for (final (i, tile) in upcoming.indexed) ...[
+                        if (i > 0) const Divider(height: 1, indent: 76),
+                        ListTile(
+                          leading: TileIcon(tile.icon, size: 40),
+                          title: Text(tile.name),
+                          subtitle: Text(tile.description),
+                          trailing: const StatusPill('Soon'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                const _PrivacyFooter(),
+              ],
             ),
+          ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).pushNamed(AppRouter.addTiles),
-        icon: const Icon(Icons.add),
-        label: const Text('Add tiles'),
+    );
+  }
+}
+
+class _SetupBanner extends StatelessWidget {
+  const _SetupBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), gradient: AppTheme.brandGradient),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Symbols.key_rounded, color: Colors.white, fill: 1),
+              const SizedBox(width: 10),
+              Text('Finish setup', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Grant a one-time permission so your tiles can change system settings.',
+            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.85)),
+          ),
+          const SizedBox(height: 16),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF4F46E5)),
+            onPressed: () => showPermissionSheet(context),
+            child: const Text('Set up now'),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _PrivateDnsCard extends StatelessWidget {
+  const _PrivateDnsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dns = context.watch<DnsBloc>().state;
+    final active = dns.live?.isEncrypted ?? false;
+
+    return Card(
+      child: InkWell(
+        onTap: () => Navigator.of(context).pushNamed(AppRouter.dns),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            children: [
+              TileIcon(privateDnsTile.icon, active: active, size: 52),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(privateDnsTile.name, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 2),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      child: Text(
+                        active ? dns.liveLabel : 'Encrypted DNS is ${dns.liveLabel.toLowerCase()}',
+                        key: ValueKey(dns.liveLabel),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: active ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                          fontWeight: active ? FontWeight.w600 : null,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              StatusPill(active ? 'On' : 'Off', highlighted: active),
+              const SizedBox(width: 4),
+              Icon(Symbols.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PrivacyFooter extends StatelessWidget {
+  const _PrivacyFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Symbols.verified_user_rounded, size: 16, color: color),
+        const SizedBox(width: 6),
+        Text('Fully offline · No tracking', style: theme.textTheme.labelMedium?.copyWith(color: color)),
+      ],
     );
   }
 }

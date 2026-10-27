@@ -1,3 +1,1 @@
-# switchly
-
-A new Flutter project.
+# Switchly- One-tap Quick Settings toggles Android doesn't give you.

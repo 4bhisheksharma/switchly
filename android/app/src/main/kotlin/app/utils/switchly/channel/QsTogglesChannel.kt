@@ -1,5 +1,6 @@
 package app.utils.switchly.channel
 
+import android.Manifest
 import android.app.Activity
 import android.app.StatusBarManager
 import android.content.ActivityNotFoundException
@@ -7,13 +8,18 @@ import android.content.ComponentName
 import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import androidx.annotation.RequiresApi
 import app.utils.switchly.core.Permissions
+import app.utils.switchly.dns.PrivateDns
 import app.utils.switchly.tiles.TileRegistry
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.io.IOException
+import kotlin.concurrent.thread
 
 /** Native side of the `qs_toggles` channel. Mirrored by lib/core/platform/qs_channel.dart. */
 class QsTogglesChannel(
@@ -22,6 +28,7 @@ class QsTogglesChannel(
 ) : MethodChannel.MethodCallHandler {
 
     private val channel = MethodChannel(messenger, NAME).also { it.setMethodCallHandler(this) }
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     /** Route from the intent that cold-started the app, kept until Flutter asks for it. */
     private var pendingRoute: String? = null
@@ -47,7 +54,37 @@ class QsTogglesChannel(
             }
             "requestAddTile" -> requestAddTile(call.argument("tile"), result)
             "openSystemPanel" -> result.success(openSystemPanel(call.argument("panel")))
+            "getPrivateDns" -> {
+                val state = PrivateDns.read(activity)
+                result.success(mapOf("mode" to state.mode, "host" to state.hostname))
+            }
+            "setPrivateDns" -> result.success(setPrivateDns(call.argument("mode"), call.argument("host")))
+            "grantWithRoot" -> grantWithRoot(result)
             else -> result.notImplemented()
+        }
+    }
+
+    private fun setPrivateDns(mode: String?, host: String?): Boolean = when (mode) {
+        PrivateDns.MODE_OFF, PrivateDns.MODE_AUTOMATIC -> PrivateDns.setMode(activity, mode)
+        PrivateDns.MODE_HOSTNAME -> !host.isNullOrBlank() && PrivateDns.setHostname(activity, host)
+        else -> false
+    }
+
+    /**
+     * Grants WRITE_SECURE_SETTINGS to ourselves via `su`. Runs off the main thread because
+     * the root manager shows a prompt and `waitFor()` blocks until the user answers.
+     */
+    private fun grantWithRoot(result: MethodChannel.Result) {
+        val command = "pm grant ${activity.packageName} ${Manifest.permission.WRITE_SECURE_SETTINGS}"
+        thread(name = "root-grant") {
+            val granted = try {
+                Runtime.getRuntime().exec(arrayOf("su", "-c", command)).waitFor() == 0
+            } catch (e: IOException) {
+                false // No su binary: not rooted.
+            } catch (e: InterruptedException) {
+                false
+            }
+            mainHandler.post { result.success(granted && Permissions.hasWriteSecureSettings(activity)) }
         }
     }
 
