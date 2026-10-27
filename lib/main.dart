@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:switchly/core/app/main_app.dart';
+
+import 'app/app.dart';
+import 'core/platform/qs_channel.dart';
 
 void main() {
-  runApp(const MainApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(SwitchlyApp(channel: QsChannel()));
 }

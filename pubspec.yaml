@@ -7,10 +7,10 @@ environment:
   sdk: ^3.13.3
 
 dependencies:
+  equatable: ^3.0.0
   flutter:
     sdk: flutter
-  in_app_update: ^5.0.0
-
+  flutter_bloc: ^9.1.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
