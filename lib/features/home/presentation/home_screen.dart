@@ -40,9 +40,21 @@ class HomeScreen extends StatelessWidget {
           SliverAppBar(
             pinned: true,
             toolbarHeight: 72,
-            title: Text(
-              'Switchly',
-              style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+            title: Row(
+              children: [
+                // Single-colour mark, tinted so it follows light/dark theme.
+                Image.asset(
+                  'assets/logo/logo_mark.png',
+                  height: 32,
+                  color: theme.colorScheme.onSurface,
+                  semanticLabel: 'Switchly logo',
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Switchly',
+                  style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+                ),
+              ],
             ),
             actions: [
               IconButton(

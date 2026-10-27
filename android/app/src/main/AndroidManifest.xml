@@ -41,7 +41,7 @@
         <service
             android:name=".tiles.PrivateDnsTile"
             android:exported="true"
-            android:icon="@drawable/ic_tile_dns"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/tile_private_dns"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -56,7 +56,7 @@
         <service
             android:name=".tiles.GrayscaleTile"
             android:exported="true"
-            android:icon="@drawable/ic_tile_grayscale"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/tile_grayscale"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -75,7 +75,7 @@
         <service
             android:name=".tiles.AnimationSpeedTile"
             android:exported="true"
-            android:icon="@drawable/ic_tile_speed"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/tile_animation_speed"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -90,7 +90,7 @@
         <service
             android:name=".tiles.WirelessDebuggingTile"
             android:exported="true"
-            android:icon="@drawable/ic_tile_adb"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/tile_wireless_debugging"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -108,7 +108,7 @@
         <service
             android:name=".tiles.KillSwitchTile"
             android:exported="true"
-            android:icon="@drawable/ic_tile_block"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/tile_kill_switch"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -126,7 +126,7 @@
         <service
             android:name=".tiles.ProfileTile"
             android:exported="true"
-            android:icon="@drawable/ic_tile_profiles"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/tile_profiles"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -141,7 +141,7 @@
         <service
             android:name=".tiles.QuickTextsTile"
             android:exported="true"
-            android:icon="@drawable/ic_tile_texts"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/tile_quick_texts"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -157,7 +157,7 @@
         <service
             android:name=".tiles.BsDateTile"
             android:exported="true"
-            android:icon="@drawable/ic_tile_calendar"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/tile_bs_date"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -168,7 +168,7 @@
         <service
             android:name=".tiles.PaymentQrTile"
             android:exported="true"
-            android:icon="@drawable/ic_tile_qr"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/tile_payment_qr"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>

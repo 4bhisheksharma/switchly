@@ -14,8 +14,11 @@ data class QuickText(val id: String, val title: String, val text: String) {
 }
 
 object QuickTexts {
+    /** Shown until the user saves their own list. Mirrors `QuickTextsRepository.defaults`. */
+    private val DEFAULTS = listOf(QuickText("welcome", "Welcome", "Welcome to Switchly"))
+
     fun all(context: Context): List<QuickText> {
-        val json = SharedConfig.getString(context, PrefKeys.QUICK_TEXTS) ?: return emptyList()
+        val json = SharedConfig.getString(context, PrefKeys.QUICK_TEXTS) ?: return DEFAULTS
         return try {
             val array = JSONArray(json)
             (0 until array.length()).map {

@@ -21,6 +21,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
@@ -41,3 +42,16 @@ flutter:
           weight: 700
         - asset: assets/fonts/PlusJakartaSans-ExtraBold.ttf
           weight: 800
+
+# Regenerate with: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/logo/logo_white.png
+  min_sdk_android: 29
+  # Adaptive + themed (Android 13 monochrome) icon from the same mark.
+  adaptive_icon_background: "#100F13"
+  adaptive_icon_foreground: assets/logo/logo_white_transparent.png
+  adaptive_icon_monochrome: assets/logo/logo_white_transparent.png
+  # The source images already have padding, so no extra inset.
+  adaptive_icon_foreground_inset: 0

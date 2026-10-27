@@ -37,10 +37,14 @@ class QuickText extends Equatable {
 class QuickTextsRepository {
   const QuickTextsRepository();
 
+  /// Shown until the user saves their own list (deleting it saves an empty list, so it stays gone).
+  /// Keep in sync with `QuickTexts.DEFAULTS` in QuickTexts.kt.
+  static const defaults = [QuickText(id: 'welcome', title: 'Welcome', text: 'Welcome to Switchly')];
+
   Future<List<QuickText>> load() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(PrefKeys.quickTexts);
-    if (raw == null) return const [];
+    if (raw == null) return defaults;
     try {
       return [for (final t in jsonDecode(raw) as List) QuickText.fromJson(t as Map<String, Object?>)];
     } on Object {
