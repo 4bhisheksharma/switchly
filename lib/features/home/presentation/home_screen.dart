@@ -36,8 +36,14 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          SliverAppBar.large(
-            title: const Text('Switchly'),
+          // Title sits on the same row as the help icon instead of below it.
+          SliverAppBar(
+            pinned: true,
+            toolbarHeight: 72,
+            title: Text(
+              'Switchly',
+              style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+            ),
             actions: [
               IconButton(
                 tooltip: 'How to add tiles',
