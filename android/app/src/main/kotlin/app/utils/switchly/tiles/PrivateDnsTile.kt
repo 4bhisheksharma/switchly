@@ -36,6 +36,9 @@ class PrivateDnsTile : BaseTile() {
         }
     }
 
+    override fun announcement(tile: Tile): String =
+        "Private DNS: ${if (tile.state == Tile.STATE_ACTIVE) tile.label else tile.subtitle}"
+
     override fun toggle() {
         val cycle = PrivateDns.config(this).cycle()
         if (cycle.isEmpty()) return

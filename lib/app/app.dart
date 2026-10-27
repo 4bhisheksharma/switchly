@@ -22,6 +22,7 @@ import '../features/dns/data/dns_repository.dart';
 import '../features/setup/bloc/setup_bloc.dart';
 import '../features/setup/data/setup_repository.dart';
 import '../features/setup/presentation/permission_sheet.dart';
+import '../features/settings/tile_message_cubit.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -55,6 +56,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
   late final CaffeineCubit _caffeineCubit = CaffeineCubit(_powerRepository)..load();
   late final BatteryCubit _batteryCubit = BatteryCubit(_powerRepository)..resume();
   final BsScriptCubit _bsScriptCubit = BsScriptCubit();
+  final TileMessageCubit _tileMessageCubit = TileMessageCubit();
   late final StreamSubscription<String> _launchSub;
   late final AppLifecycleListener _lifecycle;
 
@@ -108,6 +110,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     _profilesBloc.close();
     _paymentQrBloc.close();
     _bsScriptCubit.close();
+    _tileMessageCubit.close();
     _caffeineCubit.close();
     _batteryCubit.close();
     widget.channel.dispose();
@@ -128,6 +131,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
           BlocProvider.value(value: _profilesBloc),
           BlocProvider.value(value: _paymentQrBloc),
           BlocProvider.value(value: _bsScriptCubit),
+          BlocProvider.value(value: _tileMessageCubit),
           BlocProvider.value(value: _caffeineCubit),
           BlocProvider.value(value: _batteryCubit),
         ],

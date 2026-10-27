@@ -32,6 +32,9 @@ class CaffeineTile : BaseTile() {
         tile.state = if (Caffeine.next(this) == null) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
     }
 
+    override fun announcement(tile: Tile): String =
+        if (Caffeine.isOn) "Caffeine: ${tile.label}" else "Caffeine: Off"
+
     override fun toggle() {
         val next = Caffeine.next(this)
         if (next == null) Caffeine.stop(this) else Caffeine.start(this, next)

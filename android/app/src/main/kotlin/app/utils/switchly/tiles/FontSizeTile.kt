@@ -25,6 +25,8 @@ class FontSizeTile : BaseTile() {
         }
     }
 
+    override fun announcement(tile: Tile): String = "Font size: ${FontScale.label(FontScale.read(this))}"
+
     override fun toggle() {
         val cycle = FontScale.cycle(this)
         val current = FontScale.read(this)

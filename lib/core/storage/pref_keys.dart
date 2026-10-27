@@ -31,4 +31,7 @@ abstract final class PrefKeys {
 
   /// JSON: `{"minutes": [int], "stopOnLock": bool}`; 0 minutes means no time limit.
   static const caffeineConfig = 'caffeine_config';
+
+  /// bool: show a message at the top after a tile tap (closes the panel). Default true.
+  static const showTileMessage = 'show_tile_message';
 }

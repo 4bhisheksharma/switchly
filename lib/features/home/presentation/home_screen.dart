@@ -25,6 +25,7 @@ import '../../setup/bloc/setup_bloc.dart';
 import '../../setup/data/setup_repository.dart';
 import '../../setup/presentation/add_tiles.dart';
 import '../../setup/presentation/permission_sheet.dart';
+import '../../settings/tile_message_cubit.dart';
 
 /// Overview of every tile with its live status.
 class HomeScreen extends StatelessWidget {
@@ -123,6 +124,8 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 const _ProfilesCard(),
+                const SectionHeader('Preferences'),
+                const _TileMessageCard(),
                 const SizedBox(height: 32),
                 const _PrivacyFooter(),
               ],
@@ -473,6 +476,32 @@ class _ProfilesCard extends StatelessWidget {
       status: active != null ? '${active.name} is active' : _countLabel(state.profiles.length, 'profile'),
       active: active != null,
       onTap: () => Navigator.of(context).pushNamed(AppRouter.profiles),
+    );
+  }
+}
+
+/// Toggles the message tiles show after a tap. Android closes Quick Settings to show it.
+class _TileMessageCard extends StatelessWidget {
+  const _TileMessageCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final show = context.watch<TileMessageCubit>().state;
+    return Card(
+      child: SwitchListTile(
+        contentPadding: const EdgeInsets.fromLTRB(18, 10, 16, 10),
+        secondary: const TileIcon(Symbols.notifications_rounded, size: 52),
+        title: const Text('Show message after tap'),
+        subtitle: const Text(
+          'A short message such as "Private DNS: AdGuard" at the top. Quick Settings closes '
+          'to show it. When off, the panel stays open and the tile name shows the value.',
+        ),
+        value: show,
+        onChanged: (v) {
+          HapticFeedback.selectionClick();
+          context.read<TileMessageCubit>().set(v);
+        },
+      ),
     );
   }
 }

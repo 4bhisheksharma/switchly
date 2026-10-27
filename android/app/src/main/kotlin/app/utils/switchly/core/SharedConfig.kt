@@ -31,6 +31,9 @@ object PrefKeys {
 
     /** JSON: `{"minutes": [Int], "stopOnLock": Boolean}`; 0 minutes means no time limit. */
     const val CAFFEINE_CONFIG = "caffeine_config"
+
+    /** Boolean: show a message at the top after a tile tap (closes the panel). Default true. */
+    const val SHOW_TILE_MESSAGE = "show_tile_message"
 }
 
 /**
@@ -48,6 +51,9 @@ object SharedConfig {
 
     fun getString(context: Context, key: String): String? =
         prefs(context).getString(PREFIX + key, null)
+
+    fun getBoolean(context: Context, key: String, default: Boolean): Boolean =
+        prefs(context).getBoolean(PREFIX + key, default)
 
     /** Native-only state (snapshots, active profile). Flutter never reads this file. */
     fun nativeState(context: Context): SharedPreferences =

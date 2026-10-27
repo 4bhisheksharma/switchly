@@ -27,6 +27,9 @@ class AnimationSpeedTile : BaseTile() {
         }
     }
 
+    override fun announcement(tile: Tile): String =
+        "Animation speed: ${AnimationScale.read(this).uniform?.let(AnimationScale::label) ?: "Custom"}"
+
     override fun toggle() {
         val cycle = AnimationScale.cycle(this)
         val current = AnimationScale.read(this).uniform

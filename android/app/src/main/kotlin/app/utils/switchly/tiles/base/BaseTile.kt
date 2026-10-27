@@ -1,15 +1,29 @@
 package app.utils.switchly.tiles.base
 
+import android.app.Dialog
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.Icon
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import android.util.Log
+import android.util.TypedValue
+import android.view.Gravity
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.view.Window
+import android.view.WindowManager
+import android.widget.TextView
 import app.utils.switchly.LaunchRoutes
 import app.utils.switchly.MainActivity
 import app.utils.switchly.core.Permissions
+import app.utils.switchly.core.PrefKeys
+import app.utils.switchly.core.SharedConfig
 import app.utils.switchly.tiles.TileRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,13 +40,19 @@ import kotlinx.coroutines.withContext
  * - shows the predicted state instantly ([predict]), runs [toggle] off the main thread, then
  *   redraws with the real state; taps during a toggle are ignored so a double tap can't undo it
  * - optionally asks for unlock first ([requiresUnlock])
- * - [render] may put the current value in the label ("AdGuard", "Font 130%"): small tiles and
- *   some launchers (e.g. MIUI's Control Center) show only the label, and toasts appear behind
- *   the open panel, so the label is the only feedback that is always visible
+ * - after a toggle, shows the result in a small message at the top of the screen
+ *   ([announcement]), unless turned off in the app. Toasts appear behind the open panel, so
+ *   this is a tile dialog, the only window allowed above it; showing one makes SystemUI close
+ *   the panel, hence the setting. It isn't guaranteed (see PaymentQrActivity), so [render]
+ *   also puts the current value in the label ("AdGuard", "Font 130%") for small tiles
  */
 abstract class BaseTile : TileService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var toggling = false
+    private val handler = Handler(Looper.getMainLooper())
+    private var notice: Dialog? = null
+    private var noticeText: TextView? = null
+    private val hideNotice = Runnable { dismissNotice() }
 
     /** Set to false for tiles that don't touch Settings (e.g. the VPN kill switch). */
     protected open val requiresSecureSettings: Boolean = true
@@ -48,6 +68,13 @@ abstract class BaseTile : TileService() {
 
     /** Optional instant feedback: set the state the tile is about to reach. */
     protected open fun predict(tile: Tile) {}
+
+    /** The message shown after a toggle, or null for none. Default: "Tile name: subtitle". */
+    protected open fun announcement(tile: Tile): String? = "${defaultLabel()}: ${tile.subtitle}"
+
+    /** The tile's name from the registry, e.g. "Grayscale". */
+    protected fun defaultLabel(): String =
+        TileRegistry.all.first { it.service == javaClass }.let { getString(it.label) }
 
     /** Tiles that open UI instead of toggling (dialogs, pickers) override this. */
     protected open fun onTap() {
@@ -70,6 +97,7 @@ abstract class BaseTile : TileService() {
     }
 
     override fun onDestroy() {
+        dismissNotice()
         scope.cancel()
         super.onDestroy()
     }
@@ -89,8 +117,72 @@ abstract class BaseTile : TileService() {
                 toggling = false
             }
             refresh()
+            if (SharedConfig.getBoolean(this@BaseTile, PrefKeys.SHOW_TILE_MESSAGE, true)) {
+                qsTile?.let(::announcement)?.let(::announce)
+            }
         }
     }
+
+    /**
+     * A pill at the top of the screen that lets touches through and hides itself. Rapid taps
+     * update the text in place instead of stacking messages.
+     */
+    private fun announce(text: String) {
+        handler.removeCallbacks(hideNotice)
+        val existing = noticeText
+        if (notice?.isShowing == true && existing != null) {
+            existing.text = text
+        } else {
+            val label = TextView(this).apply {
+                this.text = text
+                setTextColor(Color.WHITE)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                val h = dp(20f)
+                val v = dp(12f)
+                setPadding(h, v, h, v)
+                background = GradientDrawable().apply {
+                    setColor(Color.argb(240, 32, 33, 38))
+                    cornerRadius = dp(99f).toFloat()
+                }
+            }
+            val dialog = Dialog(this).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                setContentView(label)
+                window?.apply {
+                    setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                    clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                    // Purely informational: never takes focus or touches from the panel below.
+                    addFlags(
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                    )
+                    setLayout(WRAP_CONTENT, WRAP_CONTENT)
+                    setGravity(Gravity.TOP or Gravity.CENTER_HORIZONTAL)
+                    attributes = attributes.apply { y = dp(48f) }
+                }
+            }
+            try {
+                showDialog(dialog)
+            } catch (e: RuntimeException) {
+                // The panel closed or the system refused the window; the label still shows the value.
+                Log.d(javaClass.simpleName, "Couldn't show notice", e)
+                return
+            }
+            notice = dialog
+            noticeText = label
+        }
+        handler.postDelayed(hideNotice, NOTICE_MS)
+    }
+
+    private fun dismissNotice() {
+        handler.removeCallbacks(hideNotice)
+        notice?.dismiss()
+        notice = null
+        noticeText = null
+    }
+
+    private fun dp(value: Float) =
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, resources.displayMetrics).toInt()
 
     protected fun refresh() {
         // qsTile is null when the panel has already closed; it is redrawn on next open.
@@ -130,5 +222,9 @@ abstract class BaseTile : TileService() {
             @Suppress("DEPRECATION")
             startActivityAndCollapse(intent)
         }
+    }
+
+    private companion object {
+        const val NOTICE_MS = 1_500L
     }
 }
