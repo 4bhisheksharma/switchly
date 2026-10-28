@@ -34,4 +34,7 @@ abstract final class PrefKeys {
 
   /// bool: show a message at the top after a tile tap (closes the panel). Default true.
   static const showTileMessage = 'show_tile_message';
+
+  /// String: 'dark', 'light', or 'system'. Default 'dark'.
+  static const appThemeMode = 'app_theme_mode';
 }

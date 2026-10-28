@@ -21,8 +21,9 @@ import '../features/quick_texts/data/quick_text.dart';
 import '../features/dns/data/dns_repository.dart';
 import '../features/setup/bloc/setup_bloc.dart';
 import '../features/setup/data/setup_repository.dart';
-import '../features/setup/presentation/permission_sheet.dart';
+import '../features/settings/theme_cubit.dart';
 import '../features/settings/tile_message_cubit.dart';
+import '../features/setup/presentation/permission_sheet.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -57,6 +58,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
   late final BatteryCubit _batteryCubit = BatteryCubit(_powerRepository)..resume();
   final BsScriptCubit _bsScriptCubit = BsScriptCubit();
   final TileMessageCubit _tileMessageCubit = TileMessageCubit();
+  final ThemeCubit _themeCubit = ThemeCubit();
   late final StreamSubscription<String> _launchSub;
   late final AppLifecycleListener _lifecycle;
 
@@ -111,6 +113,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     _paymentQrBloc.close();
     _bsScriptCubit.close();
     _tileMessageCubit.close();
+    _themeCubit.close();
     _caffeineCubit.close();
     _batteryCubit.close();
     widget.channel.dispose();
@@ -135,17 +138,23 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
           BlocProvider.value(value: _paymentQrBloc),
           BlocProvider.value(value: _bsScriptCubit),
           BlocProvider.value(value: _tileMessageCubit),
+          BlocProvider.value(value: _themeCubit),
           BlocProvider.value(value: _caffeineCubit),
           BlocProvider.value(value: _batteryCubit),
         ],
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'Switchly',
-          navigatorKey: _navigatorKey,
-          theme: AppTheme.light(),
-          darkTheme: AppTheme.dark(),
-          initialRoute: AppRouter.root,
-          onGenerateRoute: AppRouter.onGenerateRoute,
+        child: BlocBuilder<ThemeCubit, ThemeMode>(
+          builder: (context, themeMode) {
+            return MaterialApp(
+              debugShowCheckedModeBanner: false,
+              title: 'Switchly',
+              navigatorKey: _navigatorKey,
+              theme: AppTheme.light(),
+              darkTheme: AppTheme.dark(),
+              themeMode: themeMode,
+              initialRoute: AppRouter.root,
+              onGenerateRoute: AppRouter.onGenerateRoute,
+            );
+          },
         ),
       ),
     );

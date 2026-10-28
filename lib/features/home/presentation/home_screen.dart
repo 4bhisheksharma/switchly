@@ -22,6 +22,7 @@ import '../../power/data/power_models.dart';
 import '../../power/presentation/caffeine_screen.dart';
 import '../../profiles/bloc/profiles_bloc.dart';
 import '../../quick_texts/bloc/quick_texts_bloc.dart';
+import '../../settings/theme_cubit.dart';
 import '../../settings/tile_message_cubit.dart';
 import '../../setup/bloc/setup_bloc.dart';
 import '../../setup/data/setup_repository.dart';
@@ -89,6 +90,11 @@ class _HomeScreenState extends State<HomeScreen> {
       profileActive,
     ].where((a) => a).length;
 
+    final themeMode = context.watch<ThemeCubit>().state;
+    final isDark = themeMode == ThemeMode.dark ||
+        (themeMode == ThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
+
     final isSearching = _searchQuery.isNotEmpty;
 
     return Scaffold(
@@ -116,6 +122,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             actions: [
+              IconButton(
+                tooltip: isDark ? 'Switch to light theme' : 'Switch to dark theme',
+                icon: Icon(
+                  isDark ? Symbols.light_mode_rounded : Symbols.dark_mode_rounded,
+                  size: 22,
+                ),
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  context.read<ThemeCubit>().toggleTheme();
+                },
+              ),
               IconButton(
                 tooltip: 'How to add tiles',
                 icon: const Icon(Symbols.help_outline_rounded, size: 22),
@@ -335,6 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const _GroupedSection(
             title: 'Preferences',
             children: [
+              _ThemePreferenceTileRow(),
               _TileMessageTileRow(),
             ],
           ),
@@ -409,6 +427,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (matches('profiles', 'preset focus bundle toggle apply')) {
       list.add(const _ProfilesTileRow());
+    }
+    if (matches('theme appearance dark light mode', 'appearance dark mode theme colors')) {
+      list.add(const _ThemePreferenceTileRow());
     }
     if (matches('preferences message', 'show message after tap toast notify')) {
       list.add(const _TileMessageTileRow());
@@ -973,6 +994,226 @@ class _TileMessageTileRow extends StatelessWidget {
         HapticFeedback.selectionClick();
         context.read<TileMessageCubit>().set(v);
       },
+    );
+  }
+}
+
+class _ThemePreferenceTileRow extends StatelessWidget {
+  const _ThemePreferenceTileRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final themeMode = context.watch<ThemeCubit>().state;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    final label = switch (themeMode) {
+      ThemeMode.dark => 'Dark (Default)',
+      ThemeMode.light => 'Light',
+      ThemeMode.system => 'Follow system',
+    };
+
+    return InkWell(
+      onTap: () => _showThemePicker(context, themeMode),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        child: Row(
+          children: [
+            const TileIcon(Symbols.contrast_rounded, size: 44),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Appearance',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHigh.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: scheme.outlineVariant.withValues(alpha: 0.5),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    switch (themeMode) {
+                      ThemeMode.dark => Symbols.dark_mode_rounded,
+                      ThemeMode.light => Symbols.light_mode_rounded,
+                      ThemeMode.system => Symbols.settings_suggest_rounded,
+                    },
+                    size: 16,
+                    color: scheme.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    switch (themeMode) {
+                      ThemeMode.dark => 'Dark',
+                      ThemeMode.light => 'Light',
+                      ThemeMode.system => 'Auto',
+                    },
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: scheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Symbols.unfold_more_rounded, size: 16, color: scheme.onSurfaceVariant),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showThemePicker(BuildContext context, ThemeMode current) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Choose appearance',
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 16),
+                _ThemeOption(
+                  icon: Symbols.dark_mode_rounded,
+                  title: 'Dark theme',
+                  subtitle: 'Default · Tailored for battery and night comfort',
+                  selected: current == ThemeMode.dark,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    context.read<ThemeCubit>().setThemeMode(ThemeMode.dark);
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                const SizedBox(height: 8),
+                _ThemeOption(
+                  icon: Symbols.light_mode_rounded,
+                  title: 'Light theme',
+                  subtitle: 'Bright and high contrast',
+                  selected: current == ThemeMode.light,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    context.read<ThemeCubit>().setThemeMode(ThemeMode.light);
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                const SizedBox(height: 8),
+                _ThemeOption(
+                  icon: Symbols.settings_suggest_rounded,
+                  title: 'Follow system',
+                  subtitle: "Matches your device's display setting",
+                  selected: current == ThemeMode.system,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    context.read<ThemeCubit>().setThemeMode(ThemeMode.system);
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  const _ThemeOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: selected ? scheme.primary.withValues(alpha: 0.1) : scheme.surfaceContainerHigh.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selected ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.5),
+              width: selected ? 1.5 : 1.0,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: selected ? scheme.primary : scheme.onSurfaceVariant, size: 22),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: selected ? scheme.primary : scheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              if (selected)
+                Icon(Symbols.check_circle_rounded, color: scheme.primary, size: 20),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
