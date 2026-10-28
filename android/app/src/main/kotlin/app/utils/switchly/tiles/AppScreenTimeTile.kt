@@ -8,13 +8,13 @@ import app.utils.switchly.screentime.AppScreenTime
 import app.utils.switchly.tiles.base.BaseTile
 
 /**
- * Shows today's screen time for a user-selected app.
+ * Base tile implementation for tracking today's screen time of a specific app slot.
  *
- * Like [BatteryTile], this is not marked ACTIVE_TILE in the manifest, so SystemUI calls
+ * Like [BatteryTile], these are not marked ACTIVE_TILE in the manifest, so SystemUI calls
  * onStartListening and re-renders every time the panel opens, giving fresh up-to-the-minute
  * screen time calculations without background alarms or battery drain.
  */
-class AppScreenTimeTile : BaseTile() {
+open class BaseAppScreenTimeTile(val slot: Int) : BaseTile() {
     override val requiresSecureSettings = false
     override val requiresUnlock = false
 
@@ -22,16 +22,16 @@ class AppScreenTimeTile : BaseTile() {
         val hasPermission = AppScreenTime.hasUsageAccess(this)
         if (!hasPermission) {
             tile.state = Tile.STATE_INACTIVE
-            tile.label = getString(R.string.tile_app_screen_time)
+            tile.label = defaultLabel()
             tile.subtitle = "Permission needed"
             return
         }
 
-        val config = AppScreenTime.getConfig(this)
+        val config = AppScreenTime.getSlotConfig(this, slot)
         if (config == null || config.packageName.isBlank()) {
             tile.state = Tile.STATE_INACTIVE
-            tile.label = getString(R.string.tile_app_screen_time)
-            tile.subtitle = "Select an app"
+            tile.label = defaultLabel()
+            tile.subtitle = "Tap to set app"
             return
         }
 
@@ -49,7 +49,7 @@ class AppScreenTimeTile : BaseTile() {
             return
         }
 
-        val config = AppScreenTime.getConfig(this)
+        val config = AppScreenTime.getSlotConfig(this, slot)
         if (config == null || config.packageName.isBlank()) {
             launchApp(LaunchRoutes.tile("app_screen_time"))
             return
@@ -67,3 +67,8 @@ class AppScreenTimeTile : BaseTile() {
         launchApp(LaunchRoutes.tile("app_screen_time"))
     }
 }
+
+class AppScreenTimeTile : BaseAppScreenTimeTile(1)
+class AppScreenTimeTile2 : BaseAppScreenTimeTile(2)
+class AppScreenTimeTile3 : BaseAppScreenTimeTile(3)
+class AppScreenTimeTile4 : BaseAppScreenTimeTile(4)

@@ -4,8 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/platform/qs_channel.dart';
+import '../../../core/tiles/tile_catalog.dart';
 import '../../../core/widgets/section_header.dart';
+import '../../setup/presentation/add_tiles.dart';
 import '../bloc/screen_time_bloc.dart';
+import '../data/screen_time_config.dart';
 
 class AppScreenTimeScreen extends StatefulWidget {
   const AppScreenTimeScreen({super.key});
@@ -17,6 +20,7 @@ class AppScreenTimeScreen extends StatefulWidget {
 class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
+  int _selectedSlot = 1;
 
   @override
   void dispose() {
@@ -38,6 +42,10 @@ class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
                 a.package.toLowerCase().contains(_query.toLowerCase()))
             .toList();
 
+    final selectedConfig = state.configForSlot(_selectedSlot);
+    final selectedTime = state.timeForSlot(_selectedSlot);
+    final canAddTiles = canRequestAddTile(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('App Screen Time'),
@@ -55,8 +63,32 @@ class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
         children: [
-          // Quick Settings Tile Live Preview Card
-          _TilePreviewCard(state: state),
+          // Slot Tabs: Tile 1, Tile 2, Tile 3, Tile 4
+          _SlotSelector(
+            selectedSlot: _selectedSlot,
+            state: state,
+            onSlotSelected: (slot) {
+              HapticFeedback.selectionClick();
+              setState(() => _selectedSlot = slot);
+            },
+          ),
+          const SizedBox(height: 14),
+
+          // Active Tile Live Preview Card
+          _TilePreviewCard(
+            slot: _selectedSlot,
+            config: selectedConfig,
+            time: selectedTime,
+            hasPermission: state.hasPermission,
+            canAddTiles: canAddTiles,
+            onAddTileTap: () => requestAddTile(context, appScreenTimeTileForSlot(_selectedSlot)),
+            onRemoveTap: selectedConfig != null
+                ? () {
+                    HapticFeedback.mediumImpact();
+                    context.read<ScreenTimeBloc>().add(ScreenTimeSlotRemoved(_selectedSlot));
+                  }
+                : null,
+          ),
           const SizedBox(height: 14),
 
           // Permission Alert if Usage Access is not granted
@@ -70,14 +102,15 @@ class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
             const SizedBox(height: 14),
           ],
 
-          // Preferences & Tile Behavior
-          if (state.config != null) ...[
-            Container(
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainer,
+          // Preferences & Tile Behavior for this Slot (Material wrapper ensures ink splashes & background render properly)
+          if (selectedConfig != null) ...[
+            Material(
+              color: scheme.surfaceContainer,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+                side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5)),
               ),
+              clipBehavior: Clip.antiAlias,
               child: SwitchListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 secondary: Icon(Symbols.launch_rounded, color: scheme.primary),
@@ -86,13 +119,15 @@ class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
                   style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 subtitle: Text(
-                  'Tapping the Quick Settings tile will directly open ${state.config!.appName}.',
+                  'Tapping Quick Tile $_selectedSlot will directly open ${selectedConfig.appName}.',
                   style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
                 ),
-                value: state.config!.openAppOnTap,
+                value: selectedConfig.openAppOnTap,
                 onChanged: (val) {
                   HapticFeedback.selectionClick();
-                  context.read<ScreenTimeBloc>().add(ScreenTimeOpenOnTapToggled(val));
+                  context
+                      .read<ScreenTimeBloc>()
+                      .add(ScreenTimeSlotOpenOnTapToggled(_selectedSlot, val));
                 },
               ),
             ),
@@ -101,7 +136,10 @@ class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
 
           // App Selection Section Header
           SectionHeader(
-            'Select App to Track',
+            'Assign App to Tile $_selectedSlot',
+            subtitle: selectedConfig != null
+                ? 'Tap any app below to change the app for Tile $_selectedSlot'
+                : 'Tap any app below to track it with Tile $_selectedSlot',
             trailing: Text(
               '${filteredApps.length} apps',
               style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
@@ -141,7 +179,7 @@ class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
           ),
           const SizedBox(height: 12),
 
-          // App List Container
+          // App List Container (Using Material to avoid invisible ink splashes / assertion error)
           if (state.isLoading)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 40),
@@ -158,12 +196,13 @@ class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
               ),
             )
           else
-            Container(
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainer,
+            Material(
+              color: scheme.surfaceContainer,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+                side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5)),
               ),
+              clipBehavior: Clip.antiAlias,
               child: ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -176,18 +215,15 @@ class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
                 ),
                 itemBuilder: (context, index) {
                   final app = filteredApps[index];
-                  final isSelected = state.config?.packageName == app.package;
+                  final isAssignedToThisSlot = selectedConfig?.packageName == app.package;
+                  final otherSlot = state.slotForPackage(app.package);
 
                   return InkWell(
-                    borderRadius: BorderRadius.vertical(
-                      top: index == 0 ? const Radius.circular(20) : Radius.zero,
-                      bottom: index == filteredApps.length - 1
-                          ? const Radius.circular(20)
-                          : Radius.zero,
-                    ),
                     onTap: () {
                       HapticFeedback.selectionClick();
-                      context.read<ScreenTimeBloc>().add(ScreenTimeAppSelected(app));
+                      context
+                          .read<ScreenTimeBloc>()
+                          .add(ScreenTimeSlotAssigned(_selectedSlot, app));
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -212,14 +248,43 @@ class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  app.label,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                                    color: isSelected ? scheme.primary : scheme.onSurface,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        app.label,
+                                        style: theme.textTheme.bodyMedium?.copyWith(
+                                          fontWeight: isAssignedToThisSlot
+                                              ? FontWeight.w700
+                                              : FontWeight.w600,
+                                          color: isAssignedToThisSlot
+                                              ? scheme.primary
+                                              : scheme.onSurface,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (otherSlot != null && otherSlot != _selectedSlot) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: scheme.surfaceContainerHigh,
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          'Tile $otherSlot',
+                                          style: theme.textTheme.labelSmall?.copyWith(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: scheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
@@ -239,7 +304,7 @@ class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: isSelected
+                                color: isAssignedToThisSlot
                                     ? scheme.primary.withValues(alpha: 0.15)
                                     : scheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
@@ -248,17 +313,19 @@ class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
                                 app.formattedUsage,
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: isSelected ? scheme.primary : scheme.onSurfaceVariant,
+                                  color: isAssignedToThisSlot
+                                      ? scheme.primary
+                                      : scheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
                           const SizedBox(width: 8),
                           Icon(
-                            isSelected
+                            isAssignedToThisSlot
                                 ? Symbols.radio_button_checked_rounded
                                 : Symbols.radio_button_unchecked_rounded,
                             size: 22,
-                            color: isSelected ? scheme.primary : scheme.outlineVariant,
+                            color: isAssignedToThisSlot ? scheme.primary : scheme.outlineVariant,
                           ),
                         ],
                       ),
@@ -273,24 +340,135 @@ class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
   }
 }
 
-class _TilePreviewCard extends StatelessWidget {
-  const _TilePreviewCard({required this.state});
+/// Horizontal selector for the 4 dedicated Quick Settings tile slots.
+class _SlotSelector extends StatelessWidget {
+  const _SlotSelector({
+    required this.selectedSlot,
+    required this.state,
+    required this.onSlotSelected,
+  });
 
+  final int selectedSlot;
   final ScreenTimeState state;
+  final ValueChanged<int> onSlotSelected;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final hasApp = state.config != null;
-    final active = hasApp && state.currentAppMillis > 0;
 
-    final String label = hasApp
-        ? '${state.config!.appName}: ${state.currentAppFormatted}'
-        : 'Screen time';
+    return Row(
+      children: List.generate(4, (index) {
+        final slot = index + 1;
+        final isSelected = slot == selectedSlot;
+        final config = state.configForSlot(slot);
+        final hasApp = config != null;
+        final time = state.timeForSlot(slot);
+
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: index == 0 ? 0 : 4,
+              right: index == 3 ? 0 : 4,
+            ),
+            child: Material(
+              color: isSelected
+                  ? scheme.primary
+                  : (hasApp ? scheme.surfaceContainerHigh : scheme.surfaceContainer),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: isSelected
+                      ? scheme.primary
+                      : (hasApp
+                          ? scheme.outlineVariant.withValues(alpha: 0.7)
+                          : scheme.outlineVariant.withValues(alpha: 0.3)),
+                  width: isSelected ? 1.5 : 1.0,
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => onSlotSelected(slot),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Tile $slot',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: isSelected ? scheme.onPrimary : scheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        hasApp ? config.appName : '+ Empty',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontSize: 11,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected
+                              ? scheme.onPrimary.withValues(alpha: 0.9)
+                              : (hasApp ? scheme.primary : scheme.onSurfaceVariant),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                      if (hasApp && time.millis > 0) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          time.formatted,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 10,
+                            color: isSelected
+                                ? scheme.onPrimary.withValues(alpha: 0.75)
+                                : scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _TilePreviewCard extends StatelessWidget {
+  const _TilePreviewCard({
+    required this.slot,
+    required this.config,
+    required this.time,
+    required this.hasPermission,
+    required this.canAddTiles,
+    required this.onAddTileTap,
+    this.onRemoveTap,
+  });
+
+  final int slot;
+  final ScreenTimeConfig? config;
+  final ({int millis, String formatted}) time;
+  final bool hasPermission;
+  final bool canAddTiles;
+  final VoidCallback onAddTileTap;
+  final VoidCallback? onRemoveTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final hasApp = config != null;
+    final active = hasApp && time.millis > 0;
+
+    final String label = hasApp ? '${config!.appName}: ${time.formatted}' : 'Screen time $slot';
     final String subtitle = hasApp
-        ? '${state.currentAppFormatted} today'
-        : (state.hasPermission ? 'Select an app below' : 'Permission required');
+        ? '${time.formatted} today'
+        : (hasPermission ? 'Select an app below' : 'Permission required');
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -309,7 +487,7 @@ class _TilePreviewCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                'QUICK SETTINGS TILE PREVIEW',
+                'QUICK SETTINGS TILE $slot PREVIEW',
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.8,
@@ -317,6 +495,16 @@ class _TilePreviewCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
+              if (onRemoveTap != null)
+                IconButton(
+                  tooltip: 'Unassign this tile',
+                  icon: const Icon(Symbols.delete_outline_rounded, size: 20),
+                  onPressed: onRemoveTap,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -382,6 +570,21 @@ class _TilePreviewCard extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 12),
+
+          // 1-tap "Add Tile to Quick Settings" Button
+          FilledButton.tonalIcon(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(40),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Symbols.add_circle_outline_rounded, size: 18),
+            label: Text(
+              'Add Tile $slot to Quick Settings',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            onPressed: canAddTiles ? onAddTileTap : () => showAddTilesHelp(context),
           ),
         ],
       ),

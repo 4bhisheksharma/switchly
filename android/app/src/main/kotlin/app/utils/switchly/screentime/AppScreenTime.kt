@@ -10,10 +10,12 @@ import android.os.Process
 import android.provider.Settings
 import app.utils.switchly.core.PrefKeys
 import app.utils.switchly.core.SharedConfig
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Calendar
 
-data class ScreenTimeConfig(
+data class ScreenTimeSlot(
+    val slot: Int,
     val packageName: String,
     val appName: String,
     val openAppOnTap: Boolean = true,
@@ -56,21 +58,57 @@ object AppScreenTime {
         }
     }
 
-    /** Reads the currently selected app config from SharedPreferences. */
-    fun getConfig(context: Context): ScreenTimeConfig? {
-        val raw = SharedConfig.getString(context, PrefKeys.APP_USAGE_CONFIG) ?: return null
+    /** Reads all configured app slots from SharedPreferences. */
+    fun getAllSlots(context: Context): List<ScreenTimeSlot> {
+        val raw = SharedConfig.getString(context, PrefKeys.APP_USAGE_CONFIG) ?: return emptyList()
         return try {
-            val json = JSONObject(raw)
-            val pkg = json.optString("packageName", "")
-            if (pkg.isBlank()) null else ScreenTimeConfig(
-                packageName = pkg,
-                appName = json.optString("appName", pkg),
-                openAppOnTap = json.optBoolean("openAppOnTap", true),
-            )
+            val trimmed = raw.trim()
+            if (trimmed.startsWith("[")) {
+                val arr = JSONArray(trimmed)
+                val list = mutableListOf<ScreenTimeSlot>()
+                for (i in 0 until arr.length()) {
+                    val obj = arr.getJSONObject(i)
+                    val pkg = obj.optString("packageName", "")
+                    if (pkg.isNotBlank()) {
+                        list.add(
+                            ScreenTimeSlot(
+                                slot = obj.optInt("slot", i + 1),
+                                packageName = pkg,
+                                appName = obj.optString("appName", pkg),
+                                openAppOnTap = obj.optBoolean("openAppOnTap", true),
+                            )
+                        )
+                    }
+                }
+                list
+            } else {
+                val json = JSONObject(trimmed)
+                val pkg = json.optString("packageName", "")
+                if (pkg.isNotBlank()) {
+                    listOf(
+                        ScreenTimeSlot(
+                            slot = 1,
+                            packageName = pkg,
+                            appName = json.optString("appName", pkg),
+                            openAppOnTap = json.optBoolean("openAppOnTap", true),
+                        )
+                    )
+                } else {
+                    emptyList()
+                }
+            }
         } catch (_: Exception) {
-            null
+            emptyList()
         }
     }
+
+    /** Reads config for a specific tile slot (1 to 4). */
+    fun getSlotConfig(context: Context, slot: Int): ScreenTimeSlot? {
+        return getAllSlots(context).firstOrNull { it.slot == slot }
+    }
+
+    /** Legacy helper for slot 1. */
+    fun getConfig(context: Context): ScreenTimeSlot? = getSlotConfig(context, 1)
 
     /** Calculates foreground screen time in milliseconds for [targetPackage] since midnight today. */
     fun getTodayForegroundTimeMillis(context: Context, targetPackage: String): Long {

@@ -241,12 +241,45 @@
             </intent-filter>
         </service>
 
-        <!-- App Screen Time: reads fresh usage stats each time the panel opens. -->
+        <!-- App Screen Time Slots 1 to 4: reads fresh usage stats each time the panel opens. -->
         <service
             android:name=".tiles.AppScreenTimeTile"
             android:exported="true"
             android:icon="@drawable/ic_tile_timer"
-            android:label="@string/tile_app_screen_time"
+            android:label="@string/tile_app_screen_time_1"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".tiles.AppScreenTimeTile2"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_timer"
+            android:label="@string/tile_app_screen_time_2"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".tiles.AppScreenTimeTile3"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_timer"
+            android:label="@string/tile_app_screen_time_3"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".tiles.AppScreenTimeTile4"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_timer"
+            android:label="@string/tile_app_screen_time_4"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>

@@ -20,21 +20,52 @@ class ScreenTimePermissionCheckRequested extends ScreenTimeEvent {
 }
 
 class ScreenTimeAppSelected extends ScreenTimeEvent {
-  const ScreenTimeAppSelected(this.app);
+  const ScreenTimeAppSelected(this.app, {this.slot = 1});
 
+  final AppUsageItem app;
+  final int slot;
+
+  @override
+  List<Object?> get props => [app.package, slot];
+}
+
+class ScreenTimeSlotAssigned extends ScreenTimeEvent {
+  const ScreenTimeSlotAssigned(this.slot, this.app);
+
+  final int slot;
   final AppUsageItem app;
 
   @override
-  List<Object?> get props => [app.package];
+  List<Object?> get props => [slot, app.package];
+}
+
+class ScreenTimeSlotRemoved extends ScreenTimeEvent {
+  const ScreenTimeSlotRemoved(this.slot);
+
+  final int slot;
+
+  @override
+  List<Object?> get props => [slot];
 }
 
 class ScreenTimeOpenOnTapToggled extends ScreenTimeEvent {
-  const ScreenTimeOpenOnTapToggled(this.openAppOnTap);
+  const ScreenTimeOpenOnTapToggled(this.openAppOnTap, {this.slot = 1});
 
+  final bool openAppOnTap;
+  final int slot;
+
+  @override
+  List<Object?> get props => [openAppOnTap, slot];
+}
+
+class ScreenTimeSlotOpenOnTapToggled extends ScreenTimeEvent {
+  const ScreenTimeSlotOpenOnTapToggled(this.slot, this.openAppOnTap);
+
+  final int slot;
   final bool openAppOnTap;
 
   @override
-  List<Object?> get props => [openAppOnTap];
+  List<Object?> get props => [slot, openAppOnTap];
 }
 
 class ScreenTimeRefreshed extends ScreenTimeEvent {
@@ -44,33 +75,47 @@ class ScreenTimeRefreshed extends ScreenTimeEvent {
 class ScreenTimeState extends Equatable {
   const ScreenTimeState({
     this.hasPermission = false,
-    this.config,
-    this.currentAppMillis = 0,
-    this.currentAppFormatted = '0m',
+    this.slots = const [],
+    this.slotTimes = const {},
     this.apps = const [],
     this.isLoading = false,
   });
 
   final bool hasPermission;
-  final ScreenTimeConfig? config;
-  final int currentAppMillis;
-  final String currentAppFormatted;
+  final List<ScreenTimeConfig> slots;
+  final Map<int, ({int millis, String formatted})> slotTimes;
   final List<AppUsageItem> apps;
   final bool isLoading;
 
+  ScreenTimeConfig? get config => slots.where((c) => c.slot == 1).firstOrNull ?? slots.firstOrNull;
+
+  int get currentAppMillis =>
+      slotTimes[1]?.millis ?? (slots.isNotEmpty ? (slotTimes[slots.first.slot]?.millis ?? 0) : 0);
+
+  String get currentAppFormatted =>
+      slotTimes[1]?.formatted ??
+      (slots.isNotEmpty ? (slotTimes[slots.first.slot]?.formatted ?? '0m') : '0m');
+
+  ScreenTimeConfig? configForSlot(int slot) =>
+      slots.where((c) => c.slot == slot).firstOrNull;
+
+  ({int millis, String formatted}) timeForSlot(int slot) =>
+      slotTimes[slot] ?? (millis: 0, formatted: '0m');
+
+  int? slotForPackage(String package) =>
+      slots.where((c) => c.packageName == package).firstOrNull?.slot;
+
   ScreenTimeState copyWith({
     bool? hasPermission,
-    ScreenTimeConfig? config,
-    int? currentAppMillis,
-    String? currentAppFormatted,
+    List<ScreenTimeConfig>? slots,
+    Map<int, ({int millis, String formatted})>? slotTimes,
     List<AppUsageItem>? apps,
     bool? isLoading,
   }) {
     return ScreenTimeState(
       hasPermission: hasPermission ?? this.hasPermission,
-      config: config ?? this.config,
-      currentAppMillis: currentAppMillis ?? this.currentAppMillis,
-      currentAppFormatted: currentAppFormatted ?? this.currentAppFormatted,
+      slots: slots ?? this.slots,
+      slotTimes: slotTimes ?? this.slotTimes,
       apps: apps ?? this.apps,
       isLoading: isLoading ?? this.isLoading,
     );
@@ -79,9 +124,8 @@ class ScreenTimeState extends Equatable {
   @override
   List<Object?> get props => [
         hasPermission,
-        config,
-        currentAppMillis,
-        currentAppFormatted,
+        slots,
+        slotTimes,
         apps,
         isLoading,
       ];
@@ -92,7 +136,10 @@ class ScreenTimeBloc extends Bloc<ScreenTimeEvent, ScreenTimeState> {
     on<ScreenTimeStarted>(_onStarted);
     on<ScreenTimePermissionCheckRequested>(_onPermissionCheck);
     on<ScreenTimeAppSelected>(_onAppSelected);
+    on<ScreenTimeSlotAssigned>(_onSlotAssigned);
+    on<ScreenTimeSlotRemoved>(_onSlotRemoved);
     on<ScreenTimeOpenOnTapToggled>(_onOpenOnTapToggled);
+    on<ScreenTimeSlotOpenOnTapToggled>(_onSlotOpenOnTapToggled);
     on<ScreenTimeRefreshed>(_onRefreshed);
   }
 
@@ -120,18 +167,50 @@ class ScreenTimeBloc extends Bloc<ScreenTimeEvent, ScreenTimeState> {
     ScreenTimeAppSelected event,
     Emitter<ScreenTimeState> emit,
   ) async {
+    add(ScreenTimeSlotAssigned(event.slot, event.app));
+  }
+
+  Future<void> _onSlotAssigned(
+    ScreenTimeSlotAssigned event,
+    Emitter<ScreenTimeState> emit,
+  ) async {
+    final existingSlot = state.configForSlot(event.slot);
     final newConfig = ScreenTimeConfig(
+      slot: event.slot,
       packageName: event.app.package,
       appName: event.app.label,
-      openAppOnTap: state.config?.openAppOnTap ?? true,
+      openAppOnTap: existingSlot?.openAppOnTap ?? true,
     );
-    await _repository.saveConfig(newConfig);
+
+    final currentSlots = state.slots.where((c) => c.slot != event.slot).toList()
+      ..add(newConfig)
+      ..sort((a, b) => a.slot.compareTo(b.slot));
+
+    await _repository.saveConfigs(currentSlots);
 
     final time = await _repository.getAppScreenTime(newConfig.packageName);
+    final updatedTimes = Map<int, ({int millis, String formatted})>.from(state.slotTimes)
+      ..[event.slot] = time;
+
     emit(state.copyWith(
-      config: newConfig,
-      currentAppMillis: time.millis,
-      currentAppFormatted: time.formatted,
+      slots: currentSlots,
+      slotTimes: updatedTimes,
+    ));
+  }
+
+  Future<void> _onSlotRemoved(
+    ScreenTimeSlotRemoved event,
+    Emitter<ScreenTimeState> emit,
+  ) async {
+    final currentSlots = state.slots.where((c) => c.slot != event.slot).toList();
+    await _repository.saveConfigs(currentSlots);
+
+    final updatedTimes = Map<int, ({int millis, String formatted})>.from(state.slotTimes)
+      ..remove(event.slot);
+
+    emit(state.copyWith(
+      slots: currentSlots,
+      slotTimes: updatedTimes,
     ));
   }
 
@@ -139,35 +218,51 @@ class ScreenTimeBloc extends Bloc<ScreenTimeEvent, ScreenTimeState> {
     ScreenTimeOpenOnTapToggled event,
     Emitter<ScreenTimeState> emit,
   ) async {
-    if (state.config == null) return;
-    final newConfig = state.config!.copyWith(openAppOnTap: event.openAppOnTap);
-    await _repository.saveConfig(newConfig);
-    emit(state.copyWith(config: newConfig));
+    add(ScreenTimeSlotOpenOnTapToggled(event.slot, event.openAppOnTap));
+  }
+
+  Future<void> _onSlotOpenOnTapToggled(
+    ScreenTimeSlotOpenOnTapToggled event,
+    Emitter<ScreenTimeState> emit,
+  ) async {
+    final existing = state.configForSlot(event.slot);
+    if (existing == null) return;
+    final updated = existing.copyWith(openAppOnTap: event.openAppOnTap);
+
+    final currentSlots = state.slots.where((c) => c.slot != event.slot).toList()
+      ..add(updated)
+      ..sort((a, b) => a.slot.compareTo(b.slot));
+
+    await _repository.saveConfigs(currentSlots);
+    emit(state.copyWith(slots: currentSlots));
   }
 
   Future<void> _onRefreshed(
     ScreenTimeRefreshed event,
     Emitter<ScreenTimeState> emit,
   ) async {
-    if (state.config == null) return;
-    final time = await _repository.getAppScreenTime(state.config!.packageName);
-    emit(state.copyWith(
-      currentAppMillis: time.millis,
-      currentAppFormatted: time.formatted,
-    ));
+    final updatedTimes = <int, ({int millis, String formatted})>{};
+    for (final slotConfig in state.slots) {
+      if (slotConfig.packageName.isNotEmpty) {
+        final time = await _repository.getAppScreenTime(slotConfig.packageName);
+        updatedTimes[slotConfig.slot] = time;
+      }
+    }
+    emit(state.copyWith(slotTimes: updatedTimes));
   }
 
   Future<void> _loadFullData(Emitter<ScreenTimeState> emit) async {
     final hasPerm = await _repository.hasUsageAccess();
-    final config = await _repository.loadConfig();
+    final configs = await _repository.loadConfigs();
 
-    int currentMillis = 0;
-    String currentFormatted = '0m';
-
-    if (config != null && hasPerm) {
-      final time = await _repository.getAppScreenTime(config.packageName);
-      currentMillis = time.millis;
-      currentFormatted = time.formatted;
+    final times = <int, ({int millis, String formatted})>{};
+    if (hasPerm) {
+      for (final slot in configs) {
+        if (slot.packageName.isNotEmpty) {
+          final time = await _repository.getAppScreenTime(slot.packageName);
+          times[slot.slot] = time;
+        }
+      }
     }
 
     final rawApps = await _repository.getLaunchableApps();
@@ -194,9 +289,8 @@ class ScreenTimeBloc extends Bloc<ScreenTimeEvent, ScreenTimeState> {
 
     emit(state.copyWith(
       hasPermission: hasPerm,
-      config: config,
-      currentAppMillis: currentMillis,
-      currentAppFormatted: currentFormatted,
+      slots: configs,
+      slotTimes: times,
       apps: appItems,
       isLoading: false,
     ));

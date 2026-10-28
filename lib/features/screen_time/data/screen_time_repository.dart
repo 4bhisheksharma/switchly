@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -39,21 +40,48 @@ class ScreenTimeRepository {
   Future<List<({String package, String label, Uint8List icon})>> getLaunchableApps() =>
       channel.getLaunchableApps();
 
-  Future<ScreenTimeConfig?> loadConfig() async {
+  Future<List<ScreenTimeConfig>> loadConfigs() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(PrefKeys.appUsageConfig);
-    if (raw == null || raw.isEmpty) return null;
+    if (raw == null || raw.isEmpty) return const [];
     try {
-      return ScreenTimeConfig.fromJson(raw);
+      final trimmed = raw.trim();
+      if (trimmed.startsWith('[')) {
+        final list = jsonDecode(trimmed) as List<dynamic>;
+        return list
+            .map((e) => ScreenTimeConfig.fromMap(e as Map<String, dynamic>))
+            .where((c) => c.packageName.isNotEmpty)
+            .toList();
+      } else {
+        final config = ScreenTimeConfig.fromJson(trimmed);
+        return config.packageName.isNotEmpty ? [config] : const [];
+      }
     } catch (_) {
-      return null;
+      return const [];
     }
   }
 
-  Future<void> saveConfig(ScreenTimeConfig config) async {
+  Future<void> saveConfigs(List<ScreenTimeConfig> configs) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(PrefKeys.appUsageConfig, config.toJson());
+    final jsonList = configs.map((c) => c.toMap()).toList();
+    await prefs.setString(PrefKeys.appUsageConfig, jsonEncode(jsonList));
     await channel.refreshAppScreenTimeTile();
+  }
+
+  Future<ScreenTimeConfig?> loadConfig() async {
+    final configs = await loadConfigs();
+    return configs.firstOrNull;
+  }
+
+  Future<void> saveConfig(ScreenTimeConfig config) async {
+    final configs = (await loadConfigs()).toList();
+    final index = configs.indexWhere((c) => c.slot == config.slot);
+    if (index >= 0) {
+      configs[index] = config;
+    } else {
+      configs.add(config);
+    }
+    await saveConfigs(configs);
   }
 
   static String formatMillis(int totalMillis) {

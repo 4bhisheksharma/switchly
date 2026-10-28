@@ -30,10 +30,17 @@ object TileRegistry {
         TileInfo("font_size", FontSizeTile::class.java, R.string.tile_font_size, R.drawable.ic_tile_font),
         TileInfo("caffeine", CaffeineTile::class.java, R.string.tile_caffeine, R.drawable.ic_tile_coffee),
         TileInfo("qr_scanner", QrScannerTile::class.java, R.string.tile_qr_scanner, R.drawable.ic_tile_scan),
-        TileInfo("app_screen_time", AppScreenTimeTile::class.java, R.string.tile_app_screen_time, R.drawable.ic_tile_timer),
+        TileInfo("app_screen_time", AppScreenTimeTile::class.java, R.string.tile_app_screen_time_1, R.drawable.ic_tile_timer),
+        TileInfo("app_screen_time_1", AppScreenTimeTile::class.java, R.string.tile_app_screen_time_1, R.drawable.ic_tile_timer),
+        TileInfo("app_screen_time_2", AppScreenTimeTile2::class.java, R.string.tile_app_screen_time_2, R.drawable.ic_tile_timer),
+        TileInfo("app_screen_time_3", AppScreenTimeTile3::class.java, R.string.tile_app_screen_time_3, R.drawable.ic_tile_timer),
+        TileInfo("app_screen_time_4", AppScreenTimeTile4::class.java, R.string.tile_app_screen_time_4, R.drawable.ic_tile_timer),
     )
 
-    fun byId(id: String?): TileInfo? = all.firstOrNull { it.id == id }
+    fun byId(id: String?): TileInfo? {
+        if (id == "app_screen_time") return all.firstOrNull { it.id == "app_screen_time_1" }
+        return all.firstOrNull { it.id == id }
+    }
 
     fun byComponent(component: ComponentName?): TileInfo? =
         all.firstOrNull { it.service.name == component?.className }

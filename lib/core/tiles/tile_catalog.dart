@@ -109,7 +109,39 @@ const paymentQrTile = TileDefinition(
 
 const appScreenTimeTile = TileDefinition(
   id: 'app_screen_time',
-  name: 'Screen time',
+  name: 'Screen time 1',
   description: "Track today's screen time of a specific app in Quick Settings.",
   icon: Symbols.timer_rounded,
 );
+
+const appScreenTimeTile1 = appScreenTimeTile;
+
+const appScreenTimeTile2 = TileDefinition(
+  id: 'app_screen_time_2',
+  name: 'Screen time 2',
+  description: "Track today's screen time of a second app in Quick Settings.",
+  icon: Symbols.timer_rounded,
+);
+
+const appScreenTimeTile3 = TileDefinition(
+  id: 'app_screen_time_3',
+  name: 'Screen time 3',
+  description: "Track today's screen time of a third app in Quick Settings.",
+  icon: Symbols.timer_rounded,
+);
+
+const appScreenTimeTile4 = TileDefinition(
+  id: 'app_screen_time_4',
+  name: 'Screen time 4',
+  description: "Track today's screen time of a fourth app in Quick Settings.",
+  icon: Symbols.timer_rounded,
+);
+
+TileDefinition appScreenTimeTileForSlot(int slot) {
+  return switch (slot) {
+    2 => appScreenTimeTile2,
+    3 => appScreenTimeTile3,
+    4 => appScreenTimeTile4,
+    _ => appScreenTimeTile,
+  };
+}

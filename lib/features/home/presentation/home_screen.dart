@@ -975,11 +975,13 @@ class _AppScreenTimeTileRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<ScreenTimeBloc>().state;
     final canAddTiles = canRequestAddTile(context);
-    final hasApp = state.config != null;
-    final status = hasApp
-        ? '${state.config!.appName} · ${state.currentAppFormatted}'
-        : (state.hasPermission ? 'Select an app to track' : 'Usage permission required');
-    final active = hasApp && state.currentAppMillis > 0;
+    final count = state.slots.length;
+    final status = count == 0
+        ? (state.hasPermission ? 'Track up to 4 apps in Quick Settings' : 'Usage permission required')
+        : (count == 1
+            ? '${state.slots.first.appName} · ${state.timeForSlot(state.slots.first.slot).formatted}'
+            : '$count apps tracked (${state.slots.map((s) => s.appName).join(', ')})');
+    final active = count > 0;
 
     return _TileRow(
       tile: appScreenTimeTile,

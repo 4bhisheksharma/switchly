@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'app/app.dart';
 import 'core/platform/qs_channel.dart';
 

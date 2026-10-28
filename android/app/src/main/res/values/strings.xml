@@ -14,4 +14,8 @@
     <string name="tile_caffeine">Caffeine</string>
     <string name="tile_qr_scanner">Scan QR</string>
     <string name="tile_app_screen_time">Screen time</string>
+    <string name="tile_app_screen_time_1">Screen time 1</string>
+    <string name="tile_app_screen_time_2">Screen time 2</string>
+    <string name="tile_app_screen_time_3">Screen time 3</string>
+    <string name="tile_app_screen_time_4">Screen time 4</string>
 </resources>

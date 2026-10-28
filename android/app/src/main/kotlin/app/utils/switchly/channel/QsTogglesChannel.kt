@@ -31,6 +31,9 @@ import app.utils.switchly.profiles.Profiles
 import app.utils.switchly.scanner.ScannerActivity
 import app.utils.switchly.screentime.AppScreenTime
 import app.utils.switchly.tiles.AppScreenTimeTile
+import app.utils.switchly.tiles.AppScreenTimeTile2
+import app.utils.switchly.tiles.AppScreenTimeTile3
+import app.utils.switchly.tiles.AppScreenTimeTile4
 import app.utils.switchly.tiles.TileRefresher
 import app.utils.switchly.tiles.TileRegistry
 import io.flutter.plugin.common.BinaryMessenger
@@ -231,6 +234,9 @@ class QsTogglesChannel(
             }
             "refreshAppScreenTimeTile" -> {
                 TileRefresher.refresh(activity, AppScreenTimeTile::class.java)
+                TileRefresher.refresh(activity, AppScreenTimeTile2::class.java)
+                TileRefresher.refresh(activity, AppScreenTimeTile3::class.java)
+                TileRefresher.refresh(activity, AppScreenTimeTile4::class.java)
                 result.success(true)
             }
             else -> result.notImplemented()
