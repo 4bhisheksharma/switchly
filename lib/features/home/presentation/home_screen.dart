@@ -28,6 +28,7 @@ import '../../setup/bloc/setup_bloc.dart';
 import '../../setup/data/setup_repository.dart';
 import '../../setup/presentation/add_tiles.dart';
 import '../../setup/presentation/permission_sheet.dart';
+import '../../updater/presentation/update_tile.dart';
 
 enum _Category {
   all('All'),
@@ -145,6 +146,9 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 48),
             sliver: SliverList.list(
               children: [
+                // In-app update alert banner (shown when an update is available)
+                const UpdateNotificationBanner(),
+
                 // Quick Dashboard Header
                 _SystemStatusBar(
                   hasPermission: hasPermission,
@@ -354,6 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _ThemePreferenceTileRow(),
               _TileMessageTileRow(),
+              UpdateCheckTile(),
             ],
           ),
       ],
@@ -433,6 +438,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (matches('preferences message', 'show message after tap toast notify')) {
       list.add(const _TileMessageTileRow());
+    }
+    if (matches('check for updates', 'github releases new version download install upgrade')) {
+      list.add(const UpdateCheckTile());
     }
 
     return list;

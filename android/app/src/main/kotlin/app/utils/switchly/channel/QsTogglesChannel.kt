@@ -6,13 +6,17 @@ import android.app.StatusBarManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.drawable.Icon
+import android.net.Uri
 import android.net.VpnService
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import androidx.annotation.RequiresApi
+import androidx.core.content.FileProvider
+import java.io.File
 import app.utils.switchly.core.Permissions
 import app.utils.switchly.display.AnimationScale
 import app.utils.switchly.display.FontScale
@@ -145,6 +149,67 @@ class QsTogglesChannel(
             "openQrScanner" -> {
                 activity.startActivity(Intent(activity, ScannerActivity::class.java))
                 result.success(true)
+            }
+            "getAppVersion" -> {
+                val pInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    activity.packageManager.getPackageInfo(activity.packageName, PackageManager.PackageInfoFlags.of(0))
+                } else {
+                    @Suppress("DEPRECATION")
+                    activity.packageManager.getPackageInfo(activity.packageName, 0)
+                }
+                val code = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    pInfo.longVersionCode
+                } else {
+                    @Suppress("DEPRECATION")
+                    pInfo.versionCode.toLong()
+                }
+                result.success(mapOf("versionName" to (pInfo.versionName ?: "0.0.0"), "versionCode" to code))
+            }
+            "canInstallPackages" -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    result.success(activity.packageManager.canRequestPackageInstalls())
+                } else {
+                    result.success(true)
+                }
+            }
+            "openInstallPermissionSettings" -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    try {
+                        val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                            data = Uri.parse("package:${activity.packageName}")
+                        }
+                        activity.startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
+                } else {
+                    result.success(false)
+                }
+            }
+            "installApk" -> {
+                val path = call.argument<String>("path")
+                if (path.isNullOrBlank()) {
+                    result.error("invalid_path", "APK path cannot be null or empty", null)
+                } else {
+                    val file = File(path)
+                    if (!file.exists()) {
+                        result.error("file_not_found", "APK file does not exist at $path", null)
+                    } else {
+                        try {
+                            val uri = FileProvider.getUriForFile(activity, "${activity.packageName}.fileprovider", file)
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(uri, "application/vnd.android.package-archive")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            activity.startActivity(intent)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("install_failed", e.message, null)
+                        }
+                    }
+                }
             }
             else -> result.notImplemented()
         }

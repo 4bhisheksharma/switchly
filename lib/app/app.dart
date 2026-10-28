@@ -24,6 +24,8 @@ import '../features/setup/data/setup_repository.dart';
 import '../features/settings/theme_cubit.dart';
 import '../features/settings/tile_message_cubit.dart';
 import '../features/setup/presentation/permission_sheet.dart';
+import '../features/updater/cubit/update_cubit.dart';
+import '../features/updater/data/update_repository.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -56,6 +58,8 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
   late final PowerRepository _powerRepository = PowerRepository(widget.channel);
   late final CaffeineCubit _caffeineCubit = CaffeineCubit(_powerRepository)..load();
   late final BatteryCubit _batteryCubit = BatteryCubit(_powerRepository)..resume();
+  late final UpdateRepository _updateRepository = UpdateRepository(channel: widget.channel);
+  late final UpdateCubit _updateCubit = UpdateCubit(repository: _updateRepository)..checkForUpdate();
   final BsScriptCubit _bsScriptCubit = BsScriptCubit();
   final TileMessageCubit _tileMessageCubit = TileMessageCubit();
   final ThemeCubit _themeCubit = ThemeCubit();
@@ -76,6 +80,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
         _profilesBloc.add(const ProfilesRefreshed());
         _caffeineCubit.refresh();
         _batteryCubit.resume();
+        _updateCubit.checkInstallPermission();
       },
       onPause: () => _batteryCubit.pause(),
     );
@@ -116,6 +121,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     _themeCubit.close();
     _caffeineCubit.close();
     _batteryCubit.close();
+    _updateCubit.close();
     widget.channel.dispose();
     super.dispose();
   }
@@ -125,6 +131,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider.value(value: _setupRepository),
+        RepositoryProvider.value(value: _updateRepository),
         RepositoryProvider.value(value: widget.channel),
       ],
       child: MultiBlocProvider(
@@ -141,6 +148,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
           BlocProvider.value(value: _themeCubit),
           BlocProvider.value(value: _caffeineCubit),
           BlocProvider.value(value: _batteryCubit),
+          BlocProvider.value(value: _updateCubit),
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(
           builder: (context, themeMode) {

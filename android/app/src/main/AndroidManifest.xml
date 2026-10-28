@@ -3,8 +3,12 @@
     <uses-permission
         android:name="android.permission.WRITE_SECURE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
-    <!-- Reads the Wi-Fi IP shown by the wireless debugging tile. No internet access. -->
+    <!-- Reads the Wi-Fi IP shown by the wireless debugging tile. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Required to query GitHub releases and download updates. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Required to prompt Android package installer for seamless in-place updates. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Caffeine: a foreground service holds a screen wake lock while it is on. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -290,6 +294,17 @@
                 <action android:name="android.net.VpnService"/>
             </intent-filter>
         </service>
+        <!-- FileProvider to safely grant the system package installer access to downloaded update APKs -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

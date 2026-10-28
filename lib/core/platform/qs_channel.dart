@@ -178,6 +178,27 @@ class QsChannel {
 
   Future<bool> restoreProfile() async => await _channel.invokeMethod<bool>('restoreProfile') ?? false;
 
+  /// Runtime app version information directly from the Android package manager.
+  Future<({String versionName, int versionCode})> getAppVersion() async {
+    final info = await _channel.invokeMapMethod<String, Object?>('getAppVersion');
+    return (
+      versionName: info!['versionName']! as String,
+      versionCode: (info['versionCode']! as num).toInt(),
+    );
+  }
+
+  /// Whether the app is allowed to request package installations on Android 8.0+.
+  Future<bool> canInstallPackages() async =>
+      await _channel.invokeMethod<bool>('canInstallPackages') ?? true;
+
+  /// Opens the system "Install unknown apps" settings screen for Switchly.
+  Future<bool> openInstallPermissionSettings() async =>
+      await _channel.invokeMethod<bool>('openInstallPermissionSettings') ?? false;
+
+  /// Prompts the Android package installer to install or update the given APK file.
+  Future<bool> installApk(String path) async =>
+      await _channel.invokeMethod<bool>('installApk', {'path': path}) ?? false;
+
   Future<Object?> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onLaunchRoute') {
       _launchRoutes.add(call.arguments as String);
