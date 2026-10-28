@@ -199,6 +199,37 @@ class QsChannel {
   Future<bool> installApk(String path) async =>
       await _channel.invokeMethod<bool>('installApk', {'path': path}) ?? false;
 
+  /// Whether Switchly has PACKAGE_USAGE_STATS permission to read app screen times.
+  Future<bool> hasUsageAccess() async =>
+      await _channel.invokeMethod<bool>('hasUsageAccess') ?? false;
+
+  /// Opens the system Usage Access settings screen for Switchly.
+  Future<bool> openUsageAccessSettings() async =>
+      await _channel.invokeMethod<bool>('openUsageAccessSettings') ?? false;
+
+  /// Gets today's foreground screen time calculated directly in native Kotlin.
+  Future<({int millis, String formatted})> getAppScreenTime(String packageName) async {
+    final result = await _channel.invokeMapMethod<String, Object?>(
+      'getAppScreenTime',
+      {'packageName': packageName},
+    );
+    return (
+      millis: (result?['millis'] as num?)?.toInt() ?? 0,
+      formatted: (result?['formatted'] as String?) ?? '0m',
+    );
+  }
+
+  /// Map of packageName to foregroundMillis today across all installed apps.
+  Future<Map<String, int>> getTodayUsageStats() async {
+    final raw = await _channel.invokeMapMethod<String, Object?>('getTodayUsageStats');
+    if (raw == null) return const {};
+    return raw.map((key, value) => MapEntry(key, (value as num).toInt()));
+  }
+
+  /// Triggers a refresh for the AppScreenTimeTile.
+  Future<bool> refreshAppScreenTimeTile() async =>
+      await _channel.invokeMethod<bool>('refreshAppScreenTimeTile') ?? false;
+
   Future<Object?> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onLaunchRoute') {
       _launchRoutes.add(call.arguments as String);

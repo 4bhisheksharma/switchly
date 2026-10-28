@@ -37,4 +37,7 @@ abstract final class PrefKeys {
 
   /// String: 'dark', 'light', or 'system'. Default 'dark'.
   static const appThemeMode = 'app_theme_mode';
+
+  /// JSON: `{"packageName", "appName", "openAppOnTap"}`: selected app for screen time tracking.
+  static const appUsageConfig = 'app_usage_config';
 }

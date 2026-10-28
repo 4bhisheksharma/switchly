@@ -16,6 +16,10 @@
     <!-- QR scanner. Asked for the first time the scanner opens; only used while it is open. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- Screen Time: allows reading foreground usage time for the user-selected app. -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
 
     <application
         android:label="Switchly"
@@ -231,6 +235,18 @@
             android:exported="true"
             android:icon="@drawable/ic_tile_battery"
             android:label="@string/tile_battery"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+
+        <!-- App Screen Time: reads fresh usage stats each time the panel opens. -->
+        <service
+            android:name=".tiles.AppScreenTimeTile"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_timer"
+            android:label="@string/tile_app_screen_time"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>

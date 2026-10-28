@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:nepali_utils/nepali_utils.dart';
-
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
 import '../../../core/platform/qs_channel.dart';
@@ -29,6 +28,7 @@ import '../../setup/data/setup_repository.dart';
 import '../../setup/presentation/add_tiles.dart';
 import '../../setup/presentation/permission_sheet.dart';
 import '../../updater/presentation/update_tile.dart';
+import '../../screen_time/bloc/screen_time_bloc.dart';
 
 enum _Category {
   all('All'),
@@ -79,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final fontActive = context.select((DisplayBloc b) => b.state.fontModified);
     final caffeineActive = context.select((CaffeineCubit b) => b.state.status.on);
     final profileActive = context.select((ProfilesBloc b) => b.state.active != null);
+    final screenTimeActive = context.select((ScreenTimeBloc b) => b.state.currentAppMillis > 0);
 
     final activeCount = [
       dnsActive,
@@ -89,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
       fontActive,
       caffeineActive,
       profileActive,
+      screenTimeActive,
     ].where((a) => a).length;
 
     final themeMode = context.watch<ThemeCubit>().state;
@@ -323,6 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
             subtitle: 'Quick tools accessible from any screen',
             children: [
               const _BsDateTileRow(),
+              const _AppScreenTimeTileRow(),
               _TileRow(
                 tile: qrScannerTile,
                 status: 'Scan any code · Offline',
@@ -441,6 +444,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (matches('check for updates', 'github releases new version download install upgrade')) {
       list.add(const UpdateCheckTile());
+    }
+    if (matches('screen time app usage timer', 'screen time track app usage digital wellbeing')) {
+      list.add(const _AppScreenTimeTileRow());
     }
 
     return list;
@@ -958,6 +964,41 @@ class _BsDateTileRow extends StatelessWidget {
       active: true,
       onTap: () => Navigator.of(context).pushNamed(AppRouter.calendar),
       trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
+    );
+  }
+}
+
+class _AppScreenTimeTileRow extends StatelessWidget {
+  const _AppScreenTimeTileRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<ScreenTimeBloc>().state;
+    final canAddTiles = canRequestAddTile(context);
+    final hasApp = state.config != null;
+    final status = hasApp
+        ? '${state.config!.appName} · ${state.currentAppFormatted}'
+        : (state.hasPermission ? 'Select an app to track' : 'Usage permission required');
+    final active = hasApp && state.currentAppMillis > 0;
+
+    return _TileRow(
+      tile: appScreenTimeTile,
+      status: status,
+      active: active,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.appScreenTime),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'Add to Quick Settings',
+            icon: const Icon(Symbols.add_circle_outline_rounded, size: 22),
+            onPressed: () => canAddTiles
+                ? requestAddTile(context, appScreenTimeTile)
+                : showAddTilesHelp(context),
+          ),
+          const Icon(Symbols.chevron_right_rounded, size: 20),
+        ],
+      ),
     );
   }
 }

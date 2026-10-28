@@ -34,6 +34,9 @@ object PrefKeys {
 
     /** Boolean: show a message at the top after a tile tap (closes the panel). Default true. */
     const val SHOW_TILE_MESSAGE = "show_tile_message"
+
+    /** JSON: `{"packageName", "appName", "openAppOnTap"}`. */
+    const val APP_USAGE_CONFIG = "app_usage_config"
 }
 
 /**

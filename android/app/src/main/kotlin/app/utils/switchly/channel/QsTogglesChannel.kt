@@ -29,6 +29,8 @@ import app.utils.switchly.power.BatteryInfo
 import app.utils.switchly.power.Caffeine
 import app.utils.switchly.profiles.Profiles
 import app.utils.switchly.scanner.ScannerActivity
+import app.utils.switchly.screentime.AppScreenTime
+import app.utils.switchly.tiles.AppScreenTimeTile
 import app.utils.switchly.tiles.TileRefresher
 import app.utils.switchly.tiles.TileRegistry
 import io.flutter.plugin.common.BinaryMessenger
@@ -210,6 +212,26 @@ class QsTogglesChannel(
                         }
                     }
                 }
+            }
+            "hasUsageAccess" -> result.success(AppScreenTime.hasUsageAccess(activity))
+            "openUsageAccessSettings" -> {
+                AppScreenTime.openUsageAccessSettings(activity)
+                result.success(true)
+            }
+            "getAppScreenTime" -> background(result) {
+                val pkg = call.argument<String>("packageName") ?: ""
+                val millis = AppScreenTime.getTodayForegroundTimeMillis(activity, pkg)
+                mapOf(
+                    "millis" to millis,
+                    "formatted" to AppScreenTime.formatDuration(millis),
+                )
+            }
+            "getTodayUsageStats" -> background(result) {
+                AppScreenTime.getTodayAllUsageStats(activity)
+            }
+            "refreshAppScreenTimeTile" -> {
+                TileRefresher.refresh(activity, AppScreenTimeTile::class.java)
+                result.success(true)
             }
             else -> result.notImplemented()
         }

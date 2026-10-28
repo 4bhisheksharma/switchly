@@ -12,6 +12,7 @@ import '../features/profiles/data/profile_models.dart';
 import '../features/profiles/presentation/profile_editor_screen.dart';
 import '../features/profiles/presentation/profiles_screen.dart';
 import '../features/quick_texts/presentation/quick_texts_screen.dart';
+import '../features/screen_time/presentation/screen_time_screen.dart';
 
 abstract final class AppRouter {
   static const root = '/';
@@ -24,6 +25,7 @@ abstract final class AppRouter {
   static const paymentQr = '/payment-qr';
   static const fontSize = '/font-size';
   static const caffeine = '/caffeine';
+  static const appScreenTime = '/app-screen-time';
 
   /// Pass the [Profile] to edit as `arguments`, or nothing to create one.
   static const profileEditor = '/profiles/edit';
@@ -43,6 +45,7 @@ abstract final class AppRouter {
         'payment_qr' => paymentQr,
         'font_size' => fontSize,
         'caffeine' => caffeine,
+        'app_screen_time' => appScreenTime,
         _ => null,
       };
 
@@ -58,6 +61,7 @@ abstract final class AppRouter {
       paymentQr => const PaymentQrScreen(),
       fontSize => const FontSizeScreen(),
       caffeine => const CaffeineScreen(),
+      appScreenTime => const AppScreenTimeScreen(),
       profileEditor => ProfileEditorScreen(editing: settings.arguments as Profile?),
       _ => null,
     };

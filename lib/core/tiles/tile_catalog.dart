@@ -106,3 +106,10 @@ const paymentQrTile = TileDefinition(
   description: 'Show your QR to get paid, even from the lock screen.',
   icon: Symbols.qr_code_2_rounded,
 );
+
+const appScreenTimeTile = TileDefinition(
+  id: 'app_screen_time',
+  name: 'Screen time',
+  description: "Track today's screen time of a specific app in Quick Settings.",
+  icon: Symbols.timer_rounded,
+);
