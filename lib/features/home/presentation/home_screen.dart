@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:nepali_utils/nepali_utils.dart';
 import '../../../app/router.dart';
-import '../../../app/theme.dart';
 import '../../../core/platform/qs_channel.dart';
 import '../../../core/tiles/tile_catalog.dart';
 import '../../../core/widgets/section_header.dart';
@@ -122,6 +121,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     letterSpacing: -0.4,
                   ),
                 ),
+                if (activeCount > 0) ...[
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: scheme.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(
+                        color: scheme.primary.withValues(alpha: 0.3),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      '$activeCount active',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: scheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
             actions: [
@@ -151,26 +171,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 // In-app update alert banner (shown when an update is available)
                 const UpdateNotificationBanner(),
 
-                // Quick Dashboard Header
-                _SystemStatusBar(
-                  hasPermission: hasPermission,
-                  activeCount: activeCount,
-                  onSetupTap: () => showPermissionSheet(context),
-                ),
-                const SizedBox(height: 12),
-
                 // Search Bar
-                Container(
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainer,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
-                  ),
+                Material(
+                  color: scheme.surfaceContainerHigh.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(16),
                   child: TextField(
                     controller: _searchController,
                     style: theme.textTheme.bodyMedium,
                     decoration: InputDecoration(
+                      filled: false,
                       hintText: 'Search toggles (DNS, battery, caffeine...)',
                       hintStyle: theme.textTheme.bodyMedium?.copyWith(
                         color: scheme.onSurfaceVariant.withValues(alpha: 0.6),
@@ -184,6 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ? IconButton(
                               icon: const Icon(Symbols.close_rounded, size: 18),
                               onPressed: () {
+                                HapticFeedback.selectionClick();
                                 _searchController.clear();
                                 setState(() => _searchQuery = '');
                               },
@@ -192,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       border: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       enabledBorder: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
                     ),
                     onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
                   ),
@@ -212,6 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: _CategoryPill(
                               label: cat.label,
                               selected: _selectedCategory == cat,
+                              badge: cat == _Category.all && activeCount > 0 ? activeCount : null,
                               onTap: () {
                                 HapticFeedback.selectionClick();
                                 setState(() => _selectedCategory = cat);
@@ -229,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   curve: Curves.easeOutCubic,
                   child: needsSetup && !isSearching
                       ? const Padding(
-                          padding: EdgeInsets.only(top: 16),
+                          padding: EdgeInsets.only(top: 14),
                           child: _SetupBanner(),
                         )
                       : const SizedBox(width: double.infinity),
@@ -453,94 +464,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// Compact status bar showing system access readiness and active toggles count.
-class _SystemStatusBar extends StatelessWidget {
-  const _SystemStatusBar({
-    required this.hasPermission,
-    required this.activeCount,
-    required this.onSetupTap,
-  });
-
-  final bool hasPermission;
-  final int activeCount;
-  final VoidCallback onSetupTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        children: [
-          InkWell(
-            onTap: hasPermission ? null : onSetupTap,
-            borderRadius: BorderRadius.circular(99),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: hasPermission
-                    ? const Color(0xFF10B981).withValues(alpha: 0.12)
-                    : scheme.error.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(99),
-                border: Border.all(
-                  color: hasPermission
-                      ? const Color(0xFF10B981).withValues(alpha: 0.3)
-                      : scheme.error.withValues(alpha: 0.3),
-                  width: 0.8,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    hasPermission ? Symbols.check_circle_rounded : Symbols.error_outline_rounded,
-                    size: 14,
-                    color: hasPermission ? const Color(0xFF10B981) : scheme.error,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    hasPermission ? 'System Access Active' : 'Setup Required',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: hasPermission ? const Color(0xFF10B981) : scheme.error,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const Spacer(),
-          Text(
-            activeCount == 0 ? 'All tiles standby' : '$activeCount active',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: activeCount > 0 ? scheme.primary : scheme.onSurfaceVariant.withValues(alpha: 0.8),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Minimal category filter pill.
+/// Minimal category filter pill with native touch feedback.
 class _CategoryPill extends StatelessWidget {
   const _CategoryPill({
     required this.label,
     required this.selected,
     required this.onTap,
+    this.badge,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final int? badge;
 
   @override
   Widget build(BuildContext context) {
@@ -548,26 +484,50 @@ class _CategoryPill extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     return Material(
-      color: Colors.transparent,
+      color: selected ? scheme.primary : scheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: selected ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.7),
+          width: 1,
+        ),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-          decoration: BoxDecoration(
-            color: selected ? scheme.primary : scheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selected ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.6),
-            ),
-          ),
-          child: Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+              if (badge != null && badge! > 0) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? scheme.onPrimary.withValues(alpha: 0.22)
+                        : scheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    '$badge',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? scheme.onPrimary : scheme.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
@@ -708,39 +668,57 @@ class _SetupBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(22),
-        gradient: AppTheme.brandGradient,
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.8)),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(Symbols.key_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Complete one-time setup',
-                style: theme.textTheme.titleSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Grant system settings permission via ADB to enable Private DNS, animations and display controls.',
-            style: theme.textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.88), height: 1.4),
-          ),
-          const SizedBox(height: 14),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFF3730A3),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: scheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
             ),
-            onPressed: () => showPermissionSheet(context),
-            child: const Text('Set up now'),
+            child: Icon(Symbols.key_rounded, color: scheme.primary, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'One-time permission required',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Grant WRITE_SECURE_SETTINGS via ADB or Shizuku to control Private DNS and display settings directly from quick tiles.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.tonal(
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    textStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  onPressed: () => showPermissionSheet(context),
+                  child: const Text('Set up now'),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1222,20 +1200,19 @@ class _ThemeOption extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     return Material(
-      color: Colors.transparent,
+      color: selected ? scheme.primary.withValues(alpha: 0.1) : scheme.surfaceContainerHigh.withValues(alpha: 0.4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: selected ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.5),
+          width: selected ? 1.5 : 1.0,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: selected ? scheme.primary.withValues(alpha: 0.1) : scheme.surfaceContainerHigh.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: selected ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.5),
-              width: selected ? 1.5 : 1.0,
-            ),
-          ),
           child: Row(
             children: [
               Icon(icon, color: selected ? scheme.primary : scheme.onSurfaceVariant, size: 22),

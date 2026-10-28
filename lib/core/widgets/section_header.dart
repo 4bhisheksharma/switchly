@@ -13,7 +13,7 @@ class SectionHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(6, 24, 6, 10),
+      padding: const EdgeInsets.fromLTRB(6, 22, 6, 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -22,19 +22,20 @@ class SectionHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title.toUpperCase(),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: colors.onSurfaceVariant.withValues(alpha: 0.8),
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: colors.onSurface,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.1,
+                    letterSpacing: -0.2,
                   ),
                 ),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     subtitle!,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colors.onSurfaceVariant.withValues(alpha: 0.85),
+                      height: 1.35,
                     ),
                   ),
                 ],

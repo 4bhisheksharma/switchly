@@ -14,19 +14,18 @@ class SelectChip extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     return Material(
-      color: Colors.transparent,
+      color: selected ? colors.primary : colors.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: selected ? colors.primary : colors.outlineVariant.withValues(alpha: 0.7),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: selected ? null : onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? colors.primary : colors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: selected ? colors.primary : colors.outlineVariant),
-          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -36,7 +35,10 @@ class SelectChip extends StatelessWidget {
               ],
               Text(
                 label,
-                style: theme.textTheme.labelLarge?.copyWith(color: selected ? colors.onPrimary : colors.onSurface),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: selected ? colors.onPrimary : colors.onSurface,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                ),
               ),
             ],
           ),

@@ -77,10 +77,13 @@ class HeroStatusCard extends StatelessWidget {
                 SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2, color: onCard)),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           Text(
-            label.toUpperCase(),
-            style: theme.textTheme.labelSmall?.copyWith(color: onCardMuted, letterSpacing: 1.2),
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: onCardMuted,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 4),
           AnimatedSwitcher(
