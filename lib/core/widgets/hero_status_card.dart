@@ -30,17 +30,28 @@ class HeroStatusCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final onCard = active ? Colors.white : colors.onSurface;
-    final onCardMuted = active ? Colors.white.withValues(alpha: 0.8) : colors.onSurfaceVariant;
+    final onCardMuted = active ? Colors.white.withValues(alpha: 0.85) : colors.onSurfaceVariant;
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 350),
       curve: Curves.easeOutCubic,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         color: active ? null : colors.surfaceContainerLow,
-        border: active ? null : Border.all(color: colors.outlineVariant),
+        border: Border.all(
+          color: active ? colors.primary.withValues(alpha: 0.3) : colors.outlineVariant.withValues(alpha: 0.65),
+        ),
         gradient: active ? AppTheme.brandGradient : null,
+        boxShadow: active
+            ? [
+                BoxShadow(
+                  color: colors.primary.withValues(alpha: 0.18),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                )
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

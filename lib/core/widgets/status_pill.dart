@@ -12,16 +12,21 @@ class StatusPill extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
       decoration: BoxDecoration(
-        color: highlighted ? colors.primaryContainer : colors.surfaceContainerHigh,
+        color: highlighted ? colors.primary.withValues(alpha: 0.12) : colors.surfaceContainerHigh.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(99),
+        border: Border.all(
+          color: highlighted ? colors.primary.withValues(alpha: 0.3) : colors.outlineVariant.withValues(alpha: 0.5),
+          width: 0.8,
+        ),
       ),
       child: Text(
         label,
         style: theme.textTheme.labelSmall?.copyWith(
           fontWeight: FontWeight.w700,
-          color: highlighted ? colors.onPrimaryContainer : colors.onSurfaceVariant,
+          color: highlighted ? colors.primary : colors.onSurfaceVariant,
+          letterSpacing: 0.2,
         ),
       ),
     );

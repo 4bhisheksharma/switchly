@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:nepali_utils/nepali_utils.dart';
+
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
 import '../../../core/platform/qs_channel.dart';
@@ -21,127 +22,203 @@ import '../../power/data/power_models.dart';
 import '../../power/presentation/caffeine_screen.dart';
 import '../../profiles/bloc/profiles_bloc.dart';
 import '../../quick_texts/bloc/quick_texts_bloc.dart';
+import '../../settings/tile_message_cubit.dart';
 import '../../setup/bloc/setup_bloc.dart';
 import '../../setup/data/setup_repository.dart';
 import '../../setup/presentation/add_tiles.dart';
 import '../../setup/presentation/permission_sheet.dart';
-import '../../settings/tile_message_cubit.dart';
 
-/// Overview of every tile with its live status.
-class HomeScreen extends StatelessWidget {
+enum _Category {
+  all('All'),
+  network('Network'),
+  display('Display'),
+  power('Power'),
+  everyday('Everyday'),
+  settings('Settings');
+
+  const _Category(this.label);
+  final String label;
+}
+
+/// Overview of every tile with live status, clean grouped sections, and quick search.
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  _Category _selectedCategory = _Category.all;
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final setup = context.watch<SetupBloc>().state;
-    final needsSetup = setup.status == SetupStatus.ready && !setup.hasPermission;
+    final hasPermission = setup.hasPermission;
+    final needsSetup = setup.status == SetupStatus.ready && !hasPermission;
     final canAddTiles = canRequestAddTile(context);
+
+    // Active status counts for the quick stats pill
+    final dnsActive = context.select((DnsBloc b) => b.state.live?.isEncrypted ?? false);
+    final killActive = context.select((NetworkBloc b) => b.state.killSwitchOn);
+    final adbActive = context.select((NetworkBloc b) => b.state.status?.wirelessDebugging ?? false);
+    final grayscaleActive = context.select((DisplayBloc b) => b.state.grayscale ?? false);
+    final animActive = context.select((DisplayBloc b) => b.state.animationModified);
+    final fontActive = context.select((DisplayBloc b) => b.state.fontModified);
+    final caffeineActive = context.select((CaffeineCubit b) => b.state.status.on);
+    final profileActive = context.select((ProfilesBloc b) => b.state.active != null);
+
+    final activeCount = [
+      dnsActive,
+      killActive,
+      adbActive,
+      grayscaleActive,
+      animActive,
+      fontActive,
+      caffeineActive,
+      profileActive,
+    ].where((a) => a).length;
+
+    final isSearching = _searchQuery.isNotEmpty;
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Title sits on the same row as the help icon instead of below it.
           SliverAppBar(
             pinned: true,
-            toolbarHeight: 72,
+            toolbarHeight: 68,
             title: Row(
               children: [
-                // Single-colour mark, tinted so it follows light/dark theme.
                 Image.asset(
                   'assets/logo/logo_mark.png',
-                  height: 32,
-                  color: theme.colorScheme.onSurface,
+                  height: 28,
+                  color: scheme.onSurface,
                   semanticLabel: 'Switchly logo',
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Text(
                   'Switchly',
-                  style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                  ),
                 ),
               ],
             ),
             actions: [
               IconButton(
                 tooltip: 'How to add tiles',
-                icon: const Icon(Symbols.help_rounded),
+                icon: const Icon(Symbols.help_outline_rounded, size: 22),
                 onPressed: () => showAddTilesHelp(context),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
             ],
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 48),
             sliver: SliverList.list(
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Text(
-                    "One-tap Quick Settings toggles Android doesn't give you.",
-                    style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                // Quick Dashboard Header
+                _SystemStatusBar(
+                  hasPermission: hasPermission,
+                  activeCount: activeCount,
+                  onSetupTap: () => showPermissionSheet(context),
+                ),
+                const SizedBox(height: 12),
+
+                // Search Bar
+                Container(
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    style: theme.textTheme.bodyMedium,
+                    decoration: InputDecoration(
+                      hintText: 'Search toggles (DNS, battery, caffeine...)',
+                      hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                      prefixIcon: Icon(
+                        Symbols.search_rounded,
+                        size: 20,
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+                      ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Symbols.close_rounded, size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
                   ),
                 ),
+
+                // Category filter chips (when not actively searching)
+                if (!isSearching) ...[
+                  const SizedBox(height: 12),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    clipBehavior: Clip.none,
+                    child: Row(
+                      children: [
+                        for (final cat in _Category.values)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _CategoryPill(
+                              label: cat.label,
+                              selected: _selectedCategory == cat,
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                setState(() => _selectedCategory = cat);
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // Setup banner (if permission still needed)
                 AnimatedSize(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeOutCubic,
-                  child: needsSetup
-                      ? const Padding(padding: EdgeInsets.only(top: 20), child: _SetupBanner())
+                  child: needsSetup && !isSearching
+                      ? const Padding(
+                          padding: EdgeInsets.only(top: 16),
+                          child: _SetupBanner(),
+                        )
                       : const SizedBox(width: double.infinity),
                 ),
-                const SectionHeader('Network'),
-                const _PrivateDnsCard(),
-                const SizedBox(height: 10),
-                const _KillSwitchCard(),
-                const SizedBox(height: 10),
-                const _WirelessDebuggingCard(),
-                const SectionHeader('Display'),
-                const _GrayscaleCard(),
-                const SizedBox(height: 10),
-                const _AnimationCard(),
-                const SizedBox(height: 10),
-                const _FontSizeCard(),
-                const SectionHeader('Power'),
-                const _CaffeineCard(),
-                const SizedBox(height: 10),
-                const _BatteryCard(),
-                const SectionHeader('Everyday'),
-                const _BsDateCard(),
-                const SizedBox(height: 10),
-                _TileCard(
-                  tile: qrScannerTile,
-                  status: 'Scan any QR code',
-                  active: false,
-                  onTap: () => context.read<QsChannel>().openQrScanner(),
-                  // No settings screen to hold the usual "Add to Quick Settings" button, so it lives here.
-                  trailing: IconButton.filledTonal(
-                    tooltip: 'Add to Quick Settings',
-                    icon: const Icon(Symbols.add_to_home_screen_rounded),
-                    onPressed: () =>
-                        canAddTiles ? requestAddTile(context, qrScannerTile) : showAddTilesHelp(context),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                _TileCard(
-                  tile: paymentQrTile,
-                  status: _countLabel(context.select((PaymentQrBloc b) => b.state.qrs.length), 'QR code'),
-                  active: false,
-                  onTap: () => Navigator.of(context).pushNamed(AppRouter.paymentQr),
-                  trailing: Icon(Symbols.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: 10),
-                _TileCard(
-                  tile: quickTextsTile,
-                  status: _countLabel(context.select((QuickTextsBloc b) => b.state.texts.length), 'text'),
-                  active: false,
-                  onTap: () => Navigator.of(context).pushNamed(AppRouter.quickTexts),
-                  // Not an on/off tile, so no status pill.
-                  trailing: Icon(Symbols.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: 10),
-                const _ProfilesCard(),
-                const SectionHeader('Preferences'),
-                const _TileMessageCard(),
-                const SizedBox(height: 32),
+
+                // Tile Groups
+                if (isSearching)
+                  _buildSearchResults(context, canAddTiles)
+                else
+                  _buildCategorizedSections(context, canAddTiles),
+
+                const SizedBox(height: 36),
                 const _PrivacyFooter(),
               ],
             ),
@@ -150,37 +227,267 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildSearchResults(BuildContext context, bool canAddTiles) {
+    final matches = _filterTiles(_searchQuery, context, canAddTiles);
+    if (matches.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 48),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(
+                Symbols.search_off_rounded,
+                size: 44,
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+              ),
+              const SizedBox(height: 12),
+              Text('No toggles match "$_searchQuery"', style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _searchQuery = '');
+                },
+                child: const Text('Clear search'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return _GroupedSection(
+      title: 'Search results',
+      children: matches,
+    );
+  }
+
+  Widget _buildCategorizedSections(BuildContext context, bool canAddTiles) {
+    final showAll = _selectedCategory == _Category.all;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (showAll || _selectedCategory == _Category.network)
+          const _GroupedSection(
+            title: 'Network',
+            subtitle: 'Encrypted DNS, kill switch and wireless debugging',
+            children: [
+              _PrivateDnsTileRow(),
+              _KillSwitchTileRow(),
+              _WirelessDebuggingTileRow(),
+            ],
+          ),
+        if (showAll || _selectedCategory == _Category.display)
+          const _GroupedSection(
+            title: 'Display',
+            subtitle: 'Focus mode, transition scales and text sizing',
+            children: [
+              _GrayscaleTileRow(),
+              _AnimationTileRow(),
+              _FontSizeTileRow(),
+            ],
+          ),
+        if (showAll || _selectedCategory == _Category.power)
+          const _GroupedSection(
+            title: 'Power',
+            subtitle: 'Keep screen awake and live battery diagnostics',
+            children: [
+              _CaffeineTileRow(),
+              _BatteryTileRow(),
+            ],
+          ),
+        if (showAll || _selectedCategory == _Category.everyday)
+          _GroupedSection(
+            title: 'Everyday',
+            subtitle: 'Quick tools accessible from any screen',
+            children: [
+              const _BsDateTileRow(),
+              _TileRow(
+                tile: qrScannerTile,
+                status: 'Scan any code · Offline',
+                active: false,
+                onTap: () => context.read<QsChannel>().openQrScanner(),
+                trailing: IconButton(
+                  tooltip: 'Add to Quick Settings',
+                  icon: const Icon(Symbols.add_circle_outline_rounded, size: 22),
+                  onPressed: () =>
+                      canAddTiles ? requestAddTile(context, qrScannerTile) : showAddTilesHelp(context),
+                ),
+              ),
+              _TileRow(
+                tile: paymentQrTile,
+                status: _countLabel(context.select((PaymentQrBloc b) => b.state.qrs.length), 'QR code'),
+                active: false,
+                onTap: () => Navigator.of(context).pushNamed(AppRouter.paymentQr),
+                trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
+              ),
+              _TileRow(
+                tile: quickTextsTile,
+                status: _countLabel(context.select((QuickTextsBloc b) => b.state.texts.length), 'text'),
+                active: false,
+                onTap: () => Navigator.of(context).pushNamed(AppRouter.quickTexts),
+                trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
+              ),
+              const _ProfilesTileRow(),
+            ],
+          ),
+        if (showAll || _selectedCategory == _Category.settings)
+          const _GroupedSection(
+            title: 'Preferences',
+            children: [
+              _TileMessageTileRow(),
+            ],
+          ),
+      ],
+    );
+  }
+
+  List<Widget> _filterTiles(String query, BuildContext context, bool canAddTiles) {
+    final list = <Widget>[];
+
+    bool matches(String name, String desc) =>
+        name.toLowerCase().contains(query) || desc.toLowerCase().contains(query);
+
+    if (matches('private dns', 'encrypted network doh provider cycle')) {
+      list.add(const _PrivateDnsTileRow());
+    }
+    if (matches('internet kill switch', 'block traffic disconnect drop vpn')) {
+      list.add(const _KillSwitchTileRow());
+    }
+    if (matches('wireless debugging', 'adb wifi port developer')) {
+      list.add(const _WirelessDebuggingTileRow());
+    }
+    if (matches('grayscale', 'black and white monochrome display color')) {
+      list.add(const _GrayscaleTileRow());
+    }
+    if (matches('animation speed', 'transition window scale fast animator')) {
+      list.add(const _AnimationTileRow());
+    }
+    if (matches('font size', 'text scale large readability font')) {
+      list.add(const _FontSizeTileRow());
+    }
+    if (matches('caffeine', 'stay awake screen timeout display lock sleep')) {
+      list.add(const _CaffeineTileRow());
+    }
+    if (matches('battery', 'charging wattage power temperature level')) {
+      list.add(const _BatteryTileRow());
+    }
+    if (matches('nepali date', 'calendar bikram sambat bs ad')) {
+      list.add(const _BsDateTileRow());
+    }
+    if (matches('scan qr', 'camera scanner barcode offline')) {
+      list.add(_TileRow(
+        tile: qrScannerTile,
+        status: 'Scan any code · Offline',
+        active: false,
+        onTap: () => context.read<QsChannel>().openQrScanner(),
+        trailing: IconButton(
+          tooltip: 'Add to Quick Settings',
+          icon: const Icon(Symbols.add_circle_outline_rounded, size: 22),
+          onPressed: () =>
+              canAddTiles ? requestAddTile(context, qrScannerTile) : showAddTilesHelp(context),
+        ),
+      ));
+    }
+    if (matches('payment qr', 'esewa khalti fonepay wallet lock screen')) {
+      list.add(_TileRow(
+        tile: paymentQrTile,
+        status: _countLabel(context.select((PaymentQrBloc b) => b.state.qrs.length), 'QR code'),
+        active: false,
+        onTap: () => Navigator.of(context).pushNamed(AppRouter.paymentQr),
+        trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
+      ));
+    }
+    if (matches('quick texts', 'clipboard snippets paste copy text')) {
+      list.add(_TileRow(
+        tile: quickTextsTile,
+        status: _countLabel(context.select((QuickTextsBloc b) => b.state.texts.length), 'text'),
+        active: false,
+        onTap: () => Navigator.of(context).pushNamed(AppRouter.quickTexts),
+        trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
+      ));
+    }
+    if (matches('profiles', 'preset focus bundle toggle apply')) {
+      list.add(const _ProfilesTileRow());
+    }
+    if (matches('preferences message', 'show message after tap toast notify')) {
+      list.add(const _TileMessageTileRow());
+    }
+
+    return list;
+  }
 }
 
-class _SetupBanner extends StatelessWidget {
-  const _SetupBanner();
+/// Compact status bar showing system access readiness and active toggles count.
+class _SystemStatusBar extends StatelessWidget {
+  const _SystemStatusBar({
+    required this.hasPermission,
+    required this.activeCount,
+    required this.onSetupTap,
+  });
+
+  final bool hasPermission;
+  final int activeCount;
+  final VoidCallback onSetupTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), gradient: AppTheme.brandGradient),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: Row(
         children: [
-          Row(
-            children: [
-              const Icon(Symbols.key_rounded, color: Colors.white, fill: 1),
-              const SizedBox(width: 10),
-              Text('Finish setup', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white)),
-            ],
+          InkWell(
+            onTap: hasPermission ? null : onSetupTap,
+            borderRadius: BorderRadius.circular(99),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: hasPermission
+                    ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                    : scheme.error.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(99),
+                border: Border.all(
+                  color: hasPermission
+                      ? const Color(0xFF10B981).withValues(alpha: 0.3)
+                      : scheme.error.withValues(alpha: 0.3),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    hasPermission ? Symbols.check_circle_rounded : Symbols.error_outline_rounded,
+                    size: 14,
+                    color: hasPermission ? const Color(0xFF10B981) : scheme.error,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    hasPermission ? 'System Access Active' : 'Setup Required',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: hasPermission ? const Color(0xFF10B981) : scheme.error,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 8),
+          const Spacer(),
           Text(
-            'Grant a one-time permission so your tiles can change system settings.',
-            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.85)),
-          ),
-          const SizedBox(height: 16),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF4F46E5)),
-            onPressed: () => showPermissionSheet(context),
-            child: const Text('Set up now'),
+            activeCount == 0 ? 'All tiles standby' : '$activeCount active',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: activeCount > 0 ? scheme.primary : scheme.onSurfaceVariant.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -188,9 +495,101 @@ class _SetupBanner extends StatelessWidget {
   }
 }
 
-/// One row per tile: icon, live status, and either a chevron or an inline [trailing] control.
-class _TileCard extends StatelessWidget {
-  const _TileCard({
+/// Minimal category filter pill.
+class _CategoryPill extends StatelessWidget {
+  const _CategoryPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: selected ? scheme.primary : scheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.6),
+            ),
+          ),
+          child: Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Clean container holding a group of related tiles with subtle hairlines.
+class _GroupedSection extends StatelessWidget {
+  const _GroupedSection({
+    required this.title,
+    this.subtitle,
+    required this.children,
+  });
+
+  final String title;
+  final String? subtitle;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(title, subtitle: subtitle),
+        Material(
+          color: scheme.surfaceContainerLow,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+            side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.65)),
+          ),
+          child: Column(
+            children: [
+              for (int i = 0; i < children.length; i++) ...[
+                if (i > 0)
+                  Divider(
+                    height: 1,
+                    indent: 74,
+                    color: scheme.outlineVariant.withValues(alpha: 0.45),
+                  ),
+                children[i],
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Single tile row inside a grouped section.
+class _TileRow extends StatelessWidget {
+  const _TileRow({
     required this.tile,
     required this.status,
     required this.active,
@@ -207,58 +606,121 @@ class _TileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(18),
+    final scheme = theme.colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           child: Row(
             children: [
-              TileIcon(tile.icon, active: active, size: 52),
-              const SizedBox(width: 16),
+              TileIcon(tile.icon, active: active, size: 44),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(tile.name, style: theme.textTheme.titleMedium),
+                    Text(
+                      tile.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 250),
+                      duration: const Duration(milliseconds: 200),
                       child: Text(
                         status,
                         key: ValueKey(status),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: active ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-                          fontWeight: active ? FontWeight.w600 : null,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: active ? scheme.primary : scheme.onSurfaceVariant,
+                          fontWeight: active ? FontWeight.w600 : FontWeight.w400,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              ...trailing != null
-                  ? [trailing!]
-                  : [
-                      StatusPill(active ? 'On' : 'Off', highlighted: active),
-                      const SizedBox(width: 4),
-                      Icon(Symbols.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
-                    ],
+              const SizedBox(width: 8),
+              if (trailing != null)
+                trailing!
+              else
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    StatusPill(active ? 'On' : 'Off', highlighted: active),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Symbols.chevron_right_rounded,
+                      size: 20,
+                      color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
+      );
+  }
+}
+
+class _SetupBanner extends StatelessWidget {
+  const _SetupBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: AppTheme.brandGradient,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Symbols.key_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Complete one-time setup',
+                style: theme.textTheme.titleSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Grant system settings permission via ADB to enable Private DNS, animations and display controls.',
+            style: theme.textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.88), height: 1.4),
+          ),
+          const SizedBox(height: 14),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF3730A3),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            ),
+            onPressed: () => showPermissionSheet(context),
+            child: const Text('Set up now'),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _PrivateDnsCard extends StatelessWidget {
-  const _PrivateDnsCard();
+class _PrivateDnsTileRow extends StatelessWidget {
+  const _PrivateDnsTileRow();
 
   @override
   Widget build(BuildContext context) {
     final dns = context.watch<DnsBloc>().state;
     final active = dns.live?.isEncrypted ?? false;
-    return _TileCard(
+    return _TileRow(
       tile: privateDnsTile,
       status: active ? dns.liveLabel : 'Encrypted DNS is ${dns.liveLabel.toLowerCase()}',
       active: active,
@@ -267,149 +729,25 @@ class _PrivateDnsCard extends StatelessWidget {
   }
 }
 
-/// Grayscale has no settings, so it toggles right here.
-class _GrayscaleCard extends StatelessWidget {
-  const _GrayscaleCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final on = context.select((DisplayBloc bloc) => bloc.state.grayscale ?? false);
-
-    void toggle() {
-      if (!context.read<SetupBloc>().state.hasPermission) {
-        showPermissionSheet(context);
-        return;
-      }
-      HapticFeedback.selectionClick();
-      context.read<DisplayBloc>().add(GrayscaleSet(!on));
-    }
-
-    return _TileCard(
-      tile: grayscaleTile,
-      status: on ? 'Screen is in grayscale' : 'Full colour',
-      active: on,
-      onTap: toggle,
-      trailing: Switch(value: on, onChanged: (_) => toggle()),
-    );
-  }
-}
-
-class _AnimationCard extends StatelessWidget {
-  const _AnimationCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final state = context.watch<DisplayBloc>().state;
-    final speed = state.speed;
-    return _TileCard(
-      tile: animationSpeedTile,
-      status: switch (state.scales) {
-        null => '—',
-        _ when speed == null => 'Custom speeds',
-        _ when sameSpeed(speed, 0) => 'Animations off',
-        _ => '${speedLabel(speed)} · ${speedDescription(speed)}',
-      },
-      active: state.animationModified,
-      onTap: () => Navigator.of(context).pushNamed(AppRouter.animation),
-    );
-  }
-}
-
-class _FontSizeCard extends StatelessWidget {
-  const _FontSizeCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final state = context.watch<DisplayBloc>().state;
-    final scale = state.fontScale;
-    return _TileCard(
-      tile: fontSizeTile,
-      status: scale == null ? '—' : '${fontLabel(scale)} · ${fontDescription(scale)}',
-      active: state.fontModified,
-      onTap: () => Navigator.of(context).pushNamed(AppRouter.fontSize),
-    );
-  }
-}
-
-/// The switch starts the first duration in the tile cycle; tap the card for the rest.
-class _CaffeineCard extends StatelessWidget {
-  const _CaffeineCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final state = context.watch<CaffeineCubit>().state;
-    final on = state.status.on;
-    final cubit = context.read<CaffeineCubit>();
-    return _TileCard(
-      tile: caffeineTile,
-      status: on ? caffeineDetail(context, state.status) : 'Off',
-      active: on,
-      onTap: () => Navigator.of(context).pushNamed(AppRouter.caffeine),
-      trailing: Switch(
-        value: on,
-        onChanged: (v) {
-          HapticFeedback.selectionClick();
-          v ? cubit.start(state.config.minutes.first) : cubit.stop();
-        },
-      ),
-    );
-  }
-}
-
-/// Live readings. Nothing to configure, so tapping offers to add the tile.
-class _BatteryCard extends StatelessWidget {
-  const _BatteryCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final battery = context.watch<BatteryCubit>().state;
-    final canAdd = canRequestAddTile(context);
-    return _TileCard(
-      tile: batteryTile,
-      status: battery == null ? '—' : batterySummary(battery),
-      active: battery?.plugged ?? false,
-      onTap: () => canAdd ? requestAddTile(context, batteryTile) : showAddTilesHelp(context),
-      trailing: Icon(Symbols.add_circle_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
-    );
-  }
-}
-
-/// "85% · Charging 12.3 W · 31.2°C", matching the tile.
-String batterySummary(BatteryStatus b) => [
-      '${b.level}%',
-      if (b.plugged && b.full)
-        'Full'
-      else if (b.plugged)
-        b.watts != null ? 'Charging ${b.watts!.toStringAsFixed(1)} W' : 'Charging',
-      if (b.temperature != null) '${b.temperature!.toStringAsFixed(1)}°C',
-    ].join(' · ');
-
-String _countLabel(int count, String noun) => switch (count) {
-      0 => 'No ${noun}s saved',
-      1 => '1 $noun saved',
-      _ => '$count ${noun}s saved',
-    };
-
-class _KillSwitchCard extends StatelessWidget {
-  const _KillSwitchCard();
+class _KillSwitchTileRow extends StatelessWidget {
+  const _KillSwitchTileRow();
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<NetworkBloc>().state;
     final on = state.killSwitchOn;
     final allowed = state.allowedApps.length;
-    return _TileCard(
+    return _TileRow(
       tile: killSwitchTile,
-      status: on ? (allowed == 0 ? 'Internet blocked' : 'Blocked · $allowed allowed') : 'Internet on',
+      status: on ? (allowed == 0 ? 'Internet blocked' : 'Blocked · $allowed allowed') : 'Internet online',
       active: on,
       onTap: () => Navigator.of(context).pushNamed(AppRouter.killSwitch),
     );
   }
 }
 
-/// Toggles inline; while on, shows the address to connect to with a copy button.
-class _WirelessDebuggingCard extends StatelessWidget {
-  const _WirelessDebuggingCard();
+class _WirelessDebuggingTileRow extends StatelessWidget {
+  const _WirelessDebuggingTileRow();
 
   @override
   Widget build(BuildContext context) {
@@ -436,7 +774,7 @@ class _WirelessDebuggingCard extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Copied adb connect ${status.address}')));
     }
 
-    return _TileCard(
+    return _TileRow(
       tile: wirelessDebuggingTile,
       status: switch (status) {
         null => '—',
@@ -451,72 +789,190 @@ class _WirelessDebuggingCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (on && (status?.hasPort ?? false))
-            IconButton(tooltip: 'Copy adb connect', icon: const Icon(Symbols.content_copy_rounded), onPressed: copyAddress),
+            IconButton(
+              tooltip: 'Copy adb connect',
+              icon: const Icon(Symbols.content_copy_rounded, size: 18),
+              onPressed: copyAddress,
+            ),
           if (status?.wirelessSupported ?? false)
             status!.devOptions
                 ? Switch(value: on, onChanged: (_) => toggle())
-                : Icon(Symbols.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                : Icon(
+                    Symbols.chevron_right_rounded,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                  ),
         ],
       ),
     );
   }
 }
 
-class _BsDateCard extends StatelessWidget {
-  const _BsDateCard();
+class _GrayscaleTileRow extends StatelessWidget {
+  const _GrayscaleTileRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final on = context.select((DisplayBloc bloc) => bloc.state.grayscale ?? false);
+
+    void toggle() {
+      if (!context.read<SetupBloc>().state.hasPermission) {
+        showPermissionSheet(context);
+        return;
+      }
+      HapticFeedback.selectionClick();
+      context.read<DisplayBloc>().add(GrayscaleSet(!on));
+    }
+
+    return _TileRow(
+      tile: grayscaleTile,
+      status: on ? 'Monochrome active' : 'Full colour display',
+      active: on,
+      onTap: toggle,
+      trailing: Switch(value: on, onChanged: (_) => toggle()),
+    );
+  }
+}
+
+class _AnimationTileRow extends StatelessWidget {
+  const _AnimationTileRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<DisplayBloc>().state;
+    final speed = state.speed;
+    return _TileRow(
+      tile: animationSpeedTile,
+      status: switch (state.scales) {
+        null => '—',
+        _ when speed == null => 'Custom scales active',
+        _ when sameSpeed(speed, 0) => 'Animations disabled',
+        _ => '${speedLabel(speed)} · ${speedDescription(speed)}',
+      },
+      active: state.animationModified,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.animation),
+    );
+  }
+}
+
+class _FontSizeTileRow extends StatelessWidget {
+  const _FontSizeTileRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<DisplayBloc>().state;
+    final scale = state.fontScale;
+    return _TileRow(
+      tile: fontSizeTile,
+      status: scale == null ? '—' : '${fontLabel(scale)} · ${fontDescription(scale)}',
+      active: state.fontModified,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.fontSize),
+    );
+  }
+}
+
+class _CaffeineTileRow extends StatelessWidget {
+  const _CaffeineTileRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<CaffeineCubit>().state;
+    final on = state.status.on;
+    final cubit = context.read<CaffeineCubit>();
+    return _TileRow(
+      tile: caffeineTile,
+      status: on ? caffeineDetail(context, state.status) : 'Normal sleep timeout',
+      active: on,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.caffeine),
+      trailing: Switch(
+        value: on,
+        onChanged: (v) {
+          HapticFeedback.selectionClick();
+          v ? cubit.start(state.config.minutes.first) : cubit.stop();
+        },
+      ),
+    );
+  }
+}
+
+class _BatteryTileRow extends StatelessWidget {
+  const _BatteryTileRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final battery = context.watch<BatteryCubit>().state;
+    final canAdd = canRequestAddTile(context);
+    return _TileRow(
+      tile: batteryTile,
+      status: battery == null ? '—' : batterySummary(battery),
+      active: battery?.plugged ?? false,
+      onTap: () => canAdd ? requestAddTile(context, batteryTile) : showAddTilesHelp(context),
+      trailing: Icon(
+        Symbols.add_circle_outline_rounded,
+        size: 22,
+        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+      ),
+    );
+  }
+}
+
+class _BsDateTileRow extends StatelessWidget {
+  const _BsDateTileRow();
 
   @override
   Widget build(BuildContext context) {
     final nepali = context.watch<BsScriptCubit>().state;
     final today = DateTime.now().toNepaliDateTime();
-    return _TileCard(
+    return _TileRow(
       tile: bsDateTile,
       status: '${BsFormat.weekday(today, nepali)}, ${BsFormat.date(today, nepali)}',
       active: true,
       onTap: () => Navigator.of(context).pushNamed(AppRouter.calendar),
-      trailing: Icon(Symbols.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
+      trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
     );
   }
 }
 
-class _ProfilesCard extends StatelessWidget {
-  const _ProfilesCard();
+class _ProfilesTileRow extends StatelessWidget {
+  const _ProfilesTileRow();
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<ProfilesBloc>().state;
     final active = state.active;
-    return _TileCard(
+    return _TileRow(
       tile: profilesTile,
       status: active != null ? '${active.name} is active' : _countLabel(state.profiles.length, 'profile'),
       active: active != null,
       onTap: () => Navigator.of(context).pushNamed(AppRouter.profiles),
+      trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
     );
   }
 }
 
-/// Toggles the message tiles show after a tap. Android closes Quick Settings to show it.
-class _TileMessageCard extends StatelessWidget {
-  const _TileMessageCard();
+class _TileMessageTileRow extends StatelessWidget {
+  const _TileMessageTileRow();
 
   @override
   Widget build(BuildContext context) {
     final show = context.watch<TileMessageCubit>().state;
-    return Card(
-      child: SwitchListTile(
-        contentPadding: const EdgeInsets.fromLTRB(18, 10, 16, 10),
-        secondary: const TileIcon(Symbols.notifications_rounded, size: 52),
-        title: const Text('Show message after tap'),
-        subtitle: const Text(
-          'A short message such as "Private DNS: AdGuard" at the top. Quick Settings closes '
-          'to show it. When off, the panel stays open and the tile name shows the value.',
-        ),
-        value: show,
-        onChanged: (v) {
-          HapticFeedback.selectionClick();
-          context.read<TileMessageCubit>().set(v);
-        },
+    final theme = Theme.of(context);
+    return SwitchListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      secondary: const TileIcon(Symbols.notifications_rounded, size: 44),
+      title: Text(
+        'Show confirmation message',
+        style: theme.textTheme.titleMedium?.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
       ),
+      subtitle: Text(
+        'Displays brief banner feedback when toggling tiles from Quick Settings.',
+        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+      ),
+      value: show,
+      onChanged: (v) {
+        HapticFeedback.selectionClick();
+        context.read<TileMessageCubit>().set(v);
+      },
     );
   }
 }
@@ -527,14 +983,44 @@ class _PrivacyFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    final color = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.65);
+    return Column(
       children: [
-        Icon(Symbols.verified_user_rounded, size: 16, color: color),
-        const SizedBox(width: 6),
-        Text('Fully offline · No tracking', style: theme.textTheme.labelMedium?.copyWith(color: color)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Symbols.shield_rounded, size: 15, color: color),
+            const SizedBox(width: 6),
+            Text(
+              '100% Offline · Zero Data Collection',
+              style: theme.textTheme.labelSmall?.copyWith(color: color, letterSpacing: 0.3),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Switchly v0.0.3 · GPL-3.0 License',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: color.withValues(alpha: 0.7),
+            fontSize: 11,
+          ),
+        ),
       ],
     );
   }
 }
+
+String batterySummary(BatteryStatus b) => [
+      '${b.level}%',
+      if (b.plugged && b.full)
+        'Full'
+      else if (b.plugged)
+        b.watts != null ? 'Charging ${b.watts!.toStringAsFixed(1)} W' : 'Charging',
+      if (b.temperature != null) '${b.temperature!.toStringAsFixed(1)}°C',
+    ].join(' · ');
+
+String _countLabel(int count, String noun) => switch (count) {
+      0 => 'No ${noun}s saved',
+      1 => '1 $noun saved',
+      _ => '$count ${noun}s saved',
+    };

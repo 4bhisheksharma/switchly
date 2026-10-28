@@ -11,7 +11,7 @@ abstract final class AppTheme {
   static const brandGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+    colors: [Color(0xFF3730A3), Color(0xFF4F46E5)],
   );
 
   static ThemeData light() => _build(Brightness.light);
@@ -25,14 +25,14 @@ abstract final class AppTheme {
       brightness: brightness,
       dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
     ).copyWith(
-      // Hand-tuned neutrals: near-black in dark mode, soft off-white in light mode.
-      surface: dark ? const Color(0xFF0C0D11) : const Color(0xFFF6F6F9),
-      surfaceContainerLowest: dark ? const Color(0xFF09090C) : Colors.white,
-      surfaceContainerLow: dark ? const Color(0xFF14151B) : Colors.white,
-      surfaceContainer: dark ? const Color(0xFF1A1B22) : const Color(0xFFF0F0F5),
-      surfaceContainerHigh: dark ? const Color(0xFF21222A) : const Color(0xFFE9E9F0),
-      surfaceContainerHighest: dark ? const Color(0xFF292A33) : const Color(0xFFE2E2EA),
-      outlineVariant: dark ? const Color(0xFF262730) : const Color(0xFFE4E4EC),
+      // Hand-tuned neutrals: soft modern dark mode, clean off-white in light mode.
+      surface: dark ? const Color(0xFF0E0F14) : const Color(0xFFF8F9FC),
+      surfaceContainerLowest: dark ? const Color(0xFF090A0E) : Colors.white,
+      surfaceContainerLow: dark ? const Color(0xFF15161E) : Colors.white,
+      surfaceContainer: dark ? const Color(0xFF1B1D26) : const Color(0xFFEFF1F6),
+      surfaceContainerHigh: dark ? const Color(0xFF232531) : const Color(0xFFE5E8F0),
+      surfaceContainerHighest: dark ? const Color(0xFF2B2D3C) : const Color(0xFFDBDFEA),
+      outlineVariant: dark ? const Color(0xFF262837) : const Color(0xFFE2E5EE),
     );
 
     final base = ThemeData(brightness: brightness, useMaterial3: true, fontFamily: fontFamily);
@@ -59,6 +59,11 @@ abstract final class AppTheme {
       textTheme: text,
       scaffoldBackgroundColor: scheme.surface,
       splashFactory: InkSparkle.splashFactory,
+      dividerTheme: DividerThemeData(
+        color: scheme.outlineVariant.withValues(alpha: 0.5),
+        thickness: 1,
+        space: 1,
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
@@ -76,8 +81,8 @@ abstract final class AppTheme {
         color: scheme.surfaceContainerLow,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: scheme.outlineVariant),
+          borderRadius: BorderRadius.circular(22),
+          side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.65)),
         ),
       ),
       listTileTheme: ListTileThemeData(
