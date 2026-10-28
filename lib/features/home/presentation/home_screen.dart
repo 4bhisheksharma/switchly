@@ -1268,7 +1268,7 @@ class _PrivacyFooter extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Switchly v0.0.3 · GPL-3.0 License',
+          'Switchly v0.0.4 · GPL-3.0 License',
           style: theme.textTheme.bodySmall?.copyWith(
             color: color.withValues(alpha: 0.7),
             fontSize: 11,

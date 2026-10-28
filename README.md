@@ -61,11 +61,19 @@ Switchly is fully offline. It does not request the internet permission, contains
 
 | Tile | What it does |
 | --- | --- |
+| **App Screen Time** | Track daily screen time for specific apps directly from Quick Settings. Supports up to 4 dedicated tiles (`Tile 1`, `Tile 2`, `Tile 3`, `Tile 4`). Calculates usage 100% locally on-device using native Android `UsageStatsManager`, with zero battery drain and complete offline privacy. |
 | **Nepali date** | Shows today's Bikram Sambat (BS) date on the tile, in Nepali or English script. The app includes a full BS calendar and an AD to BS converter. |
 | **Scan QR** | Opens a QR scanner from anywhere. Links, phone numbers, email addresses and locations get an Open button, and Wi-Fi codes show the network name and password. Links are shown in full and are never opened automatically. Scanning happens entirely on the phone. |
 | **Payment QR** | Shows your saved payment QR codes (eSewa, Khalti, Fonepay, bank and others) full screen at maximum brightness, without opening any other app. Works from the lock screen. |
 | **Quick texts** | Saves text you type often, such as an address, account number or a standard reply. Tap the tile, pick a text, and it is copied to the clipboard. |
 | **Profiles** | Applies several settings at once, for example "Focus" = AdGuard DNS + Grayscale + faster animations. A "Restore" option puts everything back as it was. |
+
+### Preferences & System
+
+| Feature | What it does |
+| --- | --- |
+| **In-app updates** | Built-in GitHub release checker. Automatically notifies you when a new release is available, shows changelogs, and enables 1-tap download & install without losing any saved data. |
+| **Appearance** | Deep modern dark mode by default, tailored for OLED battery life and night comfort, with instant toggle to light or follow system. |
 
 Long-press any Switchly tile in Quick Settings to open its settings screen in the app.
 
@@ -110,7 +118,7 @@ Long-press any Switchly tile in Quick Settings to open its settings screen in th
 2. Under **Assets**, download the `.apk` file.
 3. Open the downloaded file on your phone and tap **Install**. If Android asks, allow your browser or file manager to install unknown apps.
 
-To update, download and install the newer APK from the releases page. Your settings are kept.
+**In-App Updates:** Once installed, Switchly checks for newer GitHub releases automatically (or via **Preferences > Check for Updates**). You can review the changelog and install updates with a single tap without uninstalling the app or losing any saved QR codes, quick texts, or settings.
 
 ## Getting started
 
@@ -180,9 +188,11 @@ Switchly only declares permissions that a feature actively uses.
 | Permission | Why it is needed |
 | --- | --- |
 | `WRITE_SECURE_SETTINGS` | Change Private DNS, grayscale, animation speed, font size and wireless debugging. Granted once over ADB. |
+| `PACKAGE_USAGE_STATS` | Calculate app screen time locally on-device for the App Screen Time tiles. Requested via Android's native Usage Access screen. |
 | `ACCESS_NETWORK_STATE` | Read the Wi-Fi IP address shown by the Wireless debugging tile. |
 | `WAKE_LOCK`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE` | Keep the screen on while Caffeine is active. |
 | `CAMERA` | Scan QR codes. Requested the first time you open the scanner, and only used while it is open. |
+| `REQUEST_INSTALL_PACKAGES` | Allows 1-tap in-app installation of updates downloaded from GitHub releases. |
 
 There is no `INTERNET` permission. The kill switch uses Android's VPN feature, which Android asks you to approve the first time; no traffic leaves the phone through it.
 
