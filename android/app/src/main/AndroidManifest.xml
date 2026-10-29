@@ -86,6 +86,16 @@
             android:taskAffinity=""
             android:theme="@style/QrTheme" />
 
+        <!-- Opened by the Quick texts tile; transparent dialog activity for reliable display on MIUI and all OEMs. -->
+        <activity
+            android:name=".texts.QuickTextsActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:theme="@style/TransparentDialogActivityTheme" />
+
         <!-- Quick Settings tiles. Keep in sync with tiles/TileRegistry.kt. -->
         <service
             android:name=".tiles.PrivateDnsTile"

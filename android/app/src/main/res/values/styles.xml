@@ -12,4 +12,8 @@
     <style name="QrTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen">
         <item name="android:windowBackground">@android:color/black</item>
     </style>
+    <!-- Transparent theme for quick tile dialog activities (e.g. Quick Texts) -->
+    <style name="TransparentDialogActivityTheme" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>
