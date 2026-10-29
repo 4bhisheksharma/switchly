@@ -28,9 +28,17 @@ class QsChannel {
 
   final MethodChannel _channel;
   final _launchRoutes = StreamController<String>.broadcast();
+  final _micLevels = StreamController<double>.broadcast();
+  final _micModeChanges = StreamController<String>.broadcast();
 
   /// Routes requested by native code while the app is running (tile tap / long-press).
   Stream<String> get launchRoutes => _launchRoutes.stream;
+
+  /// Live audio amplitude level (0.0 to 1.0) while testing microphone.
+  Stream<double> get micLevels => _micLevels.stream;
+
+  /// Broadcasts whenever the microphone routing mode is changed by native QS tile.
+  Stream<String> get micModeChanges => _micModeChanges.stream;
 
   Future<bool> hasWriteSecureSettings() async =>
       await _channel.invokeMethod<bool>('hasWriteSecureSettings') ?? false;
@@ -230,12 +238,42 @@ class QsChannel {
   Future<bool> refreshAppScreenTimeTile() async =>
       await _channel.invokeMethod<bool>('refreshAppScreenTimeTile') ?? false;
 
+  /// Current microphone mode, available modes, and connected devices list.
+  Future<({String currentMode, List<String> availableModes, List<Map<String, dynamic>> devices})>
+      getMicState() async {
+    final result = await _channel.invokeMapMethod<String, Object?>('getMicState');
+    final rawDevices = (result?['devices'] as List<dynamic>?) ?? [];
+    return (
+      currentMode: (result?['currentMode'] as String?) ?? 'auto',
+      availableModes: ((result?['availableModes'] as List<dynamic>?) ?? []).cast<String>(),
+      devices: rawDevices.map((d) => Map<String, dynamic>.from(d as Map)).toList(),
+    );
+  }
+
+  Future<bool> setMicMode(String mode) async =>
+      await _channel.invokeMethod<bool>('setMicMode', {'mode': mode}) ?? false;
+
+  Future<bool> startMicTest() async =>
+      await _channel.invokeMethod<bool>('startMicTest') ?? false;
+
+  Future<bool> stopMicTest() async =>
+      await _channel.invokeMethod<bool>('stopMicTest') ?? false;
+
   Future<Object?> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onLaunchRoute') {
       _launchRoutes.add(call.arguments as String);
+    } else if (call.method == 'onMicLevel') {
+      final level = (call.arguments as num?)?.toDouble() ?? 0.0;
+      _micLevels.add(level);
+    } else if (call.method == 'onMicModeChanged') {
+      _micModeChanges.add(call.arguments as String);
     }
     return null;
   }
 
-  void dispose() => _launchRoutes.close();
+  void dispose() {
+    _launchRoutes.close();
+    _micLevels.close();
+    _micModeChanges.close();
+  }
 }

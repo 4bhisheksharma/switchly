@@ -13,6 +13,7 @@ import '../features/profiles/presentation/profile_editor_screen.dart';
 import '../features/profiles/presentation/profiles_screen.dart';
 import '../features/quick_texts/presentation/quick_texts_screen.dart';
 import '../features/screen_time/presentation/screen_time_screen.dart';
+import '../features/microphone/presentation/mic_screen.dart';
 
 abstract final class AppRouter {
   static const root = '/';
@@ -26,6 +27,7 @@ abstract final class AppRouter {
   static const fontSize = '/font-size';
   static const caffeine = '/caffeine';
   static const appScreenTime = '/app-screen-time';
+  static const mic = '/mic';
 
   /// Pass the [Profile] to edit as `arguments`, or nothing to create one.
   static const profileEditor = '/profiles/edit';
@@ -46,6 +48,7 @@ abstract final class AppRouter {
         'font_size' => fontSize,
         'caffeine' => caffeine,
         'app_screen_time' => appScreenTime,
+        'mic_switcher' => mic,
         _ => null,
       };
 
@@ -62,6 +65,7 @@ abstract final class AppRouter {
       fontSize => const FontSizeScreen(),
       caffeine => const CaffeineScreen(),
       appScreenTime => const AppScreenTimeScreen(),
+      mic => const MicScreen(),
       profileEditor => ProfileEditorScreen(editing: settings.arguments as Profile?),
       _ => null,
     };

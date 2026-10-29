@@ -32,7 +32,7 @@ object PrefKeys {
     /** JSON: `{"minutes": [Int], "stopOnLock": Boolean}`; 0 minutes means no time limit. */
     const val CAFFEINE_CONFIG = "caffeine_config"
 
-    /** Boolean: show a message at the top after a tile tap (closes the panel). Default true. */
+    /** Boolean: show a message at the top after a tile tap (closes the panel). Default false. */
     const val SHOW_TILE_MESSAGE = "show_tile_message"
 
     /** JSON: `{"packageName", "appName", "openAppOnTap"}`. */

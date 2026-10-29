@@ -111,13 +111,15 @@ abstract class BaseTile : TileService() {
         scope.launch {
             try {
                 withContext(Dispatchers.IO) { toggle() }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                // Normal lifecycle cancellation when the tile unbinds or closes; not an error.
             } catch (e: Exception) {
                 Log.e(javaClass.simpleName, "Toggle failed", e)
             } finally {
                 toggling = false
             }
             refresh()
-            if (SharedConfig.getBoolean(this@BaseTile, PrefKeys.SHOW_TILE_MESSAGE, true)) {
+            if (SharedConfig.getBoolean(this@BaseTile, PrefKeys.SHOW_TILE_MESSAGE, false)) {
                 qsTile?.let(::announcement)?.let(::announce)
             }
         }

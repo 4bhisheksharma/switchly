@@ -35,7 +35,9 @@ object TileRegistry {
         TileInfo("app_screen_time_2", AppScreenTimeTile2::class.java, R.string.tile_app_screen_time_2, R.drawable.ic_tile_timer),
         TileInfo("app_screen_time_3", AppScreenTimeTile3::class.java, R.string.tile_app_screen_time_3, R.drawable.ic_tile_timer),
         TileInfo("app_screen_time_4", AppScreenTimeTile4::class.java, R.string.tile_app_screen_time_4, R.drawable.ic_tile_timer),
+        TileInfo("mic_switcher", MicSwitcherTile::class.java, R.string.tile_mic_switcher, R.drawable.ic_tile_mic),
     )
+
 
     fun byId(id: String?): TileInfo? {
         if (id == "app_screen_time") return all.firstOrNull { it.id == "app_screen_time_1" }

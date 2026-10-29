@@ -5,13 +5,13 @@ import '../../core/storage/pref_keys.dart';
 
 /// Whether tiles show a message at the top after a tap. Read by `BaseTile` in Kotlin.
 class TileMessageCubit extends Cubit<bool> {
-  TileMessageCubit() : super(true) {
+  TileMessageCubit() : super(false) {
     _load();
   }
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    emit(prefs.getBool(PrefKeys.showTileMessage) ?? true);
+    emit(prefs.getBool(PrefKeys.showTileMessage) ?? false);
   }
 
   Future<void> set(bool show) async {
