@@ -18,6 +18,4 @@
     <string name="tile_app_screen_time_2">Screen time 2</string>
     <string name="tile_app_screen_time_3">Screen time 3</string>
     <string name="tile_app_screen_time_4">Screen time 4</string>
-    <string name="tile_mic_switcher">Microphone</string>
 </resources>
-

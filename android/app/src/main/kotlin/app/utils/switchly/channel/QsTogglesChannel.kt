@@ -17,7 +17,6 @@ import android.provider.Settings
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import java.io.File
-import app.utils.switchly.audio.MicRouter
 import app.utils.switchly.core.Permissions
 import app.utils.switchly.display.AnimationScale
 import app.utils.switchly.display.FontScale
@@ -51,13 +50,6 @@ class QsTogglesChannel(
 
     private val channel = MethodChannel(messenger, NAME).also { it.setMethodCallHandler(this) }
     private val mainHandler = Handler(Looper.getMainLooper())
-
-    init {
-        MicRouter.ensureListeners(activity)
-        MicRouter.onModeChangedListener = { mode ->
-            mainHandler.post { channel.invokeMethod("onMicModeChanged", mode) }
-        }
-    }
 
     /** Route from the intent that cold-started the app, kept until Flutter asks for it. */
     private var pendingRoute: String? = null
@@ -245,28 +237,6 @@ class QsTogglesChannel(
                 TileRefresher.refresh(activity, AppScreenTimeTile2::class.java)
                 TileRefresher.refresh(activity, AppScreenTimeTile3::class.java)
                 TileRefresher.refresh(activity, AppScreenTimeTile4::class.java)
-                result.success(true)
-            }
-            "getMicState" -> background(result) {
-                mapOf(
-                    "currentMode" to MicRouter.getCurrentMode(activity),
-                    "availableModes" to MicRouter.getAvailableModes(activity),
-                    "devices" to MicRouter.getConnectedDevicesInfo(activity),
-                )
-            }
-            "setMicMode" -> {
-                val mode = call.argument<String>("mode") ?: MicRouter.MODE_AUTO
-                MicRouter.setMode(activity, mode)
-                result.success(true)
-            }
-            "startMicTest" -> {
-                val started = MicRouter.startMicTest(activity) { level ->
-                    channel.invokeMethod("onMicLevel", level)
-                }
-                result.success(started)
-            }
-            "stopMicTest" -> {
-                MicRouter.stopMicTest()
                 result.success(true)
             }
             else -> result.notImplemented()

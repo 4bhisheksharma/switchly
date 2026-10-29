@@ -28,7 +28,6 @@ import '../../setup/presentation/add_tiles.dart';
 import '../../setup/presentation/permission_sheet.dart';
 import '../../updater/presentation/update_tile.dart';
 import '../../screen_time/bloc/screen_time_bloc.dart';
-import '../../microphone/bloc/mic_bloc.dart';
 
 enum _Category {
   all('All'),
@@ -80,7 +79,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final caffeineActive = context.select((CaffeineCubit b) => b.state.status.on);
     final profileActive = context.select((ProfilesBloc b) => b.state.active != null);
     final screenTimeActive = context.select((ScreenTimeBloc b) => b.state.currentAppMillis > 0);
-    final micActive = context.select((MicBloc b) => b.state.isManualOverride);
 
     final activeCount = [
       dnsActive,
@@ -92,7 +90,6 @@ class _HomeScreenState extends State<HomeScreen> {
       caffeineActive,
       profileActive,
       screenTimeActive,
-      micActive,
     ].where((a) => a).length;
 
     final themeMode = context.watch<ThemeCubit>().state;
@@ -338,7 +335,6 @@ class _HomeScreenState extends State<HomeScreen> {
             title: 'Everyday',
             subtitle: 'Quick tools accessible from any screen',
             children: [
-              const _MicSwitcherTileRow(),
               const _BsDateTileRow(),
               const _AppScreenTimeTileRow(),
               _TileRow(
@@ -409,9 +405,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (matches('caffeine', 'stay awake screen timeout display lock sleep')) {
       list.add(const _CaffeineTileRow());
-    }
-    if (matches('microphone', 'mic earbuds earphones headset audio sound voice record')) {
-      list.add(const _MicSwitcherTileRow());
     }
     if (matches('battery', 'charging wattage power temperature level')) {
       list.add(const _BatteryTileRow());
@@ -911,23 +904,6 @@ class _CaffeineTileRow extends StatelessWidget {
           v ? cubit.start(state.config.minutes.first) : cubit.stop();
         },
       ),
-    );
-  }
-}
-
-class _MicSwitcherTileRow extends StatelessWidget {
-  const _MicSwitcherTileRow();
-
-  @override
-  Widget build(BuildContext context) {
-    final state = context.watch<MicBloc>().state;
-    final isOverride = state.isManualOverride;
-    return _TileRow(
-      tile: micSwitcherTile,
-      status: state.currentModeTitle,
-      active: isOverride,
-      onTap: () => Navigator.of(context).pushNamed(AppRouter.mic),
-      trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
     );
   }
 }

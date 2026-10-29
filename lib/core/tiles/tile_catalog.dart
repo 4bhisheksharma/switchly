@@ -137,13 +137,6 @@ const appScreenTimeTile4 = TileDefinition(
   icon: Symbols.timer_rounded,
 );
 
-const micSwitcherTile = TileDefinition(
-  id: 'mic_switcher',
-  name: 'Microphone',
-  description: 'Quickly switch between phone mic, earbuds, and earphones.',
-  icon: Symbols.mic_rounded,
-);
-
 TileDefinition appScreenTimeTileForSlot(int slot) {
   return switch (slot) {
     2 => appScreenTimeTile2,
@@ -152,4 +145,3 @@ TileDefinition appScreenTimeTileForSlot(int slot) {
     _ => appScreenTimeTile,
   };
 }
-

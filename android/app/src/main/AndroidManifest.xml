@@ -20,10 +20,6 @@
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
-    <!-- Microphone Switcher: audio routing, Bluetooth headset discovery, and live mic testing. -->
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
     <application
         android:label="Switchly"
@@ -310,21 +306,6 @@
             android:exported="true"
             android:icon="@drawable/ic_tile_coffee"
             android:label="@string/tile_caffeine"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE"/>
-            </intent-filter>
-            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
-            <meta-data
-                android:name="android.service.quicksettings.ACTIVE_TILE"
-                android:value="true" />
-        </service>
-
-        <service
-            android:name=".tiles.MicSwitcherTile"
-            android:exported="true"
-            android:icon="@drawable/ic_tile_mic"
-            android:label="@string/tile_mic_switcher"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
