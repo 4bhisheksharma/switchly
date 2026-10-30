@@ -40,4 +40,7 @@ abstract final class PrefKeys {
 
   /// JSON: `{"packageName", "appName", "openAppOnTap"}`: selected app for screen time tracking.
   static const appUsageConfig = 'app_usage_config';
+
+  /// JSON: Public mode config (blocked apps, hidden tiles, timeout, protection toggles).
+  static const publicModeConfig = 'public_mode_config';
 }

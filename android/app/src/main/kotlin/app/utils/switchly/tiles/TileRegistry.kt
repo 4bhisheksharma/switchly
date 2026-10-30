@@ -35,6 +35,7 @@ object TileRegistry {
         TileInfo("app_screen_time_2", AppScreenTimeTile2::class.java, R.string.tile_app_screen_time_2, R.drawable.ic_tile_timer),
         TileInfo("app_screen_time_3", AppScreenTimeTile3::class.java, R.string.tile_app_screen_time_3, R.drawable.ic_tile_timer),
         TileInfo("app_screen_time_4", AppScreenTimeTile4::class.java, R.string.tile_app_screen_time_4, R.drawable.ic_tile_timer),
+        TileInfo("public_mode", PublicModeTile::class.java, R.string.tile_public_mode, R.drawable.ic_tile_public_mode),
     )
 
     fun byId(id: String?): TileInfo? {

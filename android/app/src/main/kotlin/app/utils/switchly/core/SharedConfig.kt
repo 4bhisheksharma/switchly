@@ -37,6 +37,9 @@ object PrefKeys {
 
     /** JSON: `{"packageName", "appName", "openAppOnTap"}`. */
     const val APP_USAGE_CONFIG = "app_usage_config"
+
+    /** JSON: Public mode config. */
+    const val PUBLIC_MODE_CONFIG = "public_mode_config"
 }
 
 /**

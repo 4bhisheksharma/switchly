@@ -137,6 +137,13 @@ const appScreenTimeTile4 = TileDefinition(
   icon: Symbols.timer_rounded,
 );
 
+const publicModeTile = TileDefinition(
+  id: 'public_mode',
+  name: 'Public Mode',
+  description: 'Prepare your phone before handing it over.',
+  icon: Symbols.shield_person_rounded,
+);
+
 TileDefinition appScreenTimeTileForSlot(int slot) {
   return switch (slot) {
     2 => appScreenTimeTile2,
@@ -145,3 +152,4 @@ TileDefinition appScreenTimeTileForSlot(int slot) {
     _ => appScreenTimeTile,
   };
 }
+

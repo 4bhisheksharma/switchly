@@ -20,6 +20,12 @@
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
+    <!-- Public Mode: overlay to block restricted private apps from opening. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Public Mode: silence incoming notifications and previews while device is handed over. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <!-- Android 13+ runtime notification permission for foreground services. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:label="Switchly"
@@ -333,6 +339,33 @@
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Keeps the screen on for a user-chosen time after the user taps the Caffeine Quick Settings tile." />
+        </service>
+
+        <service
+            android:name=".tiles.PublicModeTile"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_public_mode"
+            android:label="@string/tile_public_mode"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name=".publicmode.PublicModeService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Monitors foreground apps to block private apps and manages timeout while Public Mode is active." />
         </service>
 
         <!-- Re-pushes tile state after an app update; SystemUI keeps the old state otherwise. -->

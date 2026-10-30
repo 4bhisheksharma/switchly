@@ -28,6 +28,7 @@ import app.utils.switchly.network.WirelessDebugging
 import app.utils.switchly.power.BatteryInfo
 import app.utils.switchly.power.Caffeine
 import app.utils.switchly.profiles.Profiles
+import app.utils.switchly.publicmode.PublicMode
 import app.utils.switchly.scanner.ScannerActivity
 import app.utils.switchly.screentime.AppScreenTime
 import app.utils.switchly.tiles.AppScreenTimeTile
@@ -237,6 +238,31 @@ class QsTogglesChannel(
                 TileRefresher.refresh(activity, AppScreenTimeTile2::class.java)
                 TileRefresher.refresh(activity, AppScreenTimeTile3::class.java)
                 TileRefresher.refresh(activity, AppScreenTimeTile4::class.java)
+                result.success(true)
+            }
+            "getPublicModeState" -> result.success(
+                mapOf(
+                    "active" to PublicMode.isActive(activity),
+                    "endsAt" to PublicMode.endsAt(activity),
+                    "hasUsageAccess" to PublicMode.hasUsageAccess(activity),
+                    "canDrawOverlays" to PublicMode.canDrawOverlays(activity),
+                    "hasDndAccess" to PublicMode.hasDndAccess(activity),
+                )
+            )
+            "activatePublicMode" -> background(result) {
+                PublicMode.activate(activity).alsoRefresh()
+            }
+            "deactivatePublicMode" -> background(result) {
+                PublicMode.deactivate(activity).alsoRefresh()
+            }
+            "canDrawOverlays" -> result.success(PublicMode.canDrawOverlays(activity))
+            "openOverlayPermissionSettings" -> {
+                PublicMode.openOverlaySettings(activity)
+                result.success(true)
+            }
+            "hasDndAccess" -> result.success(PublicMode.hasDndAccess(activity))
+            "openDndPermissionSettings" -> {
+                PublicMode.openDndSettings(activity)
                 result.success(true)
             }
             else -> result.notImplemented()

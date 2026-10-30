@@ -27,6 +27,8 @@ import '../../setup/data/setup_repository.dart';
 import '../../setup/presentation/add_tiles.dart';
 import '../../setup/presentation/permission_sheet.dart';
 import '../../updater/presentation/update_tile.dart';
+import '../../public_mode/bloc/public_mode_bloc.dart';
+import '../../public_mode/presentation/widgets/hand_over_card.dart';
 import '../../screen_time/bloc/screen_time_bloc.dart';
 
 enum _Category {
@@ -79,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final caffeineActive = context.select((CaffeineCubit b) => b.state.status.on);
     final profileActive = context.select((ProfilesBloc b) => b.state.active != null);
     final screenTimeActive = context.select((ScreenTimeBloc b) => b.state.currentAppMillis > 0);
+    final publicActive = context.select((PublicModeBloc b) => b.state.active);
 
     final activeCount = [
       dnsActive,
@@ -90,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
       caffeineActive,
       profileActive,
       screenTimeActive,
+      publicActive,
     ].where((a) => a).length;
 
     final themeMode = context.watch<ThemeCubit>().state;
@@ -246,6 +250,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       : const SizedBox(width: double.infinity),
                 ),
 
+                if (!isSearching) ...[
+                  const SizedBox(height: 14),
+                  const HandOverCard(),
+                ],
+
                 // Tile Groups
                 if (isSearching)
                   _buildSearchResults(context, canAddTiles)
@@ -298,17 +307,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCategorizedSections(BuildContext context, bool canAddTiles) {
     final showAll = _selectedCategory == _Category.all;
+    final publicModeState = context.watch<PublicModeBloc>().state;
+    final hiddenTiles = publicModeState.active ? publicModeState.config.hiddenTiles : const <String>[];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (showAll || _selectedCategory == _Category.network)
-          const _GroupedSection(
+          _GroupedSection(
             title: 'Network',
             subtitle: 'Encrypted DNS, kill switch and wireless debugging',
             children: [
-              _PrivateDnsTileRow(),
-              _KillSwitchTileRow(),
-              _WirelessDebuggingTileRow(),
+              const _PrivateDnsTileRow(),
+              if (!hiddenTiles.contains('kill_switch')) const _KillSwitchTileRow(),
+              if (!hiddenTiles.contains('wireless_debugging')) const _WirelessDebuggingTileRow(),
             ],
           ),
         if (showAll || _selectedCategory == _Category.display)
@@ -335,35 +347,40 @@ class _HomeScreenState extends State<HomeScreen> {
             title: 'Everyday',
             subtitle: 'Quick tools accessible from any screen',
             children: [
+              const _PublicModeTileRow(),
               const _BsDateTileRow(),
               const _AppScreenTimeTileRow(),
-              _TileRow(
-                tile: qrScannerTile,
-                status: 'Scan any code · Offline',
-                active: false,
-                onTap: () => context.read<QsChannel>().openQrScanner(),
-                trailing: IconButton(
-                  tooltip: 'Add to Quick Settings',
-                  icon: const Icon(Symbols.add_circle_outline_rounded, size: 22),
-                  onPressed: () =>
-                      canAddTiles ? requestAddTile(context, qrScannerTile) : showAddTilesHelp(context),
+              if (!hiddenTiles.contains('qr_scanner'))
+                _TileRow(
+                  tile: qrScannerTile,
+                  status: 'Scan any code · Offline',
+                  active: false,
+                  onTap: () => context.read<QsChannel>().openQrScanner(),
+                  trailing: IconButton(
+                    tooltip: 'Add to Quick Settings',
+                    icon: const Icon(Symbols.add_circle_outline_rounded, size: 22),
+                    onPressed: () =>
+                        canAddTiles ? requestAddTile(context, qrScannerTile) : showAddTilesHelp(context),
+                  ),
                 ),
-              ),
-              _TileRow(
-                tile: paymentQrTile,
-                status: _countLabel(context.select((PaymentQrBloc b) => b.state.qrs.length), 'QR code'),
-                active: false,
-                onTap: () => Navigator.of(context).pushNamed(AppRouter.paymentQr),
-                trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
-              ),
-              _TileRow(
-                tile: quickTextsTile,
-                status: _countLabel(context.select((QuickTextsBloc b) => b.state.texts.length), 'text'),
-                active: false,
-                onTap: () => Navigator.of(context).pushNamed(AppRouter.quickTexts),
-                trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
-              ),
-              const _ProfilesTileRow(),
+              if (!hiddenTiles.contains('payment_qr'))
+                _TileRow(
+                  tile: paymentQrTile,
+                  status: _countLabel(context.select((PaymentQrBloc b) => b.state.qrs.length), 'QR code'),
+                  active: false,
+                  onTap: () => Navigator.of(context).pushNamed(AppRouter.paymentQr),
+                  trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
+                ),
+              if (!hiddenTiles.contains('quick_texts'))
+                _TileRow(
+                  tile: quickTextsTile,
+                  status: _countLabel(context.select((QuickTextsBloc b) => b.state.texts.length), 'text'),
+                  active: false,
+                  onTap: () => Navigator.of(context).pushNamed(AppRouter.quickTexts),
+                  trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
+                ),
+              if (!hiddenTiles.contains('profiles'))
+                const _ProfilesTileRow(),
             ],
           ),
         if (showAll || _selectedCategory == _Category.settings)
@@ -458,6 +475,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (matches('screen time app usage timer', 'screen time track app usage digital wellbeing')) {
       list.add(const _AppScreenTimeTileRow());
+    }
+    if (matches('public mode hand phone over guest borrow lock private apps', 'prepare device temporary profile block private apps hide tiles')) {
+      list.add(const _PublicModeTileRow());
     }
 
     return list;
@@ -996,6 +1016,40 @@ class _ProfilesTileRow extends StatelessWidget {
       active: active != null,
       onTap: () => Navigator.of(context).pushNamed(AppRouter.profiles),
       trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
+    );
+  }
+}
+
+class _PublicModeTileRow extends StatelessWidget {
+  const _PublicModeTileRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<PublicModeBloc>().state;
+    final canAddTiles = canRequestAddTile(context);
+    final status = state.active
+        ? (state.endsAt > 0 ? '${state.formattedRemainingTime} left' : 'Active')
+        : (state.config.blockedPackages.isEmpty
+            ? 'Tap to hand over'
+            : '${state.config.blockedPackages.length} apps locked');
+
+    return _TileRow(
+      tile: publicModeTile,
+      status: status,
+      active: state.active,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.publicMode),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'Add to Quick Settings',
+            icon: const Icon(Symbols.add_circle_outline_rounded, size: 22),
+            onPressed: () =>
+                canAddTiles ? requestAddTile(context, publicModeTile) : showAddTilesHelp(context),
+          ),
+          const Icon(Symbols.chevron_right_rounded, size: 20),
+        ],
+      ),
     );
   }
 }

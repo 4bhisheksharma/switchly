@@ -230,6 +230,50 @@ class QsChannel {
   Future<bool> refreshAppScreenTimeTile() async =>
       await _channel.invokeMethod<bool>('refreshAppScreenTimeTile') ?? false;
 
+  /// Gets current state and permissions for Public Mode.
+  Future<
+      ({
+        bool active,
+        int endsAt,
+        bool hasUsageAccess,
+        bool canDrawOverlays,
+        bool hasDndAccess,
+      })> getPublicModeState() async {
+    final state = await _channel.invokeMapMethod<String, Object?>('getPublicModeState');
+    return (
+      active: state?['active'] as bool? ?? false,
+      endsAt: (state?['endsAt'] as num?)?.toInt() ?? 0,
+      hasUsageAccess: state?['hasUsageAccess'] as bool? ?? false,
+      canDrawOverlays: state?['canDrawOverlays'] as bool? ?? false,
+      hasDndAccess: state?['hasDndAccess'] as bool? ?? false,
+    );
+  }
+
+  /// Activates Public Mode natively (starts Foreground Service, monitors apps, applies protection).
+  Future<bool> activatePublicMode() async =>
+      await _channel.invokeMethod<bool>('activatePublicMode') ?? false;
+
+  /// Deactivates Public Mode and restores previous profile and settings.
+  Future<bool> deactivatePublicMode() async =>
+      await _channel.invokeMethod<bool>('deactivatePublicMode') ?? false;
+
+  /// Whether Switchly has permission to display over other apps (SYSTEM_ALERT_WINDOW).
+  Future<bool> canDrawOverlays() async =>
+      await _channel.invokeMethod<bool>('canDrawOverlays') ?? false;
+
+  /// Directs user to Android's Display Over Other Apps settings screen for Switchly.
+  Future<bool> openOverlayPermissionSettings() async =>
+      await _channel.invokeMethod<bool>('openOverlayPermissionSettings') ?? false;
+
+  /// Whether Switchly has Do Not Disturb / Notification Policy access.
+  Future<bool> hasDndAccess() async =>
+      await _channel.invokeMethod<bool>('hasDndAccess') ?? false;
+
+  /// Directs user to Android's Do Not Disturb access settings screen.
+  Future<bool> openDndPermissionSettings() async =>
+      await _channel.invokeMethod<bool>('openDndPermissionSettings') ?? false;
+
+
   Future<Object?> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onLaunchRoute') {
       _launchRoutes.add(call.arguments as String);
