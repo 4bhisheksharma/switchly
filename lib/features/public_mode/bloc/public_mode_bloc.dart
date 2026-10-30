@@ -49,6 +49,9 @@ class PublicModeState extends Equatable {
     this.hasUsageAccess = false,
     this.canDrawOverlays = false,
     this.hasDndAccess = false,
+    this.isXiaomiDevice = false,
+    this.hasMiuiPopupPermission = true,
+    this.isIgnoringBattery = true,
     this.loading = false,
     this.launchableApps = const [],
   });
@@ -59,6 +62,9 @@ class PublicModeState extends Equatable {
   final bool hasUsageAccess;
   final bool canDrawOverlays;
   final bool hasDndAccess;
+  final bool isXiaomiDevice;
+  final bool hasMiuiPopupPermission;
+  final bool isIgnoringBattery;
   final bool loading;
   final List<({String package, String label, Uint8List icon})> launchableApps;
 
@@ -83,6 +89,9 @@ class PublicModeState extends Equatable {
     bool? hasUsageAccess,
     bool? canDrawOverlays,
     bool? hasDndAccess,
+    bool? isXiaomiDevice,
+    bool? hasMiuiPopupPermission,
+    bool? isIgnoringBattery,
     bool? loading,
     List<({String package, String label, Uint8List icon})>? launchableApps,
   }) {
@@ -93,6 +102,9 @@ class PublicModeState extends Equatable {
       hasUsageAccess: hasUsageAccess ?? this.hasUsageAccess,
       canDrawOverlays: canDrawOverlays ?? this.canDrawOverlays,
       hasDndAccess: hasDndAccess ?? this.hasDndAccess,
+      isXiaomiDevice: isXiaomiDevice ?? this.isXiaomiDevice,
+      hasMiuiPopupPermission: hasMiuiPopupPermission ?? this.hasMiuiPopupPermission,
+      isIgnoringBattery: isIgnoringBattery ?? this.isIgnoringBattery,
       loading: loading ?? this.loading,
       launchableApps: launchableApps ?? this.launchableApps,
     );
@@ -106,6 +118,9 @@ class PublicModeState extends Equatable {
         hasUsageAccess,
         canDrawOverlays,
         hasDndAccess,
+        isXiaomiDevice,
+        hasMiuiPopupPermission,
+        isIgnoringBattery,
         loading,
         launchableApps,
       ];
@@ -134,6 +149,9 @@ class PublicModeBloc extends Bloc<PublicModeEvent, PublicModeState> {
       hasUsageAccess: nativeState.hasUsageAccess,
       canDrawOverlays: nativeState.canDrawOverlays,
       hasDndAccess: nativeState.hasDndAccess,
+      isXiaomiDevice: nativeState.isXiaomiDevice,
+      hasMiuiPopupPermission: nativeState.hasMiuiPopupPermission,
+      isIgnoringBattery: nativeState.isIgnoringBattery,
       loading: false,
     ));
 
@@ -154,6 +172,9 @@ class PublicModeBloc extends Bloc<PublicModeEvent, PublicModeState> {
       hasUsageAccess: nativeState.hasUsageAccess,
       canDrawOverlays: nativeState.canDrawOverlays,
       hasDndAccess: nativeState.hasDndAccess,
+      isXiaomiDevice: nativeState.isXiaomiDevice,
+      hasMiuiPopupPermission: nativeState.hasMiuiPopupPermission,
+      isIgnoringBattery: nativeState.isIgnoringBattery,
     ));
   }
 
@@ -195,6 +216,9 @@ class PublicModeBloc extends Bloc<PublicModeEvent, PublicModeState> {
       hasUsageAccess: nativeState.hasUsageAccess,
       canDrawOverlays: nativeState.canDrawOverlays,
       hasDndAccess: nativeState.hasDndAccess,
+      isXiaomiDevice: nativeState.isXiaomiDevice,
+      hasMiuiPopupPermission: nativeState.hasMiuiPopupPermission,
+      isIgnoringBattery: nativeState.isIgnoringBattery,
     ));
   }
 }

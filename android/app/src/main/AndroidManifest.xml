@@ -102,6 +102,17 @@
             android:taskAffinity=""
             android:theme="@style/TransparentDialogActivityTheme" />
 
+        <!-- Public Mode lock activity; transparent fullscreen interceptor for bulletproof display on MIUI/HyperOS, ColorOS, OneUI and all OEMs. -->
+        <activity
+            android:name=".publicmode.PublicModeBlockActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:theme="@style/TransparentDialogActivityTheme" />
+
         <!-- Quick Settings tiles. Keep in sync with tiles/TileRegistry.kt. -->
         <service
             android:name=".tiles.PrivateDnsTile"

@@ -107,12 +107,13 @@ class PublicModeService : Service() {
         if (config.blockedPackages.isEmpty()) return
 
         val endTime = System.currentTimeMillis()
-        val startTime = endTime - 2500L
+        val startTime = endTime - 10_000L
 
         try {
             val usageEvents = usageStatsManager.queryEvents(startTime, endTime)
             val event = UsageEvents.Event()
             var currentForegroundPackage: String? = null
+            var lastEventTime = 0L
 
             while (usageEvents.hasNextEvent()) {
                 usageEvents.getNextEvent(event)
@@ -122,9 +123,33 @@ class PublicModeService : Service() {
                     @Suppress("DEPRECATION")
                     event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND
                 }
-                if (isResume) {
-                    currentForegroundPackage = event.packageName
+                val isPause = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    event.eventType == UsageEvents.Event.ACTIVITY_PAUSED ||
+                        event.eventType == UsageEvents.Event.ACTIVITY_STOPPED
+                } else {
+                    @Suppress("DEPRECATION")
+                    event.eventType == UsageEvents.Event.MOVE_TO_BACKGROUND
                 }
+
+                if (isResume && event.timeStamp >= lastEventTime) {
+                    currentForegroundPackage = event.packageName
+                    lastEventTime = event.timeStamp
+                } else if (isPause && event.packageName == currentForegroundPackage && event.timeStamp >= lastEventTime) {
+                    currentForegroundPackage = null
+                    lastEventTime = event.timeStamp
+                }
+            }
+
+            // Fallback: if no recent resume/pause events in last 10s, check lastTimeUsed
+            if (currentForegroundPackage == null) {
+                val stats = usageStatsManager.queryUsageStats(
+                    UsageStatsManager.INTERVAL_DAILY,
+                    endTime - 30_000L,
+                    endTime
+                )
+                currentForegroundPackage = stats?.maxByOrNull { it.lastTimeUsed }?.takeIf {
+                    (endTime - it.lastTimeUsed) < 15_000L
+                }?.packageName
             }
 
             if (currentForegroundPackage != null &&
@@ -137,6 +162,12 @@ class PublicModeService : Service() {
                     lastBlockedPackageTriggered = currentForegroundPackage
                     lastBlockedTime = now
                     PublicModeOverlay.show(this, currentForegroundPackage)
+                }
+            } else if (currentForegroundPackage != null && !config.blockedPackages.contains(currentForegroundPackage)) {
+                // If user switched away from the blocked app to an allowed app or home launcher, dismiss overlay
+                if (lastBlockedPackageTriggered != null) {
+                    lastBlockedPackageTriggered = null
+                    PublicModeOverlay.dismiss()
                 }
             }
         } catch (e: Exception) {
@@ -191,12 +222,15 @@ class PublicModeService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Exit action button
-        val exitIntent = PendingIntent.getService(
+        // Exit action button routes to app for PIN verification
+        val exitIntent = PendingIntent.getActivity(
             this,
             2,
-            Intent(this, PublicModeService::class.java).setAction(ACTION_STOP),
-            PendingIntent.FLAG_IMMUTABLE
+            Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra(app.utils.switchly.LaunchRoutes.EXTRA_ROUTE, app.utils.switchly.LaunchRoutes.tile("public_mode"))
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

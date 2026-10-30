@@ -238,6 +238,9 @@ class QsChannel {
         bool hasUsageAccess,
         bool canDrawOverlays,
         bool hasDndAccess,
+        bool isXiaomiDevice,
+        bool hasMiuiPopupPermission,
+        bool isIgnoringBattery,
       })> getPublicModeState() async {
     final state = await _channel.invokeMapMethod<String, Object?>('getPublicModeState');
     return (
@@ -246,8 +249,27 @@ class QsChannel {
       hasUsageAccess: state?['hasUsageAccess'] as bool? ?? false,
       canDrawOverlays: state?['canDrawOverlays'] as bool? ?? false,
       hasDndAccess: state?['hasDndAccess'] as bool? ?? false,
+      isXiaomiDevice: state?['isXiaomiDevice'] as bool? ?? false,
+      hasMiuiPopupPermission: state?['hasMiuiPopupPermission'] as bool? ?? true,
+      isIgnoringBattery: state?['isIgnoringBattery'] as bool? ?? true,
     );
   }
+
+  /// Opens Xiaomi/Redmi/POCO MIUI permissions editor directly for Switchly.
+  Future<bool> openMiuiPermissions() async =>
+      await _channel.invokeMethod<bool>('openMiuiPermissions') ?? false;
+
+  /// Opens OEM autostart configuration for Xiaomi, Oppo, Vivo, Huawei, etc.
+  Future<bool> openAutostartSettings() async =>
+      await _channel.invokeMethod<bool>('openAutostartSettings') ?? false;
+
+  /// Whether app is exempt from aggressive battery optimization killers.
+  Future<bool> isIgnoringBatteryOptimizations() async =>
+      await _channel.invokeMethod<bool>('isIgnoringBatteryOptimizations') ?? false;
+
+  /// Prompts system to ignore battery optimizations for reliable background service execution.
+  Future<bool> requestIgnoreBatteryOptimizations() async =>
+      await _channel.invokeMethod<bool>('requestIgnoreBatteryOptimizations') ?? false;
 
   /// Activates Public Mode natively (starts Foreground Service, monitors apps, applies protection).
   Future<bool> activatePublicMode() async =>
@@ -272,6 +294,14 @@ class QsChannel {
   /// Directs user to Android's Do Not Disturb access settings screen.
   Future<bool> openDndPermissionSettings() async =>
       await _channel.invokeMethod<bool>('openDndPermissionSettings') ?? false;
+
+  /// Checks whether Android device has a secure lock screen (PIN, pattern, password or biometric) set.
+  Future<bool> isDeviceSecure() async =>
+      await _channel.invokeMethod<bool>('isDeviceSecure') ?? false;
+
+  /// Prompts for Android device lock (fingerprint, face, PIN or pattern) via KeyguardManager.
+  Future<bool> authenticateDeviceOwner() async =>
+      await _channel.invokeMethod<bool>('authenticateDeviceOwner') ?? false;
 
 
   Future<Object?> _handleNativeCall(MethodCall call) async {

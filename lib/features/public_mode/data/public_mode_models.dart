@@ -16,6 +16,7 @@ class PublicModeConfig extends Equatable {
     this.enableGrayscale = false,
     this.enableKillSwitch = false,
     this.pin,
+    this.recoveryAnswer,
   });
 
   factory PublicModeConfig.fromJson(Map<String, Object?> json) {
@@ -29,6 +30,7 @@ class PublicModeConfig extends Equatable {
       enableGrayscale: json['enableGrayscale'] as bool? ?? false,
       enableKillSwitch: json['enableKillSwitch'] as bool? ?? false,
       pin: (json['pin'] as String?)?.takeIfNotEmpty,
+      recoveryAnswer: (json['recoveryAnswer'] as String?)?.takeIfNotEmpty,
     );
   }
 
@@ -39,6 +41,7 @@ class PublicModeConfig extends Equatable {
   final bool enableGrayscale;
   final bool enableKillSwitch;
   final String? pin;
+  final String? recoveryAnswer;
 
   Map<String, Object?> toJson() => {
         'timeoutMinutes': timeoutMinutes,
@@ -48,6 +51,7 @@ class PublicModeConfig extends Equatable {
         'enableGrayscale': enableGrayscale,
         'enableKillSwitch': enableKillSwitch,
         'pin': pin,
+        'recoveryAnswer': recoveryAnswer,
       };
 
   PublicModeConfig copyWith({
@@ -59,6 +63,8 @@ class PublicModeConfig extends Equatable {
     bool? enableKillSwitch,
     String? pin,
     bool clearPin = false,
+    String? recoveryAnswer,
+    bool clearRecoveryAnswer = false,
   }) {
     return PublicModeConfig(
       timeoutMinutes: timeoutMinutes ?? this.timeoutMinutes,
@@ -68,6 +74,8 @@ class PublicModeConfig extends Equatable {
       enableGrayscale: enableGrayscale ?? this.enableGrayscale,
       enableKillSwitch: enableKillSwitch ?? this.enableKillSwitch,
       pin: clearPin ? null : (pin ?? this.pin),
+      recoveryAnswer:
+          clearRecoveryAnswer ? null : (recoveryAnswer ?? this.recoveryAnswer),
     );
   }
 
@@ -80,6 +88,7 @@ class PublicModeConfig extends Equatable {
         enableGrayscale,
         enableKillSwitch,
         pin,
+        recoveryAnswer,
       ];
 }
 
@@ -115,6 +124,9 @@ class PublicModeRepository {
         bool hasUsageAccess,
         bool canDrawOverlays,
         bool hasDndAccess,
+        bool isXiaomiDevice,
+        bool hasMiuiPopupPermission,
+        bool isIgnoringBattery,
       })> getState() => _channel.getPublicModeState();
 
   Future<bool> activate() => _channel.activatePublicMode();
@@ -135,4 +147,16 @@ class PublicModeRepository {
 
   Future<List<({String package, String label, Uint8List icon})>> getLaunchableApps() =>
       _channel.getLaunchableApps();
+
+  Future<bool> isDeviceSecure() => _channel.isDeviceSecure();
+
+  Future<bool> authenticateDeviceOwner() => _channel.authenticateDeviceOwner();
+
+  Future<bool> openMiuiPermissions() => _channel.openMiuiPermissions();
+
+  Future<bool> openAutostartSettings() => _channel.openAutostartSettings();
+
+  Future<bool> isIgnoringBatteryOptimizations() => _channel.isIgnoringBatteryOptimizations();
+
+  Future<bool> requestIgnoreBatteryOptimizations() => _channel.requestIgnoreBatteryOptimizations();
 }

@@ -2,13 +2,16 @@ package app.utils.switchly.publicmode
 
 import android.app.AppOpsManager
 import android.app.NotificationManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
 import android.util.Log
+import java.util.Locale
 import app.utils.switchly.core.PrefKeys
 import app.utils.switchly.core.SharedConfig
 import app.utils.switchly.display.Grayscale
@@ -120,7 +123,142 @@ object PublicMode {
         }
     }
 
+    fun isXiaomiOrMiui(): Boolean {
+        val manufacturer = Build.MANUFACTURER.lowercase(Locale.ROOT)
+        val brand = Build.BRAND.lowercase(Locale.ROOT)
+        if (manufacturer.contains("xiaomi") || brand.contains("xiaomi") ||
+            brand.contains("redmi") || brand.contains("poco")) {
+            return true
+        }
+        return !getSystemProperty("ro.miui.ui.version.name").isNullOrBlank()
+    }
+
+    private fun getSystemProperty(key: String): String? {
+        return try {
+            val c = Class.forName("android.os.SystemProperties")
+            val get = c.getMethod("get", String::class.java)
+            get.invoke(c, key) as? String
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun hasMiuiBackgroundPopupPermission(context: Context): Boolean {
+        if (!isXiaomiOrMiui()) return true
+        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager ?: return true
+        return try {
+            val method = AppOpsManager::class.java.getMethod(
+                "checkOpNoThrow",
+                Int::class.javaPrimitiveType,
+                Int::class.javaPrimitiveType,
+                String::class.java
+            )
+            // 10021 is MIUI's OP_BACKGROUND_START_ACTIVITY (Display pop-up windows while running in the background)
+            val mode = method.invoke(appOps, 10021, Process.myUid(), context.packageName) as Int
+            mode == AppOpsManager.MODE_ALLOWED
+        } catch (_: Exception) {
+            true
+        }
+    }
+
+    fun openMiuiPermissions(context: Context): Boolean {
+        val intents = listOf(
+            Intent("miui.intent.action.APP_PERM_EDITOR").apply {
+                setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
+                putExtra("extra_pkgname", context.packageName)
+            },
+            Intent("miui.intent.action.APP_PERM_EDITOR").apply {
+                setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.AppPermissionsEditorActivity")
+                putExtra("extra_pkgname", context.packageName)
+            },
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+            }
+        )
+        for (intent in intents) {
+            try {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+                return true
+            } catch (_: Exception) {}
+        }
+        return false
+    }
+
+    fun isIgnoringBatteryOptimizations(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return true
+            return pm.isIgnoringBatteryOptimizations(context.packageName)
+        }
+        return true
+    }
+
+    fun requestIgnoreBatteryOptimizations(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val intents = listOf(
+                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:${context.packageName}")
+                },
+                Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+            )
+            for (intent in intents) {
+                try {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    return true
+                } catch (_: Exception) {}
+            }
+        }
+        return false
+    }
+
+    fun openAutostartSettings(context: Context): Boolean {
+        val intents = listOf(
+            // Xiaomi / Redmi / POCO
+            Intent().apply {
+                component = ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")
+            },
+            // Oppo / Realme
+            Intent().apply {
+                component = ComponentName("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity")
+            },
+            Intent().apply {
+                component = ComponentName("com.coloros.safecenter", "com.coloros.safecenter.startupapp.StartupAppListActivity")
+            },
+            // Vivo
+            Intent().apply {
+                component = ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity")
+            },
+            Intent().apply {
+                component = ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity")
+            },
+            // Huawei / Honor
+            Intent().apply {
+                component = ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity")
+            },
+            // Samsung
+            Intent().apply {
+                component = ComponentName("com.samsung.android.lool", "com.samsung.android.sm.battery.ui.BatteryActivity")
+            },
+            // Generic fallback: App details
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+            }
+        )
+        for (intent in intents) {
+            try {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+                return true
+            } catch (_: Exception) {}
+        }
+        return false
+    }
+
     fun openOverlaySettings(context: Context) {
+        if (isXiaomiOrMiui()) {
+            if (openMiuiPermissions(context)) return
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
                 data = Uri.parse("package:${context.packageName}")

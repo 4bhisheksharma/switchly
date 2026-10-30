@@ -31,14 +31,15 @@ class PublicModeTile : BaseTile() {
     override fun onTap() {
         val active = PublicMode.isActive(this)
         if (active) {
+            // Disabling always requires PIN authentication via the app
+            launchApp(LaunchRoutes.tile("public_mode"))
+        } else {
             val config = PublicMode.config(this)
-            if (!config.pin.isNullOrBlank()) {
-                // When protected by a PIN, open app to authenticate
+            if (config.pin.isNullOrBlank()) {
+                // Enabling requires a PIN to be configured first; route to setup
                 launchApp(LaunchRoutes.tile("public_mode"))
                 return
             }
-            runInBackground { PublicMode.deactivate(this) }
-        } else {
             runInBackground { PublicMode.activate(this) }
         }
     }

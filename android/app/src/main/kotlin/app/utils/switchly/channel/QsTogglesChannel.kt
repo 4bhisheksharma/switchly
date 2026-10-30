@@ -2,9 +2,11 @@ package app.utils.switchly.channel
 
 import android.Manifest
 import android.app.Activity
+import android.app.KeyguardManager
 import android.app.StatusBarManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.Icon
@@ -247,6 +249,9 @@ class QsTogglesChannel(
                     "hasUsageAccess" to PublicMode.hasUsageAccess(activity),
                     "canDrawOverlays" to PublicMode.canDrawOverlays(activity),
                     "hasDndAccess" to PublicMode.hasDndAccess(activity),
+                    "isXiaomiDevice" to PublicMode.isXiaomiOrMiui(),
+                    "hasMiuiPopupPermission" to PublicMode.hasMiuiBackgroundPopupPermission(activity),
+                    "isIgnoringBattery" to PublicMode.isIgnoringBatteryOptimizations(activity),
                 )
             )
             "activatePublicMode" -> background(result) {
@@ -264,6 +269,59 @@ class QsTogglesChannel(
             "openDndPermissionSettings" -> {
                 PublicMode.openDndSettings(activity)
                 result.success(true)
+            }
+            "openMiuiPermissions" -> {
+                result.success(PublicMode.openMiuiPermissions(activity))
+            }
+            "openAutostartSettings" -> {
+                result.success(PublicMode.openAutostartSettings(activity))
+            }
+            "isIgnoringBatteryOptimizations" -> {
+                result.success(PublicMode.isIgnoringBatteryOptimizations(activity))
+            }
+            "requestIgnoreBatteryOptimizations" -> {
+                result.success(PublicMode.requestIgnoreBatteryOptimizations(activity))
+            }
+            "isDeviceSecure" -> {
+                val km = activity.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+                val secure = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    km?.isDeviceSecure == true
+                } else {
+                    @Suppress("DEPRECATION")
+                    km?.isKeyguardSecure == true
+                }
+                result.success(secure)
+            }
+            "authenticateDeviceOwner" -> {
+                val km = activity.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+                val isSecure = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    km?.isDeviceSecure == true
+                } else {
+                    @Suppress("DEPRECATION")
+                    km?.isKeyguardSecure == true
+                }
+
+                if (km != null && isSecure) {
+                    val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        @Suppress("DEPRECATION")
+                        km.createConfirmDeviceCredentialIntent(
+                            "Unlock Switchly Public Mode",
+                            "Confirm device lock (fingerprint, face, PIN or pattern) to unlock"
+                        )
+                    } else null
+
+                    if (intent != null) {
+                        pendingDeviceAuth?.success(false)
+                        pendingDeviceAuth = result
+                        @Suppress("DEPRECATION")
+                        activity.startActivityForResult(intent, REQUEST_DEVICE_CREDENTIAL)
+                    } else {
+                        result.success(false)
+                    }
+                } else {
+                    // Device has no secure lock screen configured; cannot authenticate via device lock
+                    result.success(false)
+                }
             }
             else -> result.notImplemented()
         }
@@ -289,6 +347,7 @@ class QsTogglesChannel(
     }
 
     private var pendingVpnConsent: MethodChannel.Result? = null
+    private var pendingDeviceAuth: MethodChannel.Result? = null
 
     /** Starts the kill switch, showing Android's one-time VPN consent dialog first if needed. */
     private fun startKillSwitch(result: MethodChannel.Result) {
@@ -310,6 +369,12 @@ class QsTogglesChannel(
 
     /** Forwarded from MainActivity. Returns true if the result was ours. */
     fun onActivityResult(requestCode: Int, resultCode: Int): Boolean {
+        if (requestCode == REQUEST_DEVICE_CREDENTIAL) {
+            val res = pendingDeviceAuth ?: return true
+            pendingDeviceAuth = null
+            res.success(resultCode == Activity.RESULT_OK)
+            return true
+        }
         if (requestCode != REQUEST_VPN_CONSENT) return false
         val result = pendingVpnConsent ?: return true
         pendingVpnConsent = null
@@ -387,5 +452,6 @@ class QsTogglesChannel(
     companion object {
         const val NAME = "qs_toggles"
         private const val REQUEST_VPN_CONSENT = 4711
+        private const val REQUEST_DEVICE_CREDENTIAL = 4712
     }
 }

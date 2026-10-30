@@ -6,7 +6,10 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../app/router.dart';
 import '../../../../app/theme.dart';
+import '../../../../core/platform/qs_channel.dart';
 import '../../bloc/public_mode_bloc.dart';
+import '../../data/public_mode_models.dart';
+import 'public_mode_pin_dialogs.dart';
 
 class HandOverCard extends StatefulWidget {
   const HandOverCard({super.key});
@@ -45,85 +48,77 @@ class _HandOverCardState extends State<HandOverCard> {
     super.dispose();
   }
 
-  void _promptExit(BuildContext context, PublicModeState state) {
-    if (state.config.pin != null && state.config.pin!.isNotEmpty) {
-      _showPinDialog(context, state.config.pin!);
-    } else {
-      context.read<PublicModeBloc>().add(const PublicModeDeactivateRequested());
+  Future<void> _promptActivate(BuildContext context, PublicModeState state) async {
+    final bloc = context.read<PublicModeBloc>();
+    final channel = context.read<QsChannel>();
+    final repository = PublicModeRepository(channel);
+
+    if (state.config.pin == null || state.config.pin!.isEmpty) {
+      final created = await showPublicModePinSetupDialog(
+        context,
+        repository: repository,
+        onSaved: (newPin, recoveryAnswer) {
+          bloc.add(PublicModeConfigUpdated(
+            state.config.copyWith(
+              pin: newPin,
+              recoveryAnswer: recoveryAnswer,
+            ),
+          ));
+        },
+      );
+      if (!created) return;
+    }
+
+    bloc.add(const PublicModeActivateRequested());
+    if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Public Mode ended · Previous profile restored'),
+        SnackBar(
+          content: Text(
+            state.config.timeoutMinutes > 0
+                ? 'Public Mode active for ${state.config.timeoutMinutes} min · Private apps locked'
+                : 'Public Mode active · Private apps locked',
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
     }
   }
 
-  void _showPinDialog(BuildContext context, String expectedPin) {
-    final pinController = TextEditingController();
-    var hasError = false;
+  Future<void> _promptExit(BuildContext context, PublicModeState state) async {
+    final bloc = context.read<PublicModeBloc>();
+    final channel = context.read<QsChannel>();
+    final repository = PublicModeRepository(channel);
 
-    showDialog<void>(
-      context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          final theme = Theme.of(context);
-          return AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Symbols.lock_rounded, size: 24),
-                SizedBox(width: 10),
-                Text('Enter Exit PIN'),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Enter your 4-digit PIN to exit Public Mode and restore your device.'),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: pinController,
-                  autofocus: true,
-                  keyboardType: TextInputType.number,
-                  maxLength: 4,
-                  obscureText: true,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: 10),
-                  decoration: InputDecoration(
-                    counterText: '',
-                    errorText: hasError ? 'Incorrect PIN' : null,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  onChanged: (val) {
-                    if (val.length == 4) {
-                      if (val == expectedPin) {
-                        Navigator.of(dialogCtx).pop();
-                        this.context.read<PublicModeBloc>().add(const PublicModeDeactivateRequested());
-                        ScaffoldMessenger.of(this.context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Public Mode ended · Previous profile restored'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      } else {
-                        setDialogState(() => hasError = true);
-                        pinController.clear();
-                      }
-                    }
-                  },
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogCtx).pop(),
-                child: const Text('Cancel'),
+    if (state.config.pin != null && state.config.pin!.isNotEmpty) {
+      await showPublicModePinVerifyDialog(
+        context,
+        expectedPin: state.config.pin!,
+        recoveryAnswer: state.config.recoveryAnswer,
+        endsAt: state.endsAt,
+        repository: repository,
+        onVerified: () async {
+          bloc.add(const PublicModeDeactivateRequested());
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Public Mode ended · Previous profile restored'),
+                behavior: SnackBarBehavior.floating,
               ),
-            ],
-          );
+            );
+          }
         },
-      ),
-    );
+      );
+    } else {
+      bloc.add(const PublicModeDeactivateRequested());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Public Mode ended · Previous profile restored'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -352,19 +347,7 @@ class _HandOverCardState extends State<HandOverCard> {
                     'Hand my phone over',
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  onPressed: () {
-                    context.read<PublicModeBloc>().add(const PublicModeActivateRequested());
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          state.config.timeoutMinutes > 0
-                              ? 'Public Mode active for ${state.config.timeoutMinutes} min · Private apps locked'
-                              : 'Public Mode active · Private apps locked',
-                        ),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
+                  onPressed: () => _promptActivate(context, state),
                 ),
               ),
             ],
