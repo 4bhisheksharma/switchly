@@ -2,6 +2,7 @@ package app.utils.switchly.tiles
 
 import android.service.quicksettings.Tile
 import android.text.format.DateFormat
+import app.utils.switchly.R
 import app.utils.switchly.power.Caffeine
 import app.utils.switchly.tiles.base.BaseTile
 
@@ -24,12 +25,22 @@ class CaffeineTile : BaseTile() {
             }
             tile.subtitle = if (Caffeine.endsAt == 0L) "No time limit" else "Caffeine"
         } else {
+            tile.label = getString(R.string.tile_caffeine)
             tile.subtitle = "Off"
         }
     }
 
     override fun predict(tile: Tile) {
-        tile.state = if (Caffeine.next(this) == null) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
+        val next = Caffeine.next(this)
+        if (next == null) {
+            tile.state = Tile.STATE_INACTIVE
+            tile.label = getString(R.string.tile_caffeine)
+            tile.subtitle = "Off"
+        } else {
+            tile.state = Tile.STATE_ACTIVE
+            tile.label = if (next == 0) "Awake" else "$next min"
+            tile.subtitle = if (next == 0) "No time limit" else "Caffeine"
+        }
     }
 
     override fun announcement(tile: Tile): String =

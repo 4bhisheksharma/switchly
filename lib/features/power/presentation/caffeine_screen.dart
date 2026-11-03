@@ -63,6 +63,14 @@ class CaffeineScreen extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
+                    SelectChip(
+                      label: 'Off',
+                      selected: !status.on,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        cubit.stop();
+                      },
+                    ),
                     for (final m in caffeineDurations)
                       SelectChip(
                         label: durationLabel(m),
@@ -85,6 +93,19 @@ class CaffeineScreen extends StatelessWidget {
                         if (i > 0) const Divider(height: 1, indent: 76),
                         _CycleRow(minutes: m, config: state.config),
                       ],
+                      const Divider(height: 1, indent: 76),
+                      const ListTile(
+                        leading: TileIcon(Symbols.bedtime_rounded, size: 40),
+                        title: Row(
+                          children: [
+                            Flexible(child: Text('Off')),
+                            SizedBox(width: 8),
+                            StatusPill('Ends cycle'),
+                          ],
+                        ),
+                        subtitle: Text('Turns keep-awake off and restores normal timeout'),
+                        trailing: Switch(value: true, onChanged: null),
+                      ),
                     ],
                   ),
                 ),
