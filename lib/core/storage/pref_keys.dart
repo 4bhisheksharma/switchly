@@ -26,6 +26,9 @@ abstract final class PrefKeys {
   /// JSON array of `{"id", "name", "path"}`; path is an image in the app's files dir.
   static const paymentQrs = 'payment_qrs';
 
+  /// bool: whether to open Payment QR display at maximum brightness. Default true.
+  static const paymentQrMaxBrightness = 'payment_qr_max_brightness';
+
   /// JSON: `{"scales": [double]}` in tap order.
   static const fontConfig = 'font_config';
 

@@ -68,7 +68,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
   late final ScreenTimeBloc _screenTimeBloc = ScreenTimeBloc(_screenTimeRepository)..add(const ScreenTimeStarted());
   late final PublicModeRepository _publicModeRepository = PublicModeRepository(widget.channel);
   late final PublicModeBloc _publicModeBloc = PublicModeBloc(_publicModeRepository)..add(const PublicModeStarted());
-  final BsScriptCubit _bsScriptCubit = BsScriptCubit();
+  late final BsScriptCubit _bsScriptCubit = BsScriptCubit(widget.channel);
   final TileMessageCubit _tileMessageCubit = TileMessageCubit();
   final ThemeCubit _themeCubit = ThemeCubit();
   late final StreamSubscription<String> _launchSub;

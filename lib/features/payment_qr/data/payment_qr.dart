@@ -52,6 +52,18 @@ class PaymentQrRepository {
     await prefs.setString(PrefKeys.paymentQrs, jsonEncode([for (final q in qrs) q.toJson()]));
   }
 
+  /// Whether to open Payment QR at full brightness; default true.
+  Future<bool> loadMaxBrightness() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(PrefKeys.paymentQrMaxBrightness) ?? true;
+  }
+
+  /// Saves the max brightness preference for Payment QR.
+  Future<void> saveMaxBrightness(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(PrefKeys.paymentQrMaxBrightness, enabled);
+  }
+
   /// Copies [source] into the app's files dir and returns the new entry (not yet saved).
   Future<PaymentQr> import(String source, String name) async {
     final dir = Directory('${(await getApplicationSupportDirectory()).path}/payment_qr');

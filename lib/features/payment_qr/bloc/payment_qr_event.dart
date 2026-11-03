@@ -51,3 +51,12 @@ final class PaymentQrsReordered extends PaymentQrEvent {
   @override
   List<Object?> get props => [oldIndex, newIndex];
 }
+
+final class PaymentQrMaxBrightnessToggled extends PaymentQrEvent {
+  const PaymentQrMaxBrightnessToggled(this.enabled);
+
+  final bool enabled;
+
+  @override
+  List<Object?> get props => [enabled];
+}

@@ -16,9 +16,16 @@ import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import app.utils.switchly.R
 
-/** Built in code: a white rounded card with the QR, its name, and a picker when there are several. */
-class QrView(private val context: Context, private val qrs: List<PaymentQr>, private val onClose: () -> Unit) {
+/** Built in code: a white rounded card with the QR, its name, brightness toggle, and a picker when there are several. */
+class QrView(
+    private val context: Context,
+    private val qrs: List<PaymentQr>,
+    initialFullBrightness: Boolean,
+    private val onToggleBrightness: (Boolean) -> Unit,
+    private val onClose: () -> Unit,
+) {
     val root = FrameLayout(context)
     private val image = ImageView(context).apply {
         adjustViewBounds = true
@@ -32,6 +39,11 @@ class QrView(private val context: Context, private val qrs: List<PaymentQr>, pri
     }
     private val chips = mutableListOf<TextView>()
 
+    private var isFullBrightness = initialFullBrightness
+    private lateinit var brightnessIcon: ImageView
+    private lateinit var brightnessLabel: TextView
+    private lateinit var brightnessPill: LinearLayout
+
     init {
         root.setOnClickListener { onClose() }
         val column = LinearLayout(context).apply {
@@ -40,8 +52,13 @@ class QrView(private val context: Context, private val qrs: List<PaymentQr>, pri
             val pad = dp(24f).toInt()
             setPadding(pad, pad, pad, pad)
         }
+
+        column.addView(topBar(), LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
+            bottomMargin = dp(20f).toInt()
+        })
+
         if (qrs.size > 1) column.addView(chipRow(), LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
-            bottomMargin = dp(24f).toInt()
+            bottomMargin = dp(20f).toInt()
         })
         val card = FrameLayout(context).apply {
             background = GradientDrawable().apply {
@@ -65,6 +82,86 @@ class QrView(private val context: Context, private val qrs: List<PaymentQr>, pri
         )
         root.addView(column, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.CENTER))
         select(0)
+    }
+
+    private fun topBar(): View {
+        val bar = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            isClickable = true
+        }
+
+        // Close button
+        val closeBtn = ImageView(context).apply {
+            setImageResource(R.drawable.ic_close)
+            setColorFilter(Color.WHITE)
+            background = GradientDrawable().apply {
+                cornerRadius = dp(99f)
+                setColor(Color.argb(45, 255, 255, 255))
+            }
+            val pad = dp(10f).toInt()
+            setPadding(pad, pad, pad, pad)
+            val size = dp(42f).toInt()
+            layoutParams = LinearLayout.LayoutParams(size, size)
+            setOnClickListener { onClose() }
+        }
+        bar.addView(closeBtn)
+
+        // Spacer to push brightness toggle to right
+        val spacer = View(context).apply {
+            layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
+        }
+        bar.addView(spacer)
+
+        // Brightness toggle pill
+        brightnessIcon = ImageView(context).apply {
+            val size = dp(18f).toInt()
+            layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                marginEnd = dp(6f).toInt()
+            }
+        }
+
+        brightnessLabel = TextView(context).apply {
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            typeface = Typeface.DEFAULT_BOLD
+        }
+
+        brightnessPill = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            val h = dp(14f).toInt()
+            val v = dp(8f).toInt()
+            setPadding(h, v, h, v)
+            background = GradientDrawable().apply {
+                cornerRadius = dp(99f)
+                setColor(Color.argb(45, 255, 255, 255))
+            }
+            addView(brightnessIcon)
+            addView(brightnessLabel)
+            setOnClickListener {
+                isFullBrightness = !isFullBrightness
+                updateBrightnessUi()
+                onToggleBrightness(isFullBrightness)
+            }
+        }
+        updateBrightnessUi()
+        bar.addView(brightnessPill)
+
+        return bar
+    }
+
+    private fun updateBrightnessUi() {
+        if (isFullBrightness) {
+            brightnessIcon.setImageResource(R.drawable.ic_brightness_high)
+            brightnessIcon.setColorFilter(Color.parseColor("#FDE047"))
+            brightnessLabel.text = "Max Brightness"
+            brightnessLabel.setTextColor(Color.WHITE)
+        } else {
+            brightnessIcon.setImageResource(R.drawable.ic_brightness_normal)
+            brightnessIcon.setColorFilter(Color.parseColor("#9CA3AF"))
+            brightnessLabel.text = "Normal Brightness"
+            brightnessLabel.setTextColor(Color.parseColor("#D1D5DB"))
+        }
     }
 
     private fun chipRow(): View {

@@ -57,6 +57,21 @@ class QsChannel {
     };
   }
 
+  /// Whether the system launcher supports pinning app widgets from within an app (Android 8.0+).
+  Future<bool> supportsPinWidget() async =>
+      await _channel.invokeMethod<bool>('supportsPinWidget') ?? false;
+
+  /// Requests the home screen launcher to pin [widget] ('nepali_date', 'nepali_date_compact', 'payment_qr', 'quick_actions').
+  Future<bool> requestPinWidget([String widget = 'nepali_date']) async {
+    final result = await _channel.invokeMethod<String>('requestPinWidget', {'widget': widget});
+    return result == 'pinned';
+  }
+
+  /// Triggers a refresh of all active home screen widgets.
+  Future<void> refreshWidgets() async {
+    await _channel.invokeMethod<bool>('refreshWidgets');
+  }
+
   /// Returns false when the device has no screen for [panel].
   Future<bool> openSystemPanel(SystemPanel panel) async {
     final name = switch (panel) {

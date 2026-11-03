@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@drawable/widget_bg_dark"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/widget_bs_month_year"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#C4C2D6"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="बैशाख २०८१" />
+
+    <TextView
+        android:id="@+id/widget_bs_day"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="2dp"
+        android:textColor="#818CF8"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:text="१" />
+
+    <TextView
+        android:id="@+id/widget_bs_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#8D8B9D"
+        android:textSize="11sp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="आइतबार · 14 Apr" />
+</LinearLayout>
+

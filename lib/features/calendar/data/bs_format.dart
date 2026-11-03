@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nepali_utils/nepali_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/platform/qs_channel.dart';
 import '../../../core/storage/pref_keys.dart';
 
 /// Month/weekday names and digits, matching `BikramSambat` in Kotlin so the app and the tile
@@ -43,9 +44,11 @@ abstract final class BsFormat {
 
 /// Whether BS dates use Devanagari. Stored where the date tile reads it.
 class BsScriptCubit extends Cubit<bool> {
-  BsScriptCubit() : super(true) {
+  BsScriptCubit([this._channel]) : super(true) {
     _load();
   }
+
+  final QsChannel? _channel;
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -62,5 +65,6 @@ class BsScriptCubit extends Cubit<bool> {
     emit(nepali);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(PrefKeys.bsConfig, jsonEncode({'nepali': nepali}));
+    _channel?.refreshWidgets();
   }
 }

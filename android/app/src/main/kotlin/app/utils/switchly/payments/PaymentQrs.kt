@@ -26,4 +26,14 @@ object PaymentQrs {
             emptyList()
         }
     }
+
+    /** Whether to open the QR view at full brightness; default true. */
+    fun isMaxBrightnessEnabled(context: Context): Boolean =
+        SharedConfig.getBoolean(context, PrefKeys.PAYMENT_QR_MAX_BRIGHTNESS, true)
+
+    /** Saves max brightness preference back to Flutter SharedPreferences. */
+    fun setMaxBrightnessEnabled(context: Context, enabled: Boolean) {
+        val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("flutter." + PrefKeys.PAYMENT_QR_MAX_BRIGHTNESS, enabled).apply()
+    }
 }

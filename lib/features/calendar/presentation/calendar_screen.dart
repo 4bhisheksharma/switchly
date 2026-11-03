@@ -4,10 +4,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:nepali_utils/nepali_utils.dart';
 
+import '../../../core/platform/qs_channel.dart';
 import '../../../core/tiles/tile_catalog.dart';
 import '../../../core/widgets/hero_status_card.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/select_chip.dart';
+import '../../../core/widgets/tile_icon.dart';
 import '../../setup/presentation/add_tiles.dart';
 import '../data/bs_format.dart';
 
@@ -85,6 +87,106 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
+  Future<void> _requestAddWidget(BuildContext context, [String widget = 'nepali_date']) async {
+    final channel = context.read<QsChannel>();
+    final success = await channel.requestPinWidget(widget);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'Widget prompt displayed. Place it on your home screen!'
+              : 'To add the widget, touch & hold an empty area on your home screen and choose Switchly.',
+        ),
+      ),
+    );
+  }
+
+  void _showWidgetPreview(
+    BuildContext context, {
+    required String title,
+    required String widgetId,
+    required Widget previewWidget,
+    required String subtitle,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(title, style: theme.textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Simulated Home Screen Wallpaper Box
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(28),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF111827)],
+                  ),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Center(
+                  child: previewWidget,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _FeaturePill(icon: Symbols.aspect_ratio_rounded, label: 'Freely resizable'),
+                  _FeaturePill(icon: Symbols.update_rounded, label: 'Auto rolls at midnight'),
+                  _FeaturePill(icon: Symbols.touch_app_rounded, label: 'Tap to open calendar'),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _requestAddWidget(context, widgetId);
+                  },
+                  icon: const Icon(Symbols.add_to_home_screen_rounded),
+                  label: const Text('Add to Home Screen'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final nepali = context.watch<BsScriptCubit>().state;
@@ -121,6 +223,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         label: const Text('Copy'),
                       ),
                       if (canRequestAddTile(context)) const AddTileButton(bsDateTile, onGradient: true),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white70),
+                        ),
+                        onPressed: () => _requestAddWidget(context, 'nepali_date'),
+                        icon: const Icon(Symbols.widgets_rounded, size: 20),
+                        label: const Text('Add Widget'),
+                      ),
                     ],
                   ),
                 ),
@@ -158,6 +269,149 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       onPrevious: () => _shiftMonth(-1),
                       onNext: () => _shiftMonth(1),
                       onDayTap: (day) => _showDate(day, day.toDateTime(), nepali),
+                    ),
+                  ),
+                ),
+                const SectionHeader(
+                  'Home screen widgets',
+                  subtitle: 'Live interactive widgets for your launcher. Freely resizable & auto-updating.',
+                ),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const TileIcon(Symbols.calendar_today_rounded, active: true),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Standard Widget (4x2)',
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  Text(
+                                    'Freely resizable · Adapts to any size on your home screen',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        // Exact live preview of the standard widget
+                        GestureDetector(
+                          onTap: () => _showWidgetPreview(
+                            context,
+                            title: 'Nepali Date (Standard)',
+                            widgetId: 'nepali_date',
+                            previewWidget: _NepaliDateStandardPreview(today: _today, nepali: nepali),
+                            subtitle: 'Spacious card with BS day badge, month, year, weekday & AD date.',
+                          ),
+                          child: _NepaliDateStandardPreview(today: _today, nepali: nepali),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () => _showWidgetPreview(
+                                context,
+                                title: 'Nepali Date (Standard)',
+                                widgetId: 'nepali_date',
+                                previewWidget: _NepaliDateStandardPreview(today: _today, nepali: nepali),
+                                subtitle: 'Spacious card with BS day badge, month, year, weekday & AD date.',
+                              ),
+                              icon: const Icon(Symbols.preview_rounded, size: 18),
+                              label: const Text('Preview'),
+                            ),
+                            const SizedBox(width: 8),
+                            FilledButton.icon(
+                              onPressed: () => _requestAddWidget(context, 'nepali_date'),
+                              icon: const Icon(Symbols.add_to_home_screen_rounded, size: 18),
+                              label: const Text('Add Widget'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const TileIcon(Symbols.calendar_view_day_rounded, active: true),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Compact Widget (2x2)',
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  Text(
+                                    'Clean badge with large day number and month',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        // Exact live preview of the compact widget
+                        Center(
+                          child: GestureDetector(
+                            onTap: () => _showWidgetPreview(
+                              context,
+                              title: 'Nepali Date (Compact)',
+                              widgetId: 'nepali_date_compact',
+                              previewWidget: _NepaliDateCompactPreview(today: _today, nepali: nepali),
+                              subtitle: 'Compact badge showing current BS month, large day number, and weekday.',
+                            ),
+                            child: _NepaliDateCompactPreview(today: _today, nepali: nepali),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () => _showWidgetPreview(
+                                context,
+                                title: 'Nepali Date (Compact)',
+                                widgetId: 'nepali_date_compact',
+                                previewWidget: _NepaliDateCompactPreview(today: _today, nepali: nepali),
+                                subtitle: 'Compact badge showing current BS month, large day number, and weekday.',
+                              ),
+                              icon: const Icon(Symbols.preview_rounded, size: 18),
+                              label: const Text('Preview'),
+                            ),
+                            const SizedBox(width: 8),
+                            FilledButton.icon(
+                              onPressed: () => _requestAddWidget(context, 'nepali_date_compact'),
+                              icon: const Icon(Symbols.add_to_home_screen_rounded, size: 18),
+                              label: const Text('Add Widget'),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -279,6 +533,196 @@ class _DayCell extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Pixel-perfect in-app preview of the standard 4x2 responsive Nepali Date widget.
+class _NepaliDateStandardPreview extends StatelessWidget {
+  const _NepaliDateStandardPreview({required this.today, required this.nepali});
+
+  final NepaliDateTime today;
+  final bool nepali;
+
+  @override
+  Widget build(BuildContext context) {
+    final adDate = MaterialLocalizations.of(context).formatMediumDate(DateTime.now());
+    final dayStr = BsFormat.digits(today.day, nepali);
+    final monthYearStr = '${BsFormat.month(today.month, nepali)} ${BsFormat.digits(today.year, nepali)}';
+    final weekdayStr = BsFormat.weekday(today, nepali);
+
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 340),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161722),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF2A2C3E)),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: const Color(0xFF23253B),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFF36395A)),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              dayStr,
+              style: const TextStyle(
+                color: Color(0xFF818CF8),
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+                height: 1,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  monthYearStr,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  weekdayStr,
+                  style: const TextStyle(
+                    color: Color(0xFFC4C2D6),
+                    fontSize: 13,
+                  ),
+                  maxLines: 1,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  adDate,
+                  style: const TextStyle(
+                    color: Color(0xFF8D8B9D),
+                    fontSize: 11,
+                  ),
+                  maxLines: 1,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Pixel-perfect in-app preview of the compact 2x2 Nepali Date widget.
+class _NepaliDateCompactPreview extends StatelessWidget {
+  const _NepaliDateCompactPreview({required this.today, required this.nepali});
+
+  final NepaliDateTime today;
+  final bool nepali;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final dayStr = BsFormat.digits(today.day, nepali);
+    final monthYearStr = '${BsFormat.month(today.month, nepali)} ${BsFormat.digits(today.year, nepali)}';
+    final subtitle = '${BsFormat.weekday(today, nepali)} · ${now.day} ${MaterialLocalizations.of(context).formatMonthYear(now).split(' ').first}';
+
+    return Container(
+      width: 130,
+      decoration: BoxDecoration(
+        color: const Color(0xFF161722),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF2A2C3E)),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            monthYearStr,
+            style: const TextStyle(
+              color: Color(0xFFC4C2D6),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            dayStr,
+            style: const TextStyle(
+              color: Color(0xFF818CF8),
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: Color(0xFF8D8B9D),
+              fontSize: 11,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeaturePill extends StatelessWidget {
+  const _FeaturePill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: theme.colorScheme.primary),
+          const SizedBox(width: 6),
+          Text(label, style: theme.textTheme.labelSmall),
+        ],
       ),
     );
   }

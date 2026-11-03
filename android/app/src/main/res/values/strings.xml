@@ -19,4 +19,12 @@
     <string name="tile_app_screen_time_3">Screen time 3</string>
     <string name="tile_app_screen_time_4">Screen time 4</string>
     <string name="tile_public_mode">Public Mode</string>
+    <string name="widget_nepali_date">Nepali date</string>
+    <string name="widget_nepali_date_description">Today’s Bikram Sambat date with English equivalent</string>
+    <string name="widget_nepali_date_compact">Nepali date (Compact)</string>
+    <string name="widget_nepali_date_compact_description">Compact Bikram Sambat date badge</string>
+    <string name="widget_payment_qr">Payment QR</string>
+    <string name="widget_payment_qr_description">Fast one-tap shortcut to display payment QR</string>
+    <string name="widget_quick_actions">Quick Actions</string>
+    <string name="widget_quick_actions_description">Quick access to Nepali date, Payment QR, Quick texts, and Scanner</string>
 </resources>

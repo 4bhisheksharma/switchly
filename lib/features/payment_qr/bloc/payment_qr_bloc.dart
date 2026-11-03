@@ -14,12 +14,20 @@ class PaymentQrBloc extends Bloc<PaymentQrEvent, PaymentQrState> {
     on<PaymentQrRenamed>(_onRenamed);
     on<PaymentQrDeleted>(_onDeleted);
     on<PaymentQrsReordered>(_onReordered);
+    on<PaymentQrMaxBrightnessToggled>(_onMaxBrightnessToggled);
   }
 
   final PaymentQrRepository _repository;
 
   Future<void> _onStarted(PaymentQrsStarted event, Emitter<PaymentQrState> emit) async {
-    emit(PaymentQrState(loaded: true, qrs: await _repository.load()));
+    final qrs = await _repository.load();
+    final maxBrightness = await _repository.loadMaxBrightness();
+    emit(PaymentQrState(loaded: true, qrs: qrs, maxBrightness: maxBrightness));
+  }
+
+  Future<void> _onMaxBrightnessToggled(PaymentQrMaxBrightnessToggled event, Emitter<PaymentQrState> emit) async {
+    emit(state.copyWith(maxBrightness: event.enabled));
+    await _repository.saveMaxBrightness(event.enabled);
   }
 
   Future<void> _onAdded(PaymentQrAdded event, Emitter<PaymentQrState> emit) async {
@@ -46,7 +54,7 @@ class PaymentQrBloc extends Bloc<PaymentQrEvent, PaymentQrState> {
   }
 
   Future<void> _save(Emitter<PaymentQrState> emit, List<PaymentQr> qrs) async {
-    emit(PaymentQrState(loaded: true, qrs: qrs));
+    emit(state.copyWith(loaded: true, qrs: qrs));
     await _repository.save(qrs);
   }
 }

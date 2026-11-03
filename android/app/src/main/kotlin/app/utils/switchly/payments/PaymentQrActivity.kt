@@ -15,6 +15,8 @@ import android.view.WindowManager
  * appear. Shown over the lock screen: a receive-only QR can't be used to take money.
  */
 class PaymentQrActivity : Activity() {
+    private var isFullBrightness = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val qrs = PaymentQrs.all(this)
@@ -25,10 +27,34 @@ class PaymentQrActivity : Activity() {
         setShowWhenLocked(true)
         window.apply {
             setBackgroundDrawable(ColorDrawable(Color.rgb(8, 8, 12)))
-            // Max brightness and screen kept on while showing, so scanners read it first time.
-            attributes = attributes.apply { screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL }
             addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
-        setContentView(QrView(this, qrs, ::finish).root)
+
+        isFullBrightness = PaymentQrs.isMaxBrightnessEnabled(this)
+        applyBrightness(isFullBrightness)
+
+        setContentView(
+            QrView(
+                context = this,
+                qrs = qrs,
+                initialFullBrightness = isFullBrightness,
+                onToggleBrightness = { full ->
+                    applyBrightness(full)
+                    PaymentQrs.setMaxBrightnessEnabled(this, full)
+                },
+                onClose = ::finish
+            ).root
+        )
+    }
+
+    private fun applyBrightness(full: Boolean) {
+        isFullBrightness = full
+        window.attributes = window.attributes.apply {
+            screenBrightness = if (full) {
+                WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL
+            } else {
+                WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            }
+        }
     }
 }

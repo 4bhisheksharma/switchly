@@ -39,6 +39,12 @@ import app.utils.switchly.tiles.AppScreenTimeTile3
 import app.utils.switchly.tiles.AppScreenTimeTile4
 import app.utils.switchly.tiles.TileRefresher
 import app.utils.switchly.tiles.TileRegistry
+import app.utils.switchly.widgets.NepaliDateWidgetProvider
+import app.utils.switchly.widgets.NepaliDateCompactWidgetProvider
+import app.utils.switchly.widgets.PaymentQrWidgetProvider
+import app.utils.switchly.widgets.QuickActionsWidgetProvider
+import app.utils.switchly.widgets.WidgetRefresher
+import android.appwidget.AppWidgetManager
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -322,6 +328,34 @@ class QsTogglesChannel(
                     // Device has no secure lock screen configured; cannot authenticate via device lock
                     result.success(false)
                 }
+            }
+            "supportsPinWidget" -> {
+                val supported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                    AppWidgetManager.getInstance(activity).isRequestPinAppWidgetSupported
+                result.success(supported)
+            }
+            "requestPinWidget" -> {
+                val widget = call.argument<String>("widget") ?: "nepali_date"
+                val widgetClass = when (widget) {
+                    "nepali_date_compact" -> NepaliDateCompactWidgetProvider::class.java
+                    "payment_qr" -> PaymentQrWidgetProvider::class.java
+                    "quick_actions" -> QuickActionsWidgetProvider::class.java
+                    else -> NepaliDateWidgetProvider::class.java
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val appWidgetManager = AppWidgetManager.getInstance(activity)
+                    if (appWidgetManager.isRequestPinAppWidgetSupported) {
+                        val component = ComponentName(activity, widgetClass)
+                        val success = appWidgetManager.requestPinAppWidget(component, null, null)
+                        result.success(if (success) "pinned" else "not_supported")
+                        return
+                    }
+                }
+                result.success("not_supported")
+            }
+            "refreshWidgets" -> {
+                WidgetRefresher.refreshAll(activity)
+                result.success(true)
             }
             else -> result.notImplemented()
         }

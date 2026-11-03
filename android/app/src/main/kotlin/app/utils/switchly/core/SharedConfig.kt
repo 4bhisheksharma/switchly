@@ -26,6 +26,9 @@ object PrefKeys {
     /** JSON array of `{"id", "name", "path"}`; path is an image in the app's files dir. */
     const val PAYMENT_QRS = "payment_qrs"
 
+    /** Boolean: whether to open Payment QR display at maximum brightness. Default true. */
+    const val PAYMENT_QR_MAX_BRIGHTNESS = "payment_qr_max_brightness"
+
     /** JSON: `{"scales": [Double]}` in tap order. */
     const val FONT_CONFIG = "font_config"
 

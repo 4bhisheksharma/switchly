@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/platform/qs_channel.dart';
 import '../../../core/tiles/tile_catalog.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/select_chip.dart';
@@ -44,6 +45,113 @@ class PaymentQrScreen extends StatelessWidget {
           const SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverToBoxAdapter(child: _IntroCard()),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Card(
+                  child: SwitchListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    secondary: const TileIcon(Symbols.brightness_7_rounded, active: true),
+                    title: const Text('Full brightness on display'),
+                    subtitle: const Text('Maximize display brightness while showing QR for fast scanning.'),
+                    value: state.maxBrightness,
+                    onChanged: (val) {
+                      HapticFeedback.selectionClick();
+                      context.read<PaymentQrBloc>().add(PaymentQrMaxBrightnessToggled(val));
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const TileIcon(Symbols.widgets_rounded, active: true),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Home screen widget',
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  Text(
+                                    'Freely resizable · Fast 1-tap shortcut to show your QR',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        Center(
+                          child: GestureDetector(
+                            onTap: () => _showPaymentQrPreviewSheet(
+                              context,
+                              state.qrs.firstOrNull?.name ?? 'Tap to view QR',
+                            ),
+                            child: _PaymentQrWidgetPreview(
+                              qrName: state.qrs.firstOrNull?.name ?? 'Tap to view QR',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () => _showPaymentQrPreviewSheet(
+                                context,
+                                state.qrs.firstOrNull?.name ?? 'Tap to view QR',
+                              ),
+                              icon: const Icon(Symbols.preview_rounded, size: 18),
+                              label: const Text('Preview'),
+                            ),
+                            const SizedBox(width: 8),
+                            FilledButton.icon(
+                              onPressed: () async {
+                                final channel = context.read<QsChannel>();
+                                final success = await channel.requestPinWidget('payment_qr');
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      success
+                                          ? 'Payment QR widget prompt displayed'
+                                          : 'To add the widget, touch & hold an empty area on your home screen and choose Switchly.',
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Symbols.add_to_home_screen_rounded, size: 18),
+                              label: const Text('Add Widget'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
           if (state.loaded && qrs.isEmpty)
             const SliverFillRemaining(hasScrollBody: false, child: _EmptyState())
@@ -184,10 +292,32 @@ class _IntroCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (canRequestAddTile(context)) ...[
-              const SizedBox(height: 16),
-              const AddTileButton(paymentQrTile),
-            ],
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                if (canRequestAddTile(context)) const AddTileButton(paymentQrTile),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final channel = context.read<QsChannel>();
+                    final success = await channel.requestPinWidget('payment_qr');
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          success
+                              ? 'Payment QR widget prompt displayed'
+                              : 'To add the widget, touch & hold your home screen and choose Switchly.',
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Symbols.widgets_rounded, size: 20),
+                  label: const Text('Add Home Widget'),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -334,6 +464,180 @@ class _QrCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+void _showPaymentQrPreviewSheet(BuildContext context, String qrName) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (context) {
+      final theme = Theme.of(context);
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('Payment QR Widget Preview', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 4),
+            Text(
+              'One-tap shortcut directly on your home screen to show your QR instantly.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF111827)],
+                ),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: Center(
+                child: _PaymentQrWidgetPreview(qrName: qrName),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _FeaturePill(icon: Symbols.aspect_ratio_rounded, label: 'Freely resizable'),
+                _FeaturePill(icon: Symbols.bolt_rounded, label: 'Instant 1-tap display'),
+                _FeaturePill(icon: Symbols.lock_open_rounded, label: 'Works over lock screen'),
+              ],
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  final channel = context.read<QsChannel>();
+                  final success = await channel.requestPinWidget('payment_qr');
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? 'Payment QR widget prompt displayed'
+                            : 'To add the widget, touch & hold an empty area on your home screen and choose Switchly.',
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Symbols.add_to_home_screen_rounded),
+                label: const Text('Add to Home Screen'),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+class _PaymentQrWidgetPreview extends StatelessWidget {
+  const _PaymentQrWidgetPreview({required this.qrName});
+
+  final String qrName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 140,
+      decoration: BoxDecoration(
+        color: const Color(0xFF161722),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF2A2C3E)),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Symbols.qr_code_2_rounded,
+            size: 36,
+            color: Color(0xFF818CF8),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Payment QR',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            qrName,
+            style: const TextStyle(
+              color: Color(0xFF8D8B9D),
+              fontSize: 11,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeaturePill extends StatelessWidget {
+  const _FeaturePill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: theme.colorScheme.primary),
+          const SizedBox(width: 6),
+          Text(label, style: theme.textTheme.labelSmall),
+        ],
       ),
     );
   }

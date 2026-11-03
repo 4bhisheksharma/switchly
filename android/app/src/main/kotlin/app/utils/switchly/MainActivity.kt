@@ -3,6 +3,7 @@ package app.utils.switchly
 import android.content.Intent
 import app.utils.switchly.channel.QsTogglesChannel
 import app.utils.switchly.tiles.TileRefresher
+import app.utils.switchly.widgets.WidgetRefresher
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 
@@ -29,8 +30,9 @@ class MainActivity : FlutterActivity() {
 
     override fun onPause() {
         super.onPause()
-        // Push config edits (provider names, saved texts, profiles) to the active tiles.
+        // Push config edits (provider names, saved texts, profiles) to the active tiles and widgets.
         TileRefresher.refreshAll(this)
+        WidgetRefresher.refreshAll(this)
     }
 
     override fun onNewIntent(intent: Intent) {
