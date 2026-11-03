@@ -473,6 +473,7 @@
             android:label="@string/widget_volume">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="app.utils.switchly.action.SET_VOLUME_PRESET" />
                 <action android:name="android.media.VOLUME_CHANGED_ACTION" />
                 <action android:name="android.media.RINGER_MODE_CHANGED" />
                 <action android:name="android.intent.action.USER_PRESENT" />
@@ -488,6 +489,7 @@
             android:label="@string/widget_volume_compact">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="app.utils.switchly.action.SET_VOLUME_PRESET" />
                 <action android:name="android.media.VOLUME_CHANGED_ACTION" />
                 <action android:name="android.media.RINGER_MODE_CHANGED" />
                 <action android:name="android.intent.action.USER_PRESENT" />

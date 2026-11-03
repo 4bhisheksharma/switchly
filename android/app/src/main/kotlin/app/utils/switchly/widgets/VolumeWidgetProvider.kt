@@ -42,6 +42,25 @@ class VolumeWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         when (intent.action) {
+            ACTION_SET_PRESET -> {
+                val percent = intent.getIntExtra(EXTRA_PRESET_PERCENT, -1)
+                if (percent in 0..100) {
+                    VolumeController.setStreamPercent(context, AudioManager.STREAM_MUSIC, percent)
+                    val appWidgetManager = AppWidgetManager.getInstance(context)
+                    val ids = appWidgetManager.getAppWidgetIds(
+                        ComponentName(context, VolumeWidgetProvider::class.java)
+                    )
+                    for (id in ids) {
+                        updateAppWidget(context, appWidgetManager, id)
+                    }
+                    val compactIds = appWidgetManager.getAppWidgetIds(
+                        ComponentName(context, VolumeCompactWidgetProvider::class.java)
+                    )
+                    for (id in compactIds) {
+                        VolumeCompactWidgetProvider.updateAppWidget(context, appWidgetManager, id)
+                    }
+                }
+            }
             "android.media.VOLUME_CHANGED_ACTION",
             AudioManager.RINGER_MODE_CHANGED_ACTION,
             Intent.ACTION_USER_PRESENT -> {
@@ -57,6 +76,9 @@ class VolumeWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
+        const val ACTION_SET_PRESET = "app.utils.switchly.action.SET_VOLUME_PRESET"
+        const val EXTRA_PRESET_PERCENT = "extra_preset_percent"
+
         fun updateAppWidget(
             context: Context,
             appWidgetManager: AppWidgetManager,
@@ -73,8 +95,8 @@ class VolumeWidgetProvider : AppWidgetProvider() {
                 val views: RemoteViews = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     RemoteViews(
                         mapOf(
-                            SizeF(60f, 50f) to compactViews,
-                            SizeF(170f, 60f) to standardViews
+                            SizeF(60f, 60f) to compactViews,
+                            SizeF(180f, 60f) to standardViews
                         )
                     )
                 } else {
@@ -108,13 +130,36 @@ class VolumeWidgetProvider : AppWidgetProvider() {
                 }
             )
 
+            // Preset chips PendingIntents
+            val presets = listOf(
+                R.id.widget_volume_preset_mute to 0,
+                R.id.widget_volume_preset_30 to 30,
+                R.id.widget_volume_preset_70 to 70,
+                R.id.widget_volume_preset_100 to 100
+            )
+            for ((viewId, targetPercent) in presets) {
+                val presetIntent = Intent(context, VolumeWidgetProvider::class.java).apply {
+                    action = ACTION_SET_PRESET
+                    putExtra(EXTRA_PRESET_PERCENT, targetPercent)
+                }
+                val presetPendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    appWidgetId * 100 + targetPercent,
+                    presetIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(viewId, presetPendingIntent)
+            }
+
+            // Clicking widget body opens Volume screen in app
             val launchIntent = Intent(context, MainActivity::class.java).apply {
+                action = Intent.ACTION_VIEW
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra("route", LaunchRoutes.tile("volume"))
+                putExtra(LaunchRoutes.EXTRA_ROUTE, LaunchRoutes.tile("volume"))
             }
             val pendingIntent = PendingIntent.getActivity(
                 context,
-                appWidgetId,
+                appWidgetId * 10 + 1,
                 launchIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
@@ -142,12 +187,13 @@ class VolumeWidgetProvider : AppWidgetProvider() {
             )
 
             val launchIntent = Intent(context, MainActivity::class.java).apply {
+                action = Intent.ACTION_VIEW
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra("route", LaunchRoutes.tile("volume"))
+                putExtra(LaunchRoutes.EXTRA_ROUTE, LaunchRoutes.tile("volume"))
             }
             val pendingIntent = PendingIntent.getActivity(
                 context,
-                appWidgetId,
+                appWidgetId * 10 + 2,
                 launchIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
@@ -157,4 +203,3 @@ class VolumeWidgetProvider : AppWidgetProvider() {
         }
     }
 }
-

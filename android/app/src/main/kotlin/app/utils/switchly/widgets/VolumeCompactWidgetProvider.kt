@@ -39,6 +39,7 @@ class VolumeCompactWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         when (intent.action) {
+            VolumeWidgetProvider.ACTION_SET_PRESET,
             "android.media.VOLUME_CHANGED_ACTION",
             AudioManager.RINGER_MODE_CHANGED_ACTION,
             Intent.ACTION_USER_PRESENT -> {
@@ -71,12 +72,13 @@ class VolumeCompactWidgetProvider : AppWidgetProvider() {
                 )
 
                 val launchIntent = Intent(context, MainActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra("route", LaunchRoutes.tile("volume"))
+                    putExtra(LaunchRoutes.EXTRA_ROUTE, LaunchRoutes.tile("volume"))
                 }
                 val pendingIntent = PendingIntent.getActivity(
                     context,
-                    appWidgetId,
+                    appWidgetId * 10 + 3,
                     launchIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
@@ -89,4 +91,3 @@ class VolumeCompactWidgetProvider : AppWidgetProvider() {
         }
     }
 }
-
