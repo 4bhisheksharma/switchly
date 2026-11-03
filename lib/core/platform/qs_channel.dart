@@ -318,6 +318,35 @@ class QsChannel {
   Future<bool> authenticateDeviceOwner() async =>
       await _channel.invokeMethod<bool>('authenticateDeviceOwner') ?? false;
 
+  /// Retrieves all audio stream levels (music, ring, notification, alarm, call) and ringer mode.
+  Future<Map<String, dynamic>> getVolumeLevels() async {
+    final levels = await _channel.invokeMapMethod<String, dynamic>('getVolumeLevels');
+    return levels ?? {};
+  }
+
+  /// Sets volume for a specific stream ('music', 'ring', 'notification', 'alarm', 'call').
+  Future<bool> setVolumeLevel(String stream, int level, {bool playSound = false}) async {
+    return await _channel.invokeMethod<bool>('setVolumeLevel', {
+      'stream': stream,
+      'level': level,
+      'playSound': playSound,
+    }) ?? false;
+  }
+
+  /// Sets ringer mode (0 = Silent, 1 = Vibrate, 2 = Normal).
+  Future<bool> setRingerMode(int mode) async {
+    return await _channel.invokeMethod<bool>('setRingerMode', {'mode': mode}) ?? false;
+  }
+
+  /// Triggers the Android system volume UI flyout.
+  Future<bool> showSystemVolume() async {
+    return await _channel.invokeMethod<bool>('showSystemVolume') ?? false;
+  }
+
+  /// Opens Android Sound settings screen.
+  Future<bool> openSoundSettings() async {
+    return await _channel.invokeMethod<bool>('openSoundSettings') ?? false;
+  }
 
   Future<Object?> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onLaunchRoute') {

@@ -15,6 +15,7 @@ object WidgetRefresher {
             refreshNepaliDate(context)
             refreshPaymentQr(context)
             refreshQuickActions(context)
+            refreshVolume(context)
         } catch (e: Exception) {
             Log.d("WidgetRefresher", "Failed to refresh widgets", e)
         }
@@ -81,6 +82,36 @@ object WidgetRefresher {
             }
         } catch (e: Exception) {
             Log.d("WidgetRefresher", "Failed to refresh Quick Actions widgets", e)
+        }
+    }
+
+    fun refreshVolume(context: Context) {
+        try {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+
+            // Standard Volume widget
+            val standardComponent = ComponentName(context, VolumeWidgetProvider::class.java)
+            val standardIds = appWidgetManager.getAppWidgetIds(standardComponent)
+            if (standardIds.isNotEmpty()) {
+                val intent = Intent(context, VolumeWidgetProvider::class.java).apply {
+                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, standardIds)
+                }
+                context.sendBroadcast(intent)
+            }
+
+            // Compact Volume widget
+            val compactComponent = ComponentName(context, VolumeCompactWidgetProvider::class.java)
+            val compactIds = appWidgetManager.getAppWidgetIds(compactComponent)
+            if (compactIds.isNotEmpty()) {
+                val intent = Intent(context, VolumeCompactWidgetProvider::class.java).apply {
+                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, compactIds)
+                }
+                context.sendBroadcast(intent)
+            }
+        } catch (e: Exception) {
+            Log.d("WidgetRefresher", "Failed to refresh Volume widgets", e)
         }
     }
 }

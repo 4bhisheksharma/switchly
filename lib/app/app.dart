@@ -30,6 +30,8 @@ import '../features/public_mode/bloc/public_mode_bloc.dart';
 import '../features/public_mode/data/public_mode_models.dart';
 import '../features/screen_time/bloc/screen_time_bloc.dart';
 import '../features/screen_time/data/screen_time_repository.dart';
+import '../features/volume/bloc/volume_bloc.dart';
+import '../features/volume/data/volume_repository.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -68,6 +70,8 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
   late final ScreenTimeBloc _screenTimeBloc = ScreenTimeBloc(_screenTimeRepository)..add(const ScreenTimeStarted());
   late final PublicModeRepository _publicModeRepository = PublicModeRepository(widget.channel);
   late final PublicModeBloc _publicModeBloc = PublicModeBloc(_publicModeRepository)..add(const PublicModeStarted());
+  late final VolumeRepository _volumeRepository = VolumeRepository(channel: widget.channel);
+  late final VolumeBloc _volumeBloc = VolumeBloc(_volumeRepository)..add(const VolumeStarted());
   late final BsScriptCubit _bsScriptCubit = BsScriptCubit(widget.channel);
   final TileMessageCubit _tileMessageCubit = TileMessageCubit();
   final ThemeCubit _themeCubit = ThemeCubit();
@@ -93,6 +97,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
         _screenTimeBloc.add(const ScreenTimeRefreshed());
         _publicModeBloc.add(const PublicModeRefreshed());
         _publicModeBloc.add(const PublicModePermissionsChecked());
+        _volumeBloc.add(const VolumeRefreshed());
       },
       onPause: () => _batteryCubit.pause(),
     );
@@ -136,6 +141,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
     _updateCubit.close();
     _screenTimeBloc.close();
     _publicModeBloc.close();
+    _volumeBloc.close();
     widget.channel.dispose();
     super.dispose();
   }
@@ -148,6 +154,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
         RepositoryProvider.value(value: _updateRepository),
         RepositoryProvider.value(value: _screenTimeRepository),
         RepositoryProvider.value(value: _publicModeRepository),
+        RepositoryProvider.value(value: _volumeRepository),
         RepositoryProvider.value(value: widget.channel),
       ],
       child: MultiBlocProvider(
@@ -159,6 +166,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
           BlocProvider.value(value: _quickTextsBloc),
           BlocProvider.value(value: _profilesBloc),
           BlocProvider.value(value: _paymentQrBloc),
+          BlocProvider.value(value: _volumeBloc),
           BlocProvider.value(value: _bsScriptCubit),
           BlocProvider.value(value: _tileMessageCubit),
           BlocProvider.value(value: _themeCubit),

@@ -4,6 +4,7 @@ import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/display/presentation/animation_screen.dart';
 import '../features/display/presentation/font_size_screen.dart';
 import '../features/dns/presentation/dns_screen.dart';
+import '../features/volume/presentation/volume_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/network/presentation/kill_switch_screen.dart';
 import '../features/payment_qr/presentation/payment_qr_screen.dart';
@@ -28,6 +29,7 @@ abstract final class AppRouter {
   static const caffeine = '/caffeine';
   static const appScreenTime = '/app-screen-time';
   static const publicMode = '/public-mode';
+  static const volume = '/volume';
 
   /// Pass the [Profile] to edit as `arguments`, or nothing to create one.
   static const profileEditor = '/profiles/edit';
@@ -49,6 +51,7 @@ abstract final class AppRouter {
         'caffeine' => caffeine,
         'app_screen_time' => appScreenTime,
         'public_mode' => publicMode,
+        'volume' => volume,
         _ => null,
       };
 
@@ -66,6 +69,7 @@ abstract final class AppRouter {
       caffeine => const CaffeineScreen(),
       appScreenTime => const AppScreenTimeScreen(),
       publicMode => const PublicModeScreen(),
+      volume => const VolumeScreen(),
       profileEditor => ProfileEditorScreen(editing: settings.arguments as Profile?),
       _ => null,
     };

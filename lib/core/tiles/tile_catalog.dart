@@ -144,6 +144,13 @@ const publicModeTile = TileDefinition(
   icon: Symbols.shield_person_rounded,
 );
 
+const volumeTile = TileDefinition(
+  id: 'volume',
+  name: 'Volume control',
+  description: 'Control media, ringtone and alarm volume loudness with interactive sliders.',
+  icon: Symbols.volume_up_rounded,
+);
+
 TileDefinition appScreenTimeTileForSlot(int slot) {
   return switch (slot) {
     2 => appScreenTimeTile2,

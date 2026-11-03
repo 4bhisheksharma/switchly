@@ -13,6 +13,7 @@ import '../../calendar/data/bs_format.dart';
 import '../../display/bloc/display_bloc.dart';
 import '../../display/data/display_models.dart';
 import '../../dns/bloc/dns_bloc.dart';
+import '../../volume/bloc/volume_bloc.dart';
 import '../../network/bloc/network_bloc.dart';
 import '../../payment_qr/bloc/payment_qr_bloc.dart';
 import '../../power/bloc/power_cubits.dart';
@@ -349,6 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const _PublicModeTileRow(),
               const _BsDateTileRow(),
+              if (!hiddenTiles.contains('volume')) const _VolumeTileRow(),
               const _AppScreenTimeTileRow(),
               if (!hiddenTiles.contains('qr_scanner'))
                 _TileRow(
@@ -428,6 +430,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (matches('nepali date', 'calendar bikram sambat bs ad')) {
       list.add(const _BsDateTileRow());
+    }
+    if (matches('volume slider loudness sound audio ring media mute silent', 'volume slider control loudness media ringtone notification alarm sound audio levels')) {
+      list.add(const _VolumeTileRow());
     }
     if (matches('scan qr', 'camera scanner barcode offline')) {
       list.add(_TileRow(
@@ -961,6 +966,26 @@ class _BsDateTileRow extends StatelessWidget {
       status: '${BsFormat.weekday(today, nepali)}, ${BsFormat.date(today, nepali)}',
       active: true,
       onTap: () => Navigator.of(context).pushNamed(AppRouter.calendar),
+      trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
+    );
+  }
+}
+
+class _VolumeTileRow extends StatelessWidget {
+  const _VolumeTileRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<VolumeBloc>().state;
+    final music = state.snapshot.music;
+    final ringer = state.snapshot.ringerMode;
+    final status = 'Media: ${music.percent}% · ${ringer.label}';
+
+    return _TileRow(
+      tile: volumeTile,
+      status: status,
+      active: !music.isMuted,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.volume),
       trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
     );
   }

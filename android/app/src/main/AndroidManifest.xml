@@ -241,6 +241,18 @@
             </intent-filter>
         </service>
 
+        <!-- Interactive Volume Loudness Slider Tile -->
+        <service
+            android:name=".tiles.VolumeTile"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_volume"
+            android:label="@string/tile_volume"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+
         <service
             android:name=".tiles.PaymentQrTile"
             android:exported="true"
@@ -453,6 +465,36 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_quick_actions_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widgets.VolumeWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_volume">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.media.VOLUME_CHANGED_ACTION" />
+                <action android:name="android.media.RINGER_MODE_CHANGED" />
+                <action android:name="android.intent.action.USER_PRESENT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_volume_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widgets.VolumeCompactWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_volume_compact">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.media.VOLUME_CHANGED_ACTION" />
+                <action android:name="android.media.RINGER_MODE_CHANGED" />
+                <action android:name="android.intent.action.USER_PRESENT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_volume_compact_info" />
         </receiver>
 
         <!-- FileProvider to safely grant the system package installer access to downloaded update APKs -->

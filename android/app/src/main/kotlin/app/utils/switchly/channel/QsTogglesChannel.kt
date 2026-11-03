@@ -43,6 +43,9 @@ import app.utils.switchly.widgets.NepaliDateWidgetProvider
 import app.utils.switchly.widgets.NepaliDateCompactWidgetProvider
 import app.utils.switchly.widgets.PaymentQrWidgetProvider
 import app.utils.switchly.widgets.QuickActionsWidgetProvider
+import app.utils.switchly.widgets.VolumeWidgetProvider
+import app.utils.switchly.widgets.VolumeCompactWidgetProvider
+import app.utils.switchly.volume.VolumeController
 import app.utils.switchly.widgets.WidgetRefresher
 import android.appwidget.AppWidgetManager
 import io.flutter.plugin.common.BinaryMessenger
@@ -340,6 +343,8 @@ class QsTogglesChannel(
                     "nepali_date_compact" -> NepaliDateCompactWidgetProvider::class.java
                     "payment_qr" -> PaymentQrWidgetProvider::class.java
                     "quick_actions" -> QuickActionsWidgetProvider::class.java
+                    "volume" -> VolumeWidgetProvider::class.java
+                    "volume_compact" -> VolumeCompactWidgetProvider::class.java
                     else -> NepaliDateWidgetProvider::class.java
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -360,6 +365,43 @@ class QsTogglesChannel(
             "refreshWidgets" -> {
                 WidgetRefresher.refreshAll(activity)
                 result.success(true)
+            }
+            "getVolumeLevels" -> {
+                result.success(VolumeController.getAllLevels(activity))
+            }
+            "setVolumeLevel" -> {
+                val stream = call.argument<String>("stream") ?: "music"
+                val level = call.argument<Int>("level") ?: 0
+                val playSound = call.argument<Boolean>("playSound") == true
+                val flags = if (playSound) android.media.AudioManager.FLAG_PLAY_SOUND else 0
+                val success = VolumeController.setStreamVolume(
+                    activity,
+                    VolumeController.streamTypeFromString(stream),
+                    level,
+                    flags
+                )
+                WidgetRefresher.refreshVolume(activity)
+                result.success(success)
+            }
+            "setRingerMode" -> {
+                val mode = call.argument<Int>("mode") ?: android.media.AudioManager.RINGER_MODE_NORMAL
+                val success = VolumeController.setRingerMode(activity, mode)
+                WidgetRefresher.refreshVolume(activity)
+                result.success(success)
+            }
+            "showSystemVolume" -> {
+                result.success(VolumeController.showSystemVolume(activity))
+            }
+            "openSoundSettings" -> {
+                val intent = Intent(Settings.ACTION_SOUND_SETTINGS).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                try {
+                    activity.startActivity(intent)
+                    result.success(true)
+                } catch (e: Exception) {
+                    result.success(false)
+                }
             }
             else -> result.notImplemented()
         }

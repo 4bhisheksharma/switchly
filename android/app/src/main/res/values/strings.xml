@@ -27,4 +27,9 @@
     <string name="widget_payment_qr_description">Fast one-tap shortcut to display payment QR</string>
     <string name="widget_quick_actions">Quick Actions</string>
     <string name="widget_quick_actions_description">Quick access to Nepali date, Payment QR, Quick texts, and Scanner</string>
+    <string name="tile_volume">Volume</string>
+    <string name="widget_volume">Volume control</string>
+    <string name="widget_volume_description">Quick volume loudness controls and mute shortcuts</string>
+    <string name="widget_volume_compact">Volume (Compact)</string>
+    <string name="widget_volume_compact_description">Compact volume loudness badge</string>
 </resources>
