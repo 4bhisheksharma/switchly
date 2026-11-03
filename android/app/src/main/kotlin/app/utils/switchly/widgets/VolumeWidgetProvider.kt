@@ -15,6 +15,8 @@ import android.widget.RemoteViews
 import app.utils.switchly.LaunchRoutes
 import app.utils.switchly.MainActivity
 import app.utils.switchly.R
+import app.utils.switchly.tiles.TileRefresher
+import app.utils.switchly.tiles.VolumeTile
 import app.utils.switchly.volume.VolumeController
 
 /**
@@ -45,52 +47,80 @@ class VolumeWidgetProvider : AppWidgetProvider() {
             ACTION_SET_PRESET -> {
                 val percent = intent.getIntExtra(EXTRA_PRESET_PERCENT, -1)
                 if (percent in 0..100) {
-                    VolumeController.setStreamPercent(context, AudioManager.STREAM_MUSIC, percent)
-                    val appWidgetManager = AppWidgetManager.getInstance(context)
-                    val ids = appWidgetManager.getAppWidgetIds(
-                        ComponentName(context, VolumeWidgetProvider::class.java)
+                    val updated = VolumeController.setStreamPercent(
+                        context,
+                        AudioManager.STREAM_MUSIC,
+                        percent,
+                        AudioManager.FLAG_SHOW_UI
                     )
-                    for (id in ids) {
-                        updateAppWidget(context, appWidgetManager, id)
-                    }
-                    val compactIds = appWidgetManager.getAppWidgetIds(
-                        ComponentName(context, VolumeCompactWidgetProvider::class.java)
-                    )
-                    for (id in compactIds) {
-                        VolumeCompactWidgetProvider.updateAppWidget(context, appWidgetManager, id)
-                    }
+                    TileRefresher.refresh(context, VolumeTile::class.java)
+                    updateAllWidgets(context, updated.percent)
                 }
+            }
+            ACTION_VOLUME_UP -> {
+                val updated = VolumeController.adjustVolumeStep(
+                    context,
+                    AudioManager.STREAM_MUSIC,
+                    increase = true,
+                    flags = AudioManager.FLAG_SHOW_UI
+                )
+                TileRefresher.refresh(context, VolumeTile::class.java)
+                updateAllWidgets(context, updated.percent)
+            }
+            ACTION_VOLUME_DOWN -> {
+                val updated = VolumeController.adjustVolumeStep(
+                    context,
+                    AudioManager.STREAM_MUSIC,
+                    increase = false,
+                    flags = AudioManager.FLAG_SHOW_UI
+                )
+                TileRefresher.refresh(context, VolumeTile::class.java)
+                updateAllWidgets(context, updated.percent)
             }
             "android.media.VOLUME_CHANGED_ACTION",
             AudioManager.RINGER_MODE_CHANGED_ACTION,
             Intent.ACTION_USER_PRESENT -> {
-                val appWidgetManager = AppWidgetManager.getInstance(context)
-                val ids = appWidgetManager.getAppWidgetIds(
-                    ComponentName(context, VolumeWidgetProvider::class.java)
-                )
-                for (id in ids) {
-                    updateAppWidget(context, appWidgetManager, id)
-                }
+                updateAllWidgets(context, null)
             }
         }
     }
 
     companion object {
         const val ACTION_SET_PRESET = "app.utils.switchly.action.SET_VOLUME_PRESET"
+        const val ACTION_VOLUME_UP = "app.utils.switchly.action.VOLUME_UP"
+        const val ACTION_VOLUME_DOWN = "app.utils.switchly.action.VOLUME_DOWN"
         const val EXTRA_PRESET_PERCENT = "extra_preset_percent"
+
+        fun updateAllWidgets(context: Context, overridePercent: Int? = null) {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val ids = appWidgetManager.getAppWidgetIds(
+                ComponentName(context, VolumeWidgetProvider::class.java)
+            )
+            for (id in ids) {
+                updateAppWidget(context, appWidgetManager, id, overridePercent = overridePercent)
+            }
+            val compactIds = appWidgetManager.getAppWidgetIds(
+                ComponentName(context, VolumeCompactWidgetProvider::class.java)
+            )
+            for (id in compactIds) {
+                VolumeCompactWidgetProvider.updateAppWidget(context, appWidgetManager, id, overridePercent = overridePercent)
+            }
+        }
 
         fun updateAppWidget(
             context: Context,
             appWidgetManager: AppWidgetManager,
             appWidgetId: Int,
-            options: Bundle? = null
+            options: Bundle? = null,
+            overridePercent: Int? = null
         ) {
             try {
                 val media = VolumeController.getStreamInfo(context, AudioManager.STREAM_MUSIC)
+                val percent = overridePercent ?: media.percent
                 val ringerMode = VolumeController.getRingerMode(context)
 
-                val standardViews = buildStandardViews(context, appWidgetId, media.percent, ringerMode)
-                val compactViews = buildCompactViews(context, appWidgetId, media.percent, ringerMode)
+                val standardViews = buildStandardViews(context, appWidgetId, percent, ringerMode)
+                val compactViews = buildCompactViews(context, appWidgetId, percent, ringerMode)
 
                 val views: RemoteViews = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     RemoteViews(
@@ -129,6 +159,29 @@ class VolumeWidgetProvider : AppWidgetProvider() {
                     else -> "Sound On"
                 }
             )
+
+            // Step Controls: Volume Down (-) and Volume Up (+)
+            val downIntent = Intent(context, VolumeWidgetProvider::class.java).apply {
+                action = ACTION_VOLUME_DOWN
+            }
+            val downPending = PendingIntent.getBroadcast(
+                context,
+                appWidgetId * 100 + 91,
+                downIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.widget_volume_btn_down, downPending)
+
+            val upIntent = Intent(context, VolumeWidgetProvider::class.java).apply {
+                action = ACTION_VOLUME_UP
+            }
+            val upPending = PendingIntent.getBroadcast(
+                context,
+                appWidgetId * 100 + 92,
+                upIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.widget_volume_btn_up, upPending)
 
             // Preset chips PendingIntents
             val presets = listOf(
@@ -185,6 +238,29 @@ class VolumeWidgetProvider : AppWidgetProvider() {
                     else -> "Sound On"
                 }
             )
+
+            // Step Controls: Volume Down (-) and Volume Up (+)
+            val downIntent = Intent(context, VolumeWidgetProvider::class.java).apply {
+                action = ACTION_VOLUME_DOWN
+            }
+            val downPending = PendingIntent.getBroadcast(
+                context,
+                appWidgetId * 100 + 93,
+                downIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.widget_volume_btn_down, downPending)
+
+            val upIntent = Intent(context, VolumeWidgetProvider::class.java).apply {
+                action = ACTION_VOLUME_UP
+            }
+            val upPending = PendingIntent.getBroadcast(
+                context,
+                appWidgetId * 100 + 94,
+                upIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.widget_volume_btn_up, upPending)
 
             val launchIntent = Intent(context, MainActivity::class.java).apply {
                 action = Intent.ACTION_VIEW

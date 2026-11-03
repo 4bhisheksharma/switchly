@@ -39,7 +39,7 @@
             android:text="Sound On" />
     </LinearLayout>
 
-    <!-- Volume Percentage Headline -->
+    <!-- Volume Percentage Headline & Step Controls -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -59,12 +59,38 @@
 
         <TextView
             android:id="@+id/widget_volume_stream_label"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:textColor="#C4C2D6"
             android:textSize="13sp"
             android:text="Media Loudness" />
+
+        <!-- Volume Down (-) Button -->
+        <TextView
+            android:id="@+id/widget_volume_btn_down"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/widget_tile_bg"
+            android:gravity="center"
+            android:text="−"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- Volume Up (+) Button -->
+        <TextView
+            android:id="@+id/widget_volume_btn_up"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/widget_tile_bg"
+            android:gravity="center"
+            android:text="+"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <!-- Flexible spacer between headline and preset chips -->

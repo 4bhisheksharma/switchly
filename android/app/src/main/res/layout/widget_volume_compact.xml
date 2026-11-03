@@ -39,17 +39,48 @@
             android:text="Media" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/widget_volume_percent"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
         android:layout_marginTop="2dp"
-        android:layout_marginBottom="2dp"
-        android:textColor="#818CF8"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:includeFontPadding="false"
-        android:text="80%" />
+        android:layout_marginBottom="2dp">
+
+        <TextView
+            android:id="@+id/widget_volume_btn_down"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/widget_tile_bg"
+            android:gravity="center"
+            android:text="−"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_volume_percent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:textColor="#818CF8"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:text="80%" />
+
+        <TextView
+            android:id="@+id/widget_volume_btn_up"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/widget_tile_bg"
+            android:gravity="center"
+            android:text="+"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/widget_volume_status"

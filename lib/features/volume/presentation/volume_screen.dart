@@ -289,23 +289,53 @@ class VolumeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Master Slider
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 8,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-            ),
-            child: Slider(
-              value: music.current.toDouble().clamp(music.min.toDouble(), music.max.toDouble()),
-              min: music.min.toDouble(),
-              max: music.max.toDouble(),
-              divisions: (music.max - music.min).clamp(1, 100),
-              onChanged: (val) {
-                context.read<VolumeBloc>().add(
-                      VolumeLevelChanged(stream: 'music', level: val.round()),
-                    );
-              },
-            ),
+          // Master Slider with Step Buttons
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Symbols.remove_rounded),
+                tooltip: 'Decrease Media Volume',
+                visualDensity: VisualDensity.compact,
+                onPressed: music.current > music.min
+                    ? () {
+                        context.read<VolumeBloc>().add(
+                              const VolumeStepAdjusted(stream: 'music', increase: false),
+                            );
+                      }
+                    : null,
+              ),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 8,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                  ),
+                  child: Slider(
+                    value: music.current.toDouble().clamp(music.min.toDouble(), music.max.toDouble()),
+                    min: music.min.toDouble(),
+                    max: music.max.toDouble(),
+                    divisions: (music.max - music.min).clamp(1, 100),
+                    onChanged: (val) {
+                      context.read<VolumeBloc>().add(
+                            VolumeLevelChanged(stream: 'music', level: val.round()),
+                          );
+                    },
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Symbols.add_rounded),
+                tooltip: 'Increase Media Volume',
+                visualDensity: VisualDensity.compact,
+                onPressed: music.current < music.max
+                    ? () {
+                        context.read<VolumeBloc>().add(
+                              const VolumeStepAdjusted(stream: 'music', increase: true),
+                            );
+                      }
+                    : null,
+              ),
+            ],
           ),
           const SizedBox(height: 12),
 
@@ -550,18 +580,48 @@ class _StreamSliderTile extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 6,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-            ),
-            child: Slider(
-              value: stream.current.toDouble().clamp(stream.min.toDouble(), stream.max.toDouble()),
-              min: stream.min.toDouble(),
-              max: stream.max.toDouble(),
-              divisions: (stream.max - stream.min).clamp(1, 100),
-              onChanged: onChanged,
-            ),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Symbols.remove_rounded, size: 20),
+                tooltip: 'Decrease ${stream.label}',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                onPressed: stream.current > stream.min
+                    ? () => onChanged((stream.current - 1)
+                        .toDouble()
+                        .clamp(stream.min.toDouble(), stream.max.toDouble()))
+                    : null,
+              ),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 6,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                  ),
+                  child: Slider(
+                    value: stream.current.toDouble().clamp(stream.min.toDouble(), stream.max.toDouble()),
+                    min: stream.min.toDouble(),
+                    max: stream.max.toDouble(),
+                    divisions: (stream.max - stream.min).clamp(1, 100),
+                    onChanged: onChanged,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Symbols.add_rounded, size: 20),
+                tooltip: 'Increase ${stream.label}',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                onPressed: stream.current < stream.max
+                    ? () => onChanged((stream.current + 1)
+                        .toDouble()
+                        .clamp(stream.min.toDouble(), stream.max.toDouble()))
+                    : null,
+              ),
+            ],
           ),
         ],
       ),
@@ -718,7 +778,7 @@ class _StandardVolumeWidgetPreview extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Percentage readout
+          // Percentage readout & Step Controls
           Row(
             children: [
               Text(
@@ -735,6 +795,44 @@ class _StandardVolumeWidgetPreview extends StatelessWidget {
                 style: TextStyle(
                   color: Color(0xFFC4C2D6),
                   fontSize: 13,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF20212E),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Center(
+                  child: Text(
+                    '−',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF20212E),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Center(
+                  child: Text(
+                    '+',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -818,13 +916,57 @@ class _CompactVolumeWidgetPreview extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            '$percent%',
-            style: const TextStyle(
-              color: Color(0xFF818CF8),
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF20212E),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Center(
+                  child: Text(
+                    '−',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  '$percent%',
+                  style: const TextStyle(
+                    color: Color(0xFF818CF8),
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF20212E),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Center(
+                  child: Text(
+                    '+',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 2),
           const Text(

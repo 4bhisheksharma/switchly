@@ -39,6 +39,7 @@ import app.utils.switchly.tiles.AppScreenTimeTile3
 import app.utils.switchly.tiles.AppScreenTimeTile4
 import app.utils.switchly.tiles.TileRefresher
 import app.utils.switchly.tiles.TileRegistry
+import app.utils.switchly.tiles.VolumeTile
 import app.utils.switchly.widgets.NepaliDateWidgetProvider
 import app.utils.switchly.widgets.NepaliDateCompactWidgetProvider
 import app.utils.switchly.widgets.PaymentQrWidgetProvider
@@ -73,6 +74,11 @@ class QsTogglesChannel(
     /** Called for intents delivered to the running activity. */
     fun pushRoute(route: String) {
         channel.invokeMethod("onLaunchRoute", route)
+    }
+
+    /** Pushes live volume updates to Flutter while activity is in foreground. */
+    fun pushVolumeChanged(levels: Map<String, Any>) {
+        channel.invokeMethod("onVolumeChanged", levels)
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -373,7 +379,10 @@ class QsTogglesChannel(
                 val stream = call.argument<String>("stream") ?: "music"
                 val level = call.argument<Int>("level") ?: 0
                 val playSound = call.argument<Boolean>("playSound") == true
-                val flags = if (playSound) android.media.AudioManager.FLAG_PLAY_SOUND else 0
+                val showUi = call.argument<Boolean>("showUi") == true
+                var flags = 0
+                if (playSound) flags = flags or android.media.AudioManager.FLAG_PLAY_SOUND
+                if (showUi) flags = flags or android.media.AudioManager.FLAG_SHOW_UI
                 val success = VolumeController.setStreamVolume(
                     activity,
                     VolumeController.streamTypeFromString(stream),
@@ -381,12 +390,28 @@ class QsTogglesChannel(
                     flags
                 )
                 WidgetRefresher.refreshVolume(activity)
+                TileRefresher.refresh(activity, VolumeTile::class.java)
                 result.success(success)
+            }
+            "adjustVolume" -> {
+                val stream = call.argument<String>("stream") ?: "music"
+                val directionStr = call.argument<String>("direction") ?: "up"
+                val increase = directionStr.lowercase() == "up"
+                val info = VolumeController.adjustVolumeStep(
+                    activity,
+                    VolumeController.streamTypeFromString(stream),
+                    increase,
+                    android.media.AudioManager.FLAG_SHOW_UI
+                )
+                WidgetRefresher.refreshVolume(activity)
+                TileRefresher.refresh(activity, VolumeTile::class.java)
+                result.success(info.percent)
             }
             "setRingerMode" -> {
                 val mode = call.argument<Int>("mode") ?: android.media.AudioManager.RINGER_MODE_NORMAL
                 val success = VolumeController.setRingerMode(activity, mode)
                 WidgetRefresher.refreshVolume(activity)
+                TileRefresher.refresh(activity, VolumeTile::class.java)
                 result.success(success)
             }
             "showSystemVolume" -> {

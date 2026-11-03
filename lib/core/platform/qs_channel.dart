@@ -28,9 +28,13 @@ class QsChannel {
 
   final MethodChannel _channel;
   final _launchRoutes = StreamController<String>.broadcast();
+  final _volumeChanged = StreamController<Map<String, dynamic>>.broadcast();
 
   /// Routes requested by native code while the app is running (tile tap / long-press).
   Stream<String> get launchRoutes => _launchRoutes.stream;
+
+  /// Live volume updates emitted by Android when physical volume keys or system UI changes levels.
+  Stream<Map<String, dynamic>> get onVolumeChanged => _volumeChanged.stream;
 
   Future<bool> hasWriteSecureSettings() async =>
       await _channel.invokeMethod<bool>('hasWriteSecureSettings') ?? false;
@@ -325,12 +329,26 @@ class QsChannel {
   }
 
   /// Sets volume for a specific stream ('music', 'ring', 'notification', 'alarm', 'call').
-  Future<bool> setVolumeLevel(String stream, int level, {bool playSound = false}) async {
+  Future<bool> setVolumeLevel(
+    String stream,
+    int level, {
+    bool playSound = false,
+    bool showUi = false,
+  }) async {
     return await _channel.invokeMethod<bool>('setVolumeLevel', {
       'stream': stream,
       'level': level,
       'playSound': playSound,
+      'showUi': showUi,
     }) ?? false;
+  }
+
+  /// Adjusts volume up or down by 1 step.
+  Future<int?> adjustVolume({String stream = 'music', required bool increase}) async {
+    return await _channel.invokeMethod<int>('adjustVolume', {
+      'stream': stream,
+      'direction': increase ? 'up' : 'down',
+    });
   }
 
   /// Sets ringer mode (0 = Silent, 1 = Vibrate, 2 = Normal).
@@ -351,9 +369,15 @@ class QsChannel {
   Future<Object?> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onLaunchRoute') {
       _launchRoutes.add(call.arguments as String);
+    } else if (call.method == 'onVolumeChanged') {
+      final map = (call.arguments as Map?)?.cast<String, dynamic>() ?? {};
+      _volumeChanged.add(map);
     }
     return null;
   }
 
-  void dispose() => _launchRoutes.close();
+  void dispose() {
+    _launchRoutes.close();
+    _volumeChanged.close();
+  }
 }

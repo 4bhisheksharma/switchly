@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -34,6 +36,27 @@ final class VolumeLevelChanged extends VolumeEvent {
 
   @override
   List<Object?> get props => [stream, level, playSound];
+}
+
+final class VolumeStepAdjusted extends VolumeEvent {
+  const VolumeStepAdjusted({
+    required this.stream,
+    required this.increase,
+  });
+
+  final String stream;
+  final bool increase;
+
+  @override
+  List<Object?> get props => [stream, increase];
+}
+
+final class VolumeExternalChanged extends VolumeEvent {
+  const VolumeExternalChanged(this.snapshot);
+  final VolumeSnapshot snapshot;
+
+  @override
+  List<Object?> get props => [snapshot];
 }
 
 final class VolumePresetChanged extends VolumeEvent {
@@ -87,13 +110,47 @@ class VolumeBloc extends Bloc<VolumeEvent, VolumeState> {
     on<VolumeStarted>(_onStarted);
     on<VolumeRefreshed>(_onRefreshed);
     on<VolumeLevelChanged>(_onLevelChanged);
+    on<VolumeStepAdjusted>(_onStepAdjusted);
     on<VolumePresetChanged>(_onPresetChanged);
     on<VolumeRingerModeChanged>(_onRingerModeChanged);
     on<VolumeSystemUiRequested>(_onSystemUiRequested);
     on<VolumeSoundSettingsRequested>(_onSoundSettingsRequested);
+    on<VolumeExternalChanged>(_onExternalChanged);
+
+    _volumeSub = _repository.channel.onVolumeChanged.listen((map) {
+      if (map.isNotEmpty) {
+        add(VolumeExternalChanged(VolumeSnapshot.fromMap(map)));
+      }
+    });
   }
 
   final VolumeRepository _repository;
+  StreamSubscription<Map<String, dynamic>>? _volumeSub;
+
+  @override
+  Future<void> close() {
+    _volumeSub?.cancel();
+    return super.close();
+  }
+
+  void _onExternalChanged(VolumeExternalChanged event, Emitter<VolumeState> emit) {
+    emit(state.copyWith(snapshot: event.snapshot));
+  }
+
+  Future<void> _onStepAdjusted(VolumeStepAdjusted event, Emitter<VolumeState> emit) async {
+    final streamState = switch (event.stream) {
+      'music' => state.snapshot.music,
+      'ring' => state.snapshot.ring,
+      'notification' => state.snapshot.notification,
+      'alarm' => state.snapshot.alarm,
+      'call' => state.snapshot.call,
+      _ => state.snapshot.music,
+    };
+    final nextLevel = event.increase
+        ? (streamState.current + 1).clamp(streamState.min, streamState.max)
+        : (streamState.current - 1).clamp(streamState.min, streamState.max);
+    add(VolumeLevelChanged(stream: event.stream, level: nextLevel, playSound: true));
+  }
 
   Future<void> _onStarted(VolumeStarted event, Emitter<VolumeState> emit) async {
     final levels = await _repository.getLevels();

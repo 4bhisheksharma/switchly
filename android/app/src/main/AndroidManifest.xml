@@ -26,6 +26,8 @@
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <!-- Android 13+ runtime notification permission for foreground services. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Volume control: allows increasing, decreasing, and setting stream volume. -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <application
         android:label="Switchly"
@@ -474,6 +476,8 @@
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="app.utils.switchly.action.SET_VOLUME_PRESET" />
+                <action android:name="app.utils.switchly.action.VOLUME_UP" />
+                <action android:name="app.utils.switchly.action.VOLUME_DOWN" />
                 <action android:name="android.media.VOLUME_CHANGED_ACTION" />
                 <action android:name="android.media.RINGER_MODE_CHANGED" />
                 <action android:name="android.intent.action.USER_PRESENT" />
@@ -490,6 +494,8 @@
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="app.utils.switchly.action.SET_VOLUME_PRESET" />
+                <action android:name="app.utils.switchly.action.VOLUME_UP" />
+                <action android:name="app.utils.switchly.action.VOLUME_DOWN" />
                 <action android:name="android.media.VOLUME_CHANGED_ACTION" />
                 <action android:name="android.media.RINGER_MODE_CHANGED" />
                 <action android:name="android.intent.action.USER_PRESENT" />

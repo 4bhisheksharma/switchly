@@ -22,6 +22,7 @@ import app.utils.switchly.LaunchRoutes
 import app.utils.switchly.R
 import app.utils.switchly.tiles.base.BaseTile
 import app.utils.switchly.volume.VolumeController
+import app.utils.switchly.widgets.WidgetRefresher
 
 /**
  * Quick Settings volume slider tile.
@@ -163,6 +164,7 @@ class VolumeTile : BaseTile() {
                         val pct = ((progress.toDouble() / range) * 100).toInt().coerceIn(0, 100)
                         mediaText.text = "$pct%"
                         refresh()
+                        WidgetRefresher.refreshVolume(this@VolumeTile)
                     }
                 }
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {}
@@ -184,6 +186,7 @@ class VolumeTile : BaseTile() {
                         val pct = ((progress.toDouble() / range) * 100).toInt().coerceIn(0, 100)
                         ringText.text = "$pct%"
                         refresh()
+                        WidgetRefresher.refreshVolume(this@VolumeTile)
                     }
                 }
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {}
@@ -204,6 +207,7 @@ class VolumeTile : BaseTile() {
                         val range = (notifInfo.max - notifInfo.min).coerceAtLeast(1)
                         val pct = ((progress.toDouble() / range) * 100).toInt().coerceIn(0, 100)
                         notifText.text = "$pct%"
+                        WidgetRefresher.refreshVolume(this@VolumeTile)
                     }
                 }
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {}
@@ -224,6 +228,7 @@ class VolumeTile : BaseTile() {
                         val range = (alarmInfo.max - alarmInfo.min).coerceAtLeast(1)
                         val pct = ((progress.toDouble() / range) * 100).toInt().coerceIn(0, 100)
                         alarmText.text = "$pct%"
+                        WidgetRefresher.refreshVolume(this@VolumeTile)
                     }
                 }
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {}
@@ -248,8 +253,8 @@ class VolumeTile : BaseTile() {
             activeDialog = themedDialog
             showDialog(themedDialog)
         } catch (e: Exception) {
-            Log.w("VolumeTile", "Could not show volume dialog, fallback to system volume UI", e)
-            VolumeController.showSystemVolume(this)
+            Log.w("VolumeTile", "Could not show volume dialog, opening in app", e)
+            launchApp(LaunchRoutes.tile("volume"))
         }
     }
 }

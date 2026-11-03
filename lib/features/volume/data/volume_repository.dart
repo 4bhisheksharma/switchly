@@ -16,11 +16,29 @@ class VolumeRepository {
     return VolumeSnapshot.fallback;
   }
 
-  Future<bool> setVolume(String stream, int level, {bool playSound = false}) async {
+  Future<bool> setVolume(
+    String stream,
+    int level, {
+    bool playSound = false,
+    bool showUi = false,
+  }) async {
     try {
-      return await channel.setVolumeLevel(stream, level, playSound: playSound);
+      return await channel.setVolumeLevel(
+        stream,
+        level,
+        playSound: playSound,
+        showUi: showUi,
+      );
     } catch (_) {
       return false;
+    }
+  }
+
+  Future<int?> adjustVolume(String stream, {required bool increase}) async {
+    try {
+      return await channel.adjustVolume(stream: stream, increase: increase);
+    } catch (_) {
+      return null;
     }
   }
 

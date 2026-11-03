@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.AudioManager
 import android.os.Build
 import android.util.Log
+import kotlin.math.round
 
 data class StreamInfo(
     val current: Int,
@@ -80,24 +81,33 @@ object VolumeController {
         }
     }
 
-    fun setStreamPercent(context: Context, streamType: Int, percent: Int, flags: Int = 0): Boolean {
-        val am = audioManager(context) ?: return false
-        return try {
-            val max = am.getStreamMaxVolume(streamType)
-            val min = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                try {
-                    am.getStreamMinVolume(streamType)
-                } catch (_: Exception) {
-                    0
-                }
-            } else 0
-            val range = (max - min).coerceAtLeast(1)
-            val target = (min + (range * (percent.coerceIn(0, 100) / 100.0))).toInt()
-            setStreamVolume(context, streamType, target, flags)
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to set stream percent for $streamType", e)
-            false
-        }
+    fun setStreamPercent(context: Context, streamType: Int, percent: Int, flags: Int = 0): StreamInfo {
+        val info = getStreamInfo(context, streamType)
+        val range = (info.max - info.min).coerceAtLeast(1)
+        val target = (info.min + round(range * (percent.coerceIn(0, 100) / 100.0)).toInt())
+            .coerceIn(info.min, info.max)
+        setStreamVolume(context, streamType, target, flags)
+        val actualPct = (((target - info.min).toDouble() / range) * 100).toInt().coerceIn(0, 100)
+        return StreamInfo(target, info.max, info.min, actualPct)
+    }
+
+    /**
+     * Adjusts stream volume up or down by 1 step.
+     * Calculates the new value immediately and applies it with [flags].
+     * Returns the updated [StreamInfo].
+     */
+    fun adjustVolumeStep(
+        context: Context,
+        streamType: Int,
+        increase: Boolean,
+        flags: Int = AudioManager.FLAG_SHOW_UI
+    ): StreamInfo {
+        val info = getStreamInfo(context, streamType)
+        val next = if (increase) (info.current + 1).coerceAtMost(info.max) else (info.current - 1).coerceAtLeast(info.min)
+        setStreamVolume(context, streamType, next, flags)
+        val range = (info.max - info.min).coerceAtLeast(1)
+        val nextPct = (((next - info.min).toDouble() / range) * 100).toInt().coerceIn(0, 100)
+        return StreamInfo(next, info.max, info.min, nextPct)
     }
 
     fun getRingerMode(context: Context): Int {
