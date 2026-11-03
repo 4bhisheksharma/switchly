@@ -104,6 +104,16 @@
             android:taskAffinity=""
             android:theme="@style/TransparentDialogActivityTheme" />
 
+        <!-- Opened by the Volume tile: transparent dialog activity for reliable foreground audio adjustment on all OEMs. -->
+        <activity
+            android:name=".volume.VolumeDialogActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:theme="@style/TransparentDialogActivityTheme" />
+
         <!-- Public Mode lock activity; transparent fullscreen interceptor for bulletproof display on MIUI/HyperOS, ColorOS, OneUI and all OEMs. -->
         <activity
             android:name=".publicmode.PublicModeBlockActivity"
