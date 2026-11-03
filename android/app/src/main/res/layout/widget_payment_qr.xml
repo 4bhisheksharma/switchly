@@ -12,8 +12,7 @@
         android:id="@+id/widget_qr_icon"
         android:layout_width="36dp"
         android:layout_height="36dp"
-        android:src="@drawable/ic_tile_qr"
-        android:tint="#818CF8" />
+        android:src="@drawable/ic_widget_qr" />
 
     <TextView
         android:id="@+id/widget_qr_title"

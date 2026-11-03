@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.util.SizeF
 import android.widget.RemoteViews
 import app.utils.switchly.LaunchRoutes
@@ -65,29 +66,33 @@ class NepaliDateWidgetProvider : AppWidgetProvider() {
             appWidgetId: Int,
             options: Bundle? = null
         ) {
-            val nepali = BikramSambat.useNepali(context)
-            val today = LocalDate.now()
-            val bs = BikramSambat.fromAd(today) ?: return
+            try {
+                val nepali = BikramSambat.useNepali(context)
+                val today = LocalDate.now()
+                val bs = BikramSambat.fromAd(today) ?: return
 
-            val standardViews = buildStandardViews(context, appWidgetId, bs, today, nepali)
-            val compactViews = buildCompactViews(context, appWidgetId, bs, today, nepali)
+                val standardViews = buildStandardViews(context, appWidgetId, bs, today, nepali)
+                val compactViews = buildCompactViews(context, appWidgetId, bs, today, nepali)
 
-            val views: RemoteViews = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                // Responsive views on Android 12+: system auto-selects and smoothly transitions
-                RemoteViews(
-                    mapOf(
-                        SizeF(60f, 60f) to compactViews,
-                        SizeF(180f, 60f) to standardViews
+                val views: RemoteViews = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    // Responsive views on Android 12+: system auto-selects and smoothly transitions
+                    RemoteViews(
+                        mapOf(
+                            SizeF(60f, 60f) to compactViews,
+                            SizeF(180f, 60f) to standardViews
+                        )
                     )
-                )
-            } else {
-                val opt = options ?: appWidgetManager.getAppWidgetOptions(appWidgetId)
-                val minWidth = opt.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 200)
-                val minHeight = opt.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 100)
-                if (minWidth < 170 || minHeight < 65) compactViews else standardViews
-            }
+                } else {
+                    val opt = options ?: appWidgetManager.getAppWidgetOptions(appWidgetId)
+                    val minWidth = opt.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 200)
+                    val minHeight = opt.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 100)
+                    if (minWidth < 170 || minHeight < 65) compactViews else standardViews
+                }
 
-            appWidgetManager.updateAppWidget(appWidgetId, views)
+                appWidgetManager.updateAppWidget(appWidgetId, views)
+            } catch (e: Exception) {
+                Log.w("NepaliDateWidget", "Failed to update widget $appWidgetId", e)
+            }
         }
 
         private fun buildStandardViews(

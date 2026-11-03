@@ -4,66 +4,83 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 
 /**
  * Triggers refresh for all Switchly home screen widgets when settings or states change.
  */
 object WidgetRefresher {
     fun refreshAll(context: Context) {
-        refreshNepaliDate(context)
-        refreshPaymentQr(context)
-        refreshQuickActions(context)
+        try {
+            refreshNepaliDate(context)
+            refreshPaymentQr(context)
+            refreshQuickActions(context)
+        } catch (e: Exception) {
+            Log.d("WidgetRefresher", "Failed to refresh widgets", e)
+        }
     }
 
     fun refreshNepaliDate(context: Context) {
-        val appWidgetManager = AppWidgetManager.getInstance(context)
+        try {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
 
-        // Standard widget
-        val standardComponent = ComponentName(context, NepaliDateWidgetProvider::class.java)
-        val standardIds = appWidgetManager.getAppWidgetIds(standardComponent)
-        if (standardIds.isNotEmpty()) {
-            val intent = Intent(context, NepaliDateWidgetProvider::class.java).apply {
-                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, standardIds)
+            // Standard widget
+            val standardComponent = ComponentName(context, NepaliDateWidgetProvider::class.java)
+            val standardIds = appWidgetManager.getAppWidgetIds(standardComponent)
+            if (standardIds.isNotEmpty()) {
+                val intent = Intent(context, NepaliDateWidgetProvider::class.java).apply {
+                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, standardIds)
+                }
+                context.sendBroadcast(intent)
             }
-            context.sendBroadcast(intent)
-        }
 
-        // Compact widget
-        val compactComponent = ComponentName(context, NepaliDateCompactWidgetProvider::class.java)
-        val compactIds = appWidgetManager.getAppWidgetIds(compactComponent)
-        if (compactIds.isNotEmpty()) {
-            val intent = Intent(context, NepaliDateCompactWidgetProvider::class.java).apply {
-                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, compactIds)
+            // Compact widget
+            val compactComponent = ComponentName(context, NepaliDateCompactWidgetProvider::class.java)
+            val compactIds = appWidgetManager.getAppWidgetIds(compactComponent)
+            if (compactIds.isNotEmpty()) {
+                val intent = Intent(context, NepaliDateCompactWidgetProvider::class.java).apply {
+                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, compactIds)
+                }
+                context.sendBroadcast(intent)
             }
-            context.sendBroadcast(intent)
+        } catch (e: Exception) {
+            Log.d("WidgetRefresher", "Failed to refresh Nepali date widgets", e)
         }
     }
 
     fun refreshPaymentQr(context: Context) {
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val component = ComponentName(context, PaymentQrWidgetProvider::class.java)
-        val ids = appWidgetManager.getAppWidgetIds(component)
-        if (ids.isNotEmpty()) {
-            val intent = Intent(context, PaymentQrWidgetProvider::class.java).apply {
-                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+        try {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val component = ComponentName(context, PaymentQrWidgetProvider::class.java)
+            val ids = appWidgetManager.getAppWidgetIds(component)
+            if (ids.isNotEmpty()) {
+                val intent = Intent(context, PaymentQrWidgetProvider::class.java).apply {
+                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+                }
+                context.sendBroadcast(intent)
             }
-            context.sendBroadcast(intent)
+        } catch (e: Exception) {
+            Log.d("WidgetRefresher", "Failed to refresh Payment QR widgets", e)
         }
     }
 
     fun refreshQuickActions(context: Context) {
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val component = ComponentName(context, QuickActionsWidgetProvider::class.java)
-        val ids = appWidgetManager.getAppWidgetIds(component)
-        if (ids.isNotEmpty()) {
-            val intent = Intent(context, QuickActionsWidgetProvider::class.java).apply {
-                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+        try {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val component = ComponentName(context, QuickActionsWidgetProvider::class.java)
+            val ids = appWidgetManager.getAppWidgetIds(component)
+            if (ids.isNotEmpty()) {
+                val intent = Intent(context, QuickActionsWidgetProvider::class.java).apply {
+                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+                }
+                context.sendBroadcast(intent)
             }
-            context.sendBroadcast(intent)
+        } catch (e: Exception) {
+            Log.d("WidgetRefresher", "Failed to refresh Quick Actions widgets", e)
         }
     }
 }

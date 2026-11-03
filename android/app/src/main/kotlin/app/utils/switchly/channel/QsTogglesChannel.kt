@@ -346,7 +346,11 @@ class QsTogglesChannel(
                     val appWidgetManager = AppWidgetManager.getInstance(activity)
                     if (appWidgetManager.isRequestPinAppWidgetSupported) {
                         val component = ComponentName(activity, widgetClass)
-                        val success = appWidgetManager.requestPinAppWidget(component, null, null)
+                        val success = try {
+                            appWidgetManager.requestPinAppWidget(component, null, null)
+                        } catch (e: Exception) {
+                            false
+                        }
                         result.success(if (success) "pinned" else "not_supported")
                         return
                     }

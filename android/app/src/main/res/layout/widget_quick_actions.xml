@@ -23,8 +23,7 @@
         <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:src="@drawable/ic_tile_calendar"
-            android:tint="#818CF8" />
+            android:src="@drawable/ic_widget_calendar" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -53,8 +52,7 @@
         <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:src="@drawable/ic_tile_qr"
-            android:tint="#818CF8" />
+            android:src="@drawable/ic_widget_qr" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -83,8 +81,7 @@
         <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:src="@drawable/ic_tile_texts"
-            android:tint="#818CF8" />
+            android:src="@drawable/ic_widget_texts" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -113,8 +110,7 @@
         <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:src="@drawable/ic_tile_scan"
-            android:tint="#818CF8" />
+            android:src="@drawable/ic_widget_scan" />
 
         <TextView
             android:layout_width="wrap_content"

@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.RemoteViews
 import app.utils.switchly.LaunchRoutes
 import app.utils.switchly.MainActivity
@@ -58,36 +59,40 @@ class NepaliDateCompactWidgetProvider : AppWidgetProvider() {
 
     companion object {
         fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
-            val nepali = BikramSambat.useNepali(context)
-            val today = LocalDate.now()
-            val bs = BikramSambat.fromAd(today) ?: return
+            try {
+                val nepali = BikramSambat.useNepali(context)
+                val today = LocalDate.now()
+                val bs = BikramSambat.fromAd(today) ?: return
 
-            val views = RemoteViews(context.packageName, R.layout.widget_nepali_date_compact)
+                val views = RemoteViews(context.packageName, R.layout.widget_nepali_date_compact)
 
-            val dayStr = BikramSambat.digits(bs.day, nepali)
-            val monthName = BikramSambat.monthName(bs.month, nepali)
-            val yearStr = BikramSambat.digits(bs.year, nepali)
-            val weekdayStr = BikramSambat.weekday(today.dayOfWeek, nepali)
-            val adStr = today.format(DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH))
+                val dayStr = BikramSambat.digits(bs.day, nepali)
+                val monthName = BikramSambat.monthName(bs.month, nepali)
+                val yearStr = BikramSambat.digits(bs.year, nepali)
+                val weekdayStr = BikramSambat.weekday(today.dayOfWeek, nepali)
+                val adStr = today.format(DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH))
 
-            views.setTextViewText(R.id.widget_bs_month_year, "$monthName $yearStr")
-            views.setTextViewText(R.id.widget_bs_day, dayStr)
-            views.setTextViewText(R.id.widget_bs_subtitle, "$weekdayStr · $adStr")
+                views.setTextViewText(R.id.widget_bs_month_year, "$monthName $yearStr")
+                views.setTextViewText(R.id.widget_bs_day, dayStr)
+                views.setTextViewText(R.id.widget_bs_subtitle, "$weekdayStr · $adStr")
 
-            val launchIntent = Intent(context, MainActivity::class.java).apply {
-                action = Intent.ACTION_VIEW
-                putExtra(LaunchRoutes.EXTRA_ROUTE, LaunchRoutes.tile("bs_date"))
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                val launchIntent = Intent(context, MainActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                    putExtra(LaunchRoutes.EXTRA_ROUTE, LaunchRoutes.tile("bs_date"))
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                val pendingIntent = PendingIntent.getActivity(
+                    context,
+                    appWidgetId,
+                    launchIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+
+                appWidgetManager.updateAppWidget(appWidgetId, views)
+            } catch (e: Exception) {
+                Log.w("NepaliDateCompact", "Failed to update widget $appWidgetId", e)
             }
-            val pendingIntent = PendingIntent.getActivity(
-                context,
-                appWidgetId,
-                launchIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
-
-            appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
 }
