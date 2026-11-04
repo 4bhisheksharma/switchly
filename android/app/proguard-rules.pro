@@ -39,3 +39,7 @@
 -keep class app.utils.switchly.profiles.** { *; }
 -keep class app.utils.switchly.screentime.** { *; }
 
+# Google Play Core deferred components (referenced by Flutter engine, unused in app)
+-dontwarn com.google.android.play.core.**
+
+

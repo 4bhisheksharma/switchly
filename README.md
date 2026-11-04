@@ -28,9 +28,9 @@
 
 Android's Quick Settings panel (the panel you pull down from the top of the screen) has tiles for Wi-Fi, Bluetooth and a few other things. Many useful settings are missing from it and are buried several screens deep in the Settings app, or inside Developer options.
 
-Switchly adds those missing settings as Quick Settings tiles. Each tile does one job with a single tap, from any app, and many of them work from the lock screen. The Switchly app itself is where you choose how each tile behaves.
+Switchly adds those missing settings as Quick Settings tiles and interactive Home Screen widgets. Each tile does one job with a single tap, from any app, and many of them work from the lock screen. The Switchly app itself is where you choose how each tile behaves.
 
-Switchly is fully offline. It does not request the internet permission, contains no analytics or tracking, and never sends data anywhere.
+Switchly respects your privacy. It contains no analytics, no telemetry, and no advertisements. The network permission is used strictly to check GitHub releases for in-app updates upon request.
 
 ## Features
 
@@ -41,6 +41,18 @@ Switchly is fully offline. It does not request the internet permission, contains
 | **Private DNS** | Switches encrypted DNS between Off and providers such as AdGuard, Cloudflare, Google, Quad9 and Mullvad. Each tap moves to the next provider. You can add your own providers and choose the order. |
 | **Internet kill switch** | Blocks all internet traffic instantly, with an optional list of apps that stay online. It works through Android's local VPN feature; traffic is dropped on the phone and never sent or inspected. |
 | **Wireless debugging** | Turns ADB over Wi-Fi on or off and shows the address to connect to (`ip:port`). Requires Android 11 or newer. |
+
+### Audio & Sound
+
+| Tile | What it does |
+| --- | --- |
+| **Volume Control** | Adjust media, ring, notification, in-call, and alarm volume without pressing physical buttons. Tapping the tile opens a fast overlay slider directly from the shade; supports one-tap ringer mode toggle (Normal, Vibrate, Silent) and customizable stream shortcuts. |
+
+### Privacy & Security
+
+| Tile | What it does |
+| --- | --- |
+| **Public Mode** | PIN-protected guest lock for when handing your phone to someone else. Instantly hides sensitive Quick Settings tiles (Payment QR, Quick texts, etc.) and blocks designated private apps from opening until your PIN is entered. |
 
 ### Display
 
@@ -62,18 +74,28 @@ Switchly is fully offline. It does not request the internet permission, contains
 | Tile | What it does |
 | --- | --- |
 | **App Screen Time** | Track daily screen time for specific apps directly from Quick Settings. Supports up to 4 dedicated tiles (`Tile 1`, `Tile 2`, `Tile 3`, `Tile 4`). Calculates usage 100% locally on-device using native Android `UsageStatsManager`, with zero battery drain and complete offline privacy. |
-| **Nepali date** | Shows today's Bikram Sambat (BS) date on the tile, in Nepali or English script. The app includes a full BS calendar and an AD to BS converter. |
-| **Scan QR** | Opens a QR scanner from anywhere. Links, phone numbers, email addresses and locations get an Open button, and Wi-Fi codes show the network name and password. Links are shown in full and are never opened automatically. Scanning happens entirely on the phone. |
 | **Payment QR** | Shows your saved payment QR codes (eSewa, Khalti, Fonepay, bank and others) full screen at maximum brightness, without opening any other app. Works from the lock screen. |
+| **Scan QR** | Opens a QR scanner from anywhere. Links, phone numbers, email addresses and locations get an Open button, and Wi-Fi codes show the network name and password. Links are shown in full and are never opened automatically. Scanning happens entirely on the phone. |
 | **Quick texts** | Saves text you type often, such as an address, account number or a standard reply. Tap the tile, pick a text, and it is copied to the clipboard. |
+| **Nepali date** | Shows today's Bikram Sambat (BS) date on the tile, in Nepali or English script. The app includes a full BS calendar and an AD to BS converter. |
 | **Profiles** | Applies several settings at once, for example "Focus" = AdGuard DNS + Grayscale + faster animations. A "Restore" option puts everything back as it was. |
+
+### Home Screen Widgets
+
+| Widget | What it does |
+| --- | --- |
+| **Volume & Compact Volume** | Change volume streams and toggle ringer modes directly from your home screen launcher. |
+| **Payment QR** | One-tap access to your essential payment and merchant QR codes. |
+| **Nepali Date & Compact Date** | Shows today's Bikram Sambat date with automatic daily rollover. |
+| **Quick Actions** | Shortcut bar for essential Switchly functions and quick toggles. |
 
 ### Preferences & System
 
 | Feature | What it does |
 | --- | --- |
-| **In-app updates** | Built-in GitHub release checker. Automatically notifies you when a new release is available, shows changelogs, and enables 1-tap download & install without losing any saved data. |
-| **Appearance** | Deep modern dark mode by default, tailored for OLED battery life and night comfort, with instant toggle to light or follow system. |
+| **In-app updates** | Built-in GitHub release updater with instant offline connectivity detection, changelog viewer, and 1-tap seamless background download and APK installation. |
+| **Lightweight & Optimized** | Built with full R8/ProGuard minification, resource shrinking, font icon tree-shaking, and per-ABI split APKs (`~21-25 MB`) for fast app launch and minimal storage footprint. |
+| **Appearance & Theming** | Deep modern dark mode and clean light theme with harmonized Material 3 Indigo accents across sliders, steppers, and actions. |
 
 Long-press any Switchly tile in Quick Settings to open its settings screen in the app.
 
@@ -115,10 +137,13 @@ Long-press any Switchly tile in Quick Settings to open its settings screen in th
 ### Download
 
 1. Open the [latest release](https://github.com/4bhisheksharma/switchly/releases/latest) on GitHub.
-2. Under **Assets**, download the `.apk` file.
+2. Under **Assets**, choose the `.apk` file for your device:
+   - **`app-arm64-v8a-release.apk`**: Recommended for almost all modern Android phones.
+   - **`app-armeabi-v7a-release.apk`**: For older 32-bit Android phones.
+   - **`app-x86_64-release.apk`**: For Android emulators or ChromeOS devices.
 3. Open the downloaded file on your phone and tap **Install**. If Android asks, allow your browser or file manager to install unknown apps.
 
-**In-App Updates:** Once installed, Switchly checks for newer GitHub releases automatically (or via **Preferences > Check for Updates**). You can review the changelog and install updates with a single tap without uninstalling the app or losing any saved QR codes, quick texts, or settings.
+**In-App Updates:** Once installed, Switchly checks for newer GitHub releases automatically (or via **Preferences > Check for Updates**). With instant connectivity verification, you can review release notes and install updates with a single tap without losing any saved data, QR codes, or settings.
 
 ## Getting started
 
@@ -183,18 +208,21 @@ Open a tile's screen in the app (or long-press the tile) to choose what each tap
 
 ## Permissions
 
-Switchly only declares permissions that a feature actively uses.
+Switchly only requests permissions that a feature actively uses.
 
 | Permission | Why it is needed |
 | --- | --- |
 | `WRITE_SECURE_SETTINGS` | Change Private DNS, grayscale, animation speed, font size and wireless debugging. Granted once over ADB. |
-| `PACKAGE_USAGE_STATS` | Calculate app screen time locally on-device for the App Screen Time tiles. Requested via Android's native Usage Access screen. |
-| `ACCESS_NETWORK_STATE` | Read the Wi-Fi IP address shown by the Wireless debugging tile. |
-| `WAKE_LOCK`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE` | Keep the screen on while Caffeine is active. |
-| `CAMERA` | Scan QR codes. Requested the first time you open the scanner, and only used while it is open. |
+| `MODIFY_AUDIO_SETTINGS` | Adjust volume streams and toggle ringer modes from the Volume Control tile and home screen widgets. |
+| `PACKAGE_USAGE_STATS` | Calculate app screen time locally on-device for App Screen Time tiles, and identify restricted apps in Public Mode. |
+| `ACCESS_NETWORK_STATE` | Read the Wi-Fi IP address shown by the Wireless debugging tile and detect connectivity before checking for updates. |
+| `INTERNET` | Check GitHub releases and download updates when requested. Zero analytics, telemetry, or tracking. |
 | `REQUEST_INSTALL_PACKAGES` | Allows 1-tap in-app installation of updates downloaded from GitHub releases. |
+| `WAKE_LOCK`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE` | Keep the screen on while Caffeine is active, and monitor timeouts in Public Mode. |
+| `ACCESS_NOTIFICATION_POLICY` | Mute notifications and manage Do Not Disturb while Public Mode is active. |
+| `CAMERA` | Scan QR codes. Requested the first time you open the scanner, and only used while it is open. |
 
-There is no `INTERNET` permission. The kill switch uses Android's VPN feature, which Android asks you to approve the first time; no traffic leaves the phone through it.
+The kill switch uses Android's local VPN service; traffic is terminated locally on the device and never leaves your phone.
 
 ## Frequently asked questions
 
@@ -218,16 +246,19 @@ Some manufacturers report charging current in non-standard units. Switchly corre
 
 ## Building from source
 
-Switchly is built with Flutter (user interface) and Kotlin (Quick Settings tiles and system integration).
+Switchly is built with Flutter (user interface) and Kotlin (Quick Settings tiles, widgets, and system integration).
 
 ```sh
 git clone https://github.com/4bhisheksharma/switchly.git
 cd switchly
 flutter pub get
-flutter build apk --release
+flutter build apk --release --split-per-abi
 ```
 
-The APK is written to `build/app/outputs/flutter-apk/app-release.apk`.
+The optimized, minified split APKs are written to `build/app/outputs/flutter-apk/`:
+- `app-arm64-v8a-release.apk` (64-bit ARM)
+- `app-armeabi-v7a-release.apk` (32-bit ARM)
+- `app-x86_64-release.apk` (x86_64 emulator / PC)
 
 Use a release build when testing tile responsiveness. Debug builds are considerably slower on Android.
 
