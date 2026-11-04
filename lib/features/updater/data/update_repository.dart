@@ -160,4 +160,23 @@ class UpdateRepository {
 
   /// Opens an external URL in the default browser.
   Future<bool> openUrl(String url) => channel.openUrl(url);
+
+  /// Checks whether the device is currently online and can reach the internet.
+  Future<bool> hasInternetConnection() async {
+    try {
+      final isConnected = await channel.isInternetConnected();
+      if (!isConnected) return false;
+
+      // Fast DNS lookup check without blocking UI
+      final lookup = await InternetAddress.lookup('api.github.com')
+          .timeout(const Duration(milliseconds: 1800));
+      return lookup.isNotEmpty && lookup[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Opens the Android Internet connectivity panel.
+  Future<bool> openInternetSettings() =>
+      channel.openSystemPanel(SystemPanel.internet);
 }

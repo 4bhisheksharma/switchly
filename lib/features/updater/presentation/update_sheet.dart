@@ -5,7 +5,6 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../app/theme.dart';
 import '../cubit/update_cubit.dart';
-import '../cubit/update_state.dart';
 import '../models/update_info.dart';
 
 /// Opens the update details bottom sheet.
@@ -104,6 +103,9 @@ class UpdateSheet extends StatelessWidget {
     } else if (state is UpdateUpToDate) {
       title = 'You are on the latest version';
       subtitle = 'v${state.currentVersion} • Up to date';
+    } else if (state is UpdateOffline) {
+      title = "Device is Offline";
+      subtitle = 'Connect to check for updates';
     } else if (state is UpdateChecking) {
       title = 'Checking for updates...';
       subtitle = 'Connecting to GitHub Releases';
@@ -178,6 +180,42 @@ class UpdateSheet extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      );
+    }
+
+    if (state is UpdateOffline) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Symbols.wifi_off_rounded,
+              color: scheme.onSurfaceVariant,
+              size: 44,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No Internet Connection',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Switchly needs an active internet connection to query GitHub releases and download update packages.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -560,6 +598,44 @@ class UpdateSheet extends StatelessWidget {
           HapticFeedback.mediumImpact();
           context.read<UpdateCubit>().downloadAndInstall(state.updateInfo);
         },
+      );
+    }
+
+    if (state is UpdateOffline) {
+      return Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(46),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Symbols.settings_ethernet_rounded, size: 20),
+              label: const Text('Internet Settings'),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                context.read<UpdateCubit>().openInternetSettings();
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: scheme.primary,
+                foregroundColor: scheme.onPrimary,
+                minimumSize: const Size.fromHeight(46),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Symbols.refresh_rounded, size: 20),
+              label: const Text('Check Again'),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                context.read<UpdateCubit>().checkForUpdate();
+              },
+            ),
+          ),
+        ],
       );
     }
 

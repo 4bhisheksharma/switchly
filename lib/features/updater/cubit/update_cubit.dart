@@ -6,6 +6,8 @@ import '../data/update_repository.dart';
 import '../models/update_info.dart';
 import 'update_state.dart';
 
+export 'update_state.dart';
+
 class UpdateCubit extends Cubit<UpdateState> {
   UpdateCubit({required this.repository}) : super(const UpdateInitial()) {
     _initVersion();
@@ -26,6 +28,12 @@ class UpdateCubit extends Cubit<UpdateState> {
 
   /// Checks GitHub for the latest release.
   Future<void> checkForUpdate({bool forceShowAvailable = false}) async {
+    final hasInternet = await repository.hasInternetConnection();
+    if (!hasInternet) {
+      emit(UpdateOffline(currentVersion: _cachedCurrentVersion));
+      return;
+    }
+
     emit(UpdateChecking(currentVersion: _cachedCurrentVersion));
 
     try {
@@ -58,12 +66,19 @@ class UpdateCubit extends Cubit<UpdateState> {
         ));
       }
     } catch (e) {
-      emit(UpdateError(
-        message: e is SocketException
-            ? 'Unable to connect to GitHub. Check your internet connection.'
-            : e.toString().replaceFirst('Exception: ', ''),
-        currentVersion: _cachedCurrentVersion,
-      ));
+      final isOffline = e is SocketException ||
+          e.toString().contains('Failed host lookup') ||
+          e.toString().contains('Network is unreachable') ||
+          !await repository.hasInternetConnection();
+
+      if (isOffline) {
+        emit(UpdateOffline(currentVersion: _cachedCurrentVersion));
+      } else {
+        emit(UpdateError(
+          message: e.toString().replaceFirst('Exception: ', ''),
+          currentVersion: _cachedCurrentVersion,
+        ));
+      }
     }
   }
 
@@ -173,4 +188,7 @@ class UpdateCubit extends Cubit<UpdateState> {
       ));
     }
   }
+
+  /// Opens the system internet settings screen.
+  Future<bool> openInternetSettings() => repository.openInternetSettings();
 }

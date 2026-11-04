@@ -61,7 +61,7 @@ class VolumeStreamState extends Equatable {
 
   factory VolumeStreamState.fromMap(
     String stream,
-    Map<String, dynamic>? map, {
+    Map<dynamic, dynamic>? map, {
     required String label,
     required String subtitle,
     required IconData icon,
@@ -105,41 +105,46 @@ class VolumeSnapshot extends Equatable {
   final VolumeStreamState call;
   final RingerMode ringerMode;
 
-  factory VolumeSnapshot.fromMap(Map<String, dynamic> map) {
+  factory VolumeSnapshot.fromMap(Map<dynamic, dynamic> map) {
     final modeCode = (map['ringerMode'] as num?)?.toInt() ?? 2;
+
+    Map<dynamic, dynamic>? streamMap(String key) {
+      final val = map[key];
+      return val is Map ? val : null;
+    }
 
     return VolumeSnapshot(
       music: VolumeStreamState.fromMap(
         'music',
-        map['music'] as Map<String, dynamic>?,
+        streamMap('music'),
         label: 'Media',
         subtitle: 'Music, videos, games and podcasts',
         icon: Symbols.music_note_rounded,
       ),
       ring: VolumeStreamState.fromMap(
         'ring',
-        map['ring'] as Map<String, dynamic>?,
+        streamMap('ring'),
         label: 'Ringtone',
         subtitle: 'Incoming phone calls',
         icon: Symbols.phone_in_talk_rounded,
       ),
       notification: VolumeStreamState.fromMap(
         'notification',
-        map['notification'] as Map<String, dynamic>?,
+        streamMap('notification'),
         label: 'Notifications',
         subtitle: 'App alerts and messages',
         icon: Symbols.notifications_rounded,
       ),
       alarm: VolumeStreamState.fromMap(
         'alarm',
-        map['alarm'] as Map<String, dynamic>?,
+        streamMap('alarm'),
         label: 'Alarm',
         subtitle: 'Alarm clocks and timers',
         icon: Symbols.alarm_rounded,
       ),
       call: VolumeStreamState.fromMap(
         'call',
-        map['call'] as Map<String, dynamic>?,
+        streamMap('call'),
         label: 'Voice call',
         subtitle: 'In-call earpiece and speaker loudness',
         icon: Symbols.call_rounded,

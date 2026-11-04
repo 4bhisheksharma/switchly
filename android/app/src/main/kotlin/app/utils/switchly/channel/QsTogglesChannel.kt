@@ -11,6 +11,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.Icon
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.net.VpnService
 import android.os.Build
@@ -226,6 +228,18 @@ class QsTogglesChannel(
                         result.success(false)
                     }
                 }
+            }
+            "isInternetAvailable" -> {
+                val cm = activity.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+                val connected = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    val network = cm?.activeNetwork
+                    val caps = cm?.getNetworkCapabilities(network)
+                    caps != null && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                } else {
+                    @Suppress("DEPRECATION")
+                    cm?.activeNetworkInfo?.isConnected == true
+                }
+                result.success(connected)
             }
             "installApk" -> {
                 val path = call.argument<String>("path")
@@ -593,7 +607,11 @@ class QsTogglesChannel(
 
     private fun openSystemPanel(panel: String?): Boolean {
         val action = when (panel) {
-            "internet" -> Settings.Panel.ACTION_INTERNET_CONNECTIVITY
+            "internet" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                Settings.Panel.ACTION_INTERNET_CONNECTIVITY
+            } else {
+                Settings.ACTION_WIFI_SETTINGS
+            }
             "developer_options" -> Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS
             else -> return false
         }
@@ -601,6 +619,12 @@ class QsTogglesChannel(
             activity.startActivity(Intent(action))
             true
         } catch (e: ActivityNotFoundException) {
+            try {
+                if (panel == "internet") {
+                    activity.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
+                    return true
+                }
+            } catch (_: Exception) {}
             false
         }
     }

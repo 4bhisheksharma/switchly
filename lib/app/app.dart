@@ -93,6 +93,9 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
         _caffeineCubit.refresh();
         _batteryCubit.resume();
         _updateCubit.checkInstallPermission();
+        if (_updateCubit.state is UpdateOffline) {
+          _updateCubit.checkForUpdate();
+        }
         _screenTimeBloc.add(const ScreenTimePermissionCheckRequested());
         _screenTimeBloc.add(const ScreenTimeRefreshed());
         _publicModeBloc.add(const PublicModeRefreshed());

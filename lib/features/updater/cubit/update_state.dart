@@ -14,6 +14,10 @@ class UpdateInitial extends UpdateState {
   const UpdateInitial({super.currentVersion});
 }
 
+class UpdateOffline extends UpdateState {
+  const UpdateOffline({super.currentVersion});
+}
+
 class UpdateChecking extends UpdateState {
   const UpdateChecking({super.currentVersion});
 }

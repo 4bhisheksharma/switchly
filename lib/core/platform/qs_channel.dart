@@ -85,6 +85,15 @@ class QsChannel {
     return await _channel.invokeMethod<bool>('openSystemPanel', {'panel': name}) ?? false;
   }
 
+  /// Checks whether the device is currently connected to an active network with internet access.
+  Future<bool> isInternetConnected() async {
+    try {
+      return await _channel.invokeMethod<bool>('isInternetAvailable') ?? false;
+    } catch (_) {
+      return true; // Fallback to optimistic true if platform check fails
+    }
+  }
+
   /// Raw Private DNS settings: `mode` is `off`, `opportunistic` or `hostname`.
   Future<({String mode, String? host})> getPrivateDns() async {
     final state = await _channel.invokeMapMethod<String, Object?>('getPrivateDns');

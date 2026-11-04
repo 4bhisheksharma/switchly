@@ -5,7 +5,6 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/widgets/tile_icon.dart';
 import '../cubit/update_cubit.dart';
-import '../cubit/update_state.dart';
 import 'update_sheet.dart';
 
 /// Preference tile displayed in the settings/preferences section.
@@ -88,6 +87,13 @@ class UpdateCheckTile extends StatelessWidget {
         size: 18,
         color: _green,
       );
+    } else if (state is UpdateOffline) {
+      subtitle = 'Device is offline • Connect to check';
+      trailing = Icon(
+        Symbols.wifi_off_rounded,
+        size: 18,
+        color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+      );
     } else if (state is UpdateError) {
       subtitle = 'Check failed • Tap to retry';
       trailing = Icon(
@@ -101,16 +107,50 @@ class UpdateCheckTile extends StatelessWidget {
     }
 
     return InkWell(
-      onTap: () {
+      onTap: () async {
         HapticFeedback.selectionClick();
-        if (state is UpdateAvailable ||
-            state is UpdateDownloading ||
-            state is UpdateDownloaded) {
+        final cubit = context.read<UpdateCubit>();
+        final currentState = cubit.state;
+
+        if (currentState is UpdateAvailable ||
+            currentState is UpdateDownloading ||
+            currentState is UpdateDownloaded) {
           showUpdateSheet(context);
-        } else {
-          context.read<UpdateCubit>().checkForUpdate();
-          showUpdateSheet(context);
+          return;
         }
+
+        // Fast internet check before opening a bottom sheet to avoid unnatural flash/failing
+        final hasInternet = await cubit.repository.hasInternetConnection();
+        if (!context.mounted) return;
+
+        if (!hasInternet) {
+          cubit.checkForUpdate(); // Moves state to UpdateOffline cleanly
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              content: const Row(
+                children: [
+                  Icon(Symbols.wifi_off_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text('Device is offline. Connect to check for updates.'),
+                  ),
+                ],
+              ),
+              action: SnackBarAction(
+                label: 'Internet',
+                textColor: scheme.primaryContainer,
+                onPressed: () => cubit.openInternetSettings(),
+              ),
+            ),
+          );
+          return;
+        }
+
+        cubit.checkForUpdate();
+        showUpdateSheet(context);
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

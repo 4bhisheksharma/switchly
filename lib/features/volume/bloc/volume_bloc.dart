@@ -119,7 +119,9 @@ class VolumeBloc extends Bloc<VolumeEvent, VolumeState> {
 
     _volumeSub = _repository.channel.onVolumeChanged.listen((map) {
       if (map.isNotEmpty) {
-        add(VolumeExternalChanged(VolumeSnapshot.fromMap(map)));
+        try {
+          add(VolumeExternalChanged(VolumeSnapshot.fromMap(map)));
+        } catch (_) {}
       }
     });
   }
