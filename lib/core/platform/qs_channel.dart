@@ -218,6 +218,10 @@ class QsChannel {
   Future<bool> installApk(String path) async =>
       await _channel.invokeMethod<bool>('installApk', {'path': path}) ?? false;
 
+  /// Opens an external URL in the default browser.
+  Future<bool> openUrl(String url) async =>
+      await _channel.invokeMethod<bool>('openUrl', {'url': url}) ?? false;
+
   /// Whether Switchly has PACKAGE_USAGE_STATS permission to read app screen times.
   Future<bool> hasUsageAccess() async =>
       await _channel.invokeMethod<bool>('hasUsageAccess') ?? false;

@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.KeyguardManager
 import android.app.StatusBarManager
 import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -210,6 +211,22 @@ class QsTogglesChannel(
                     result.success(false)
                 }
             }
+            "openUrl" -> {
+                val url = call.argument<String>("url")
+                if (url.isNullOrBlank()) {
+                    result.success(false)
+                } else {
+                    try {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        activity.startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
+                }
+            }
             "installApk" -> {
                 val path = call.argument<String>("path")
                 if (path.isNullOrBlank()) {
@@ -218,14 +235,48 @@ class QsTogglesChannel(
                     val file = File(path)
                     if (!file.exists()) {
                         result.error("file_not_found", "APK file does not exist at $path", null)
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !activity.packageManager.canRequestPackageInstalls()) {
+                        // Check Android 8.0+ unknown app install permission first
+                        try {
+                            val manageIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                                data = Uri.parse("package:${activity.packageName}")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            activity.startActivity(manageIntent)
+                        } catch (_: Exception) {}
+                        result.error("permission_required", "Install permission required. Please enable it in Settings.", null)
                     } else {
                         try {
                             val uri = FileProvider.getUriForFile(activity, "${activity.packageName}.fileprovider", file)
                             val intent = Intent(Intent.ACTION_VIEW).apply {
                                 setDataAndType(uri, "application/vnd.android.package-archive")
+                                clipData = ClipData.newRawUri("package", uri)
                                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
+
+                            // Explicitly grant URI permission to matching package installer components
+                            val resolveInfos = activity.packageManager.queryIntentActivities(
+                                intent,
+                                PackageManager.MATCH_DEFAULT_ONLY
+                            )
+                            for (info in resolveInfos) {
+                                activity.grantUriPermission(
+                                    info.activityInfo.packageName,
+                                    uri,
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                )
+                            }
+                            // Also explicitly grant to system package installer packages
+                            for (installerPkg in listOf(
+                                "com.google.android.packageinstaller",
+                                "com.android.packageinstaller"
+                            )) {
+                                try {
+                                    activity.grantUriPermission(installerPkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                } catch (_: Exception) {}
+                            }
+
                             activity.startActivity(intent)
                             result.success(true)
                         } catch (e: Exception) {

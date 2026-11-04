@@ -190,17 +190,39 @@ class UpdateSheet extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: scheme.error.withValues(alpha: 0.2)),
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Symbols.error_outline_rounded, color: scheme.error, size: 22),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                state.message,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onErrorContainer,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Symbols.error_outline_rounded, color: scheme.error, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    state.message,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onErrorContainer,
+                    ),
+                  ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: scheme.primary,
+                ),
+                icon: const Icon(Symbols.open_in_new_rounded, size: 16),
+                label: const Text('View Releases on GitHub'),
+                onPressed: () {
+                  context.read<UpdateCubit>().openReleasePage(
+                    'https://github.com/4bhisheksharma/switchly/releases',
+                  );
+                },
               ),
             ),
           ],
@@ -334,6 +356,34 @@ class UpdateSheet extends StatelessWidget {
         ),
         const SizedBox(height: 14),
 
+        // Notice if release has no direct APK asset attached
+        if (!info.hasApk) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: scheme.outlineVariant),
+            ),
+            child: Row(
+              children: [
+                Icon(Symbols.info_rounded, color: scheme.primary, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'No direct APK download is attached to this release yet. You can view release details and downloads on GitHub.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurface,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
+
         // Permission notice if Android blocks unknown app installs
         if (!canInstall) ...[
           Container(
@@ -442,6 +492,23 @@ class UpdateSheet extends StatelessWidget {
     }
 
     if (state is UpdateDownloaded) {
+      if (!state.canInstall) {
+        return FilledButton.icon(
+          style: FilledButton.styleFrom(
+            backgroundColor: _amber,
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(48),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+          icon: const Icon(Symbols.security_rounded, size: 20),
+          label: const Text('Allow Install Permission', style: TextStyle(fontWeight: FontWeight.w700)),
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            context.read<UpdateCubit>().openInstallPermissionSettings();
+          },
+        );
+      }
+
       return FilledButton.icon(
         style: FilledButton.styleFrom(
           backgroundColor: scheme.primary,
@@ -459,6 +526,27 @@ class UpdateSheet extends StatelessWidget {
     }
 
     if (state is UpdateAvailable) {
+      if (!state.updateInfo.hasApk) {
+        return FilledButton.icon(
+          style: FilledButton.styleFrom(
+            backgroundColor: scheme.primary,
+            foregroundColor: scheme.onPrimary,
+            minimumSize: const Size.fromHeight(48),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+          icon: const Icon(Symbols.open_in_browser_rounded, size: 20),
+          label: const Text('View on GitHub', style: TextStyle(fontWeight: FontWeight.w700)),
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            context.read<UpdateCubit>().openReleasePage(
+              state.updateInfo.htmlUrl.isNotEmpty
+                  ? state.updateInfo.htmlUrl
+                  : 'https://github.com/4bhisheksharma/switchly/releases',
+            );
+          },
+        );
+      }
+
       return FilledButton.icon(
         style: FilledButton.styleFrom(
           backgroundColor: scheme.primary,
@@ -475,7 +563,45 @@ class UpdateSheet extends StatelessWidget {
       );
     }
 
-    // Up to date or Error: Check again button
+    if (state is UpdateError) {
+      return Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(46),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Symbols.refresh_rounded, size: 20),
+              label: const Text('Retry'),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                context.read<UpdateCubit>().checkForUpdate();
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(46),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Symbols.open_in_browser_rounded, size: 20),
+              label: const Text('Open GitHub'),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                context.read<UpdateCubit>().openReleasePage(
+                  'https://github.com/4bhisheksharma/switchly/releases',
+                );
+              },
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Up to date: Check again button
     return OutlinedButton.icon(
       style: OutlinedButton.styleFrom(
         minimumSize: const Size.fromHeight(46),

@@ -69,6 +69,13 @@ class UpdateCubit extends Cubit<UpdateState> {
 
   /// Downloads the release APK with progress tracking, then triggers installation.
   Future<void> downloadAndInstall(AppUpdateInfo info) async {
+    if (!info.hasApk) {
+      if (info.htmlUrl.isNotEmpty) {
+        await repository.openUrl(info.htmlUrl);
+      }
+      return;
+    }
+
     emit(UpdateDownloading(
       updateInfo: info,
       currentVersion: _cachedCurrentVersion,
@@ -77,8 +84,9 @@ class UpdateCubit extends Cubit<UpdateState> {
       totalBytes: info.apkSizeBytes,
     ));
 
+    String? apkPath;
     try {
-      final apkPath = await repository.downloadApk(
+      apkPath = await repository.downloadApk(
         info.apkDownloadUrl,
         onProgress: (received, total) {
           final progress = total > 0 ? (received / total).clamp(0.0, 1.0) : 0.0;
@@ -100,11 +108,16 @@ class UpdateCubit extends Cubit<UpdateState> {
         canInstall: canInstall,
       ));
 
-      // Trigger the install prompt immediately
-      await repository.installApk(apkPath);
+      // Only attempt immediate install prompt if permission is already held.
+      // If permission is required, the UI will prompt the user to enable it cleanly.
+      if (canInstall) {
+        await repository.installApk(apkPath);
+      }
     } catch (e) {
       emit(UpdateError(
-        message: 'Download failed: ${e.toString().replaceFirst('Exception: ', '')}',
+        message: apkPath != null
+            ? 'Install prompt failed: ${e.toString().replaceFirst('Exception: ', '')}'
+            : 'Download failed: ${e.toString().replaceFirst('Exception: ', '')}',
         currentVersion: _cachedCurrentVersion,
       ));
     }
@@ -113,14 +126,28 @@ class UpdateCubit extends Cubit<UpdateState> {
   /// Manually triggers installation if already downloaded.
   Future<void> installApk(String apkPath) async {
     try {
-      await repository.installApk(apkPath);
+      final success = await repository.installApk(apkPath);
+      if (!success) {
+        final canInstall = await repository.canInstallPackages();
+        if (!canInstall) {
+          await repository.openInstallPermissionSettings();
+        }
+      }
     } catch (e) {
-      emit(UpdateError(
-        message: 'Could not launch installer: $e',
-        currentVersion: _cachedCurrentVersion,
-      ));
+      final canInstall = await repository.canInstallPackages();
+      if (!canInstall) {
+        await repository.openInstallPermissionSettings();
+      } else {
+        emit(UpdateError(
+          message: 'Could not launch installer: $e',
+          currentVersion: _cachedCurrentVersion,
+        ));
+      }
     }
   }
+
+  /// Opens an external URL (such as GitHub release page) in the default browser.
+  Future<bool> openReleasePage(String url) => repository.openUrl(url);
 
   /// Opens Android's system screen to allow Switchly to install APKs.
   Future<void> openInstallPermissionSettings() async {

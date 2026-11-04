@@ -24,6 +24,9 @@ class AppUpdateInfo {
   final int apkSizeBytes;
   final String htmlUrl;
 
+  /// Whether a direct APK file asset was attached to this release.
+  bool get hasApk => apkDownloadUrl.trim().isNotEmpty;
+
   /// Returns true if [versionName] is strictly higher than [currentVersion].
   bool isNewerThan(String currentVersion) {
     return compareVersions(versionName, currentVersion) > 0;
@@ -81,6 +84,8 @@ class AppUpdateInfo {
     int apkSize = 0;
 
     final assets = json['assets'] as List<dynamic>? ?? const [];
+    // Collect all APK candidate assets
+    final apkCandidates = <({String name, String url, int size})>[];
     for (final rawAsset in assets) {
       if (rawAsset is Map<String, dynamic>) {
         final name = (rawAsset['name'] as String?) ?? '';
@@ -88,13 +93,25 @@ class AppUpdateInfo {
         final downloadUrl = (rawAsset['browser_download_url'] as String?) ?? '';
         final size = (rawAsset['size'] as num?)?.toInt() ?? 0;
 
-        if (name.endsWith('.apk') || contentType == 'application/vnd.android.package-archive') {
-          apkName = name;
-          apkUrl = downloadUrl;
-          apkSize = size;
-          break;
+        if (name.toLowerCase().endsWith('.apk') ||
+            contentType == 'application/vnd.android.package-archive') {
+          apkCandidates.add((name: name, url: downloadUrl, size: size));
         }
       }
+    }
+
+    if (apkCandidates.isNotEmpty) {
+      // Prioritize universal or arm64 APK, or fall back to the first APK asset
+      final preferred = apkCandidates.firstWhere(
+        (c) => c.name.toLowerCase().contains('universal'),
+        orElse: () => apkCandidates.firstWhere(
+          (c) => c.name.toLowerCase().contains('arm64'),
+          orElse: () => apkCandidates.first,
+        ),
+      );
+      apkName = preferred.name;
+      apkUrl = preferred.url;
+      apkSize = preferred.size;
     }
 
     return AppUpdateInfo(
