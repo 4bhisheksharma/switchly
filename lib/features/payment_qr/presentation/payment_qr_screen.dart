@@ -396,6 +396,7 @@ class _QrCard extends StatelessWidget {
 
   Future<void> _delete(BuildContext context) async {
     final bloc = context.read<PaymentQrBloc>();
+    final colors = Theme.of(context).colorScheme;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -403,7 +404,14 @@ class _QrCard extends StatelessWidget {
         content: const Text('The saved copy of the image is removed. Your gallery is not affected.'),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete')),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: colors.error,
+              foregroundColor: colors.onError,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -446,19 +454,40 @@ class _QrCard extends StatelessWidget {
                   child: Text(qr.name, style: theme.textTheme.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),
                 PopupMenuButton<String>(
-                  tooltip: 'More',
-                  icon: const Icon(Symbols.more_vert_rounded),
+                  tooltip: 'Options',
+                  icon: Icon(Symbols.more_vert_rounded, size: 20, color: colors.onSurfaceVariant),
+                  style: IconButton.styleFrom(
+                    backgroundColor: colors.surfaceContainerHighest.withValues(alpha: 0.35),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.all(6),
+                    minimumSize: const Size(32, 32),
+                  ),
                   onSelected: (action) => action == 'rename' ? _rename(context) : _delete(context),
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(
-                      value: 'rename',
-                      child: ListTile(leading: Icon(Symbols.edit_rounded), title: Text('Rename')),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: ListTile(leading: Icon(Symbols.delete_rounded), title: Text('Delete')),
-                    ),
-                  ],
+                  itemBuilder: (ctx) {
+                    final scheme = Theme.of(ctx).colorScheme;
+                    return [
+                      PopupMenuItem(
+                        value: 'rename',
+                        child: Row(
+                          children: [
+                            Icon(Symbols.edit_rounded, size: 20, color: scheme.primary),
+                            const SizedBox(width: 12),
+                            Text('Rename', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Symbols.delete_rounded, size: 20, color: scheme.error),
+                            const SizedBox(width: 12),
+                            Text('Delete', style: TextStyle(color: scheme.error, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                    ];
+                  },
                 ),
               ],
             ),

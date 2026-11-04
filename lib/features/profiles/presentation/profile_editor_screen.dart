@@ -61,6 +61,7 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
   }
 
   Future<void> _delete() async {
+    final theme = Theme.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -68,7 +69,14 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
         content: const Text('Settings it changed stay as they are.'),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete')),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -110,7 +118,16 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
             title: Text(widget.editing == null ? 'New profile' : 'Edit profile'),
             actions: [
               if (widget.editing != null)
-                IconButton(tooltip: 'Delete', icon: const Icon(Symbols.delete_rounded), onPressed: _delete),
+                IconButton(
+                  tooltip: 'Delete profile',
+                  style: IconButton.styleFrom(
+                    backgroundColor: theme.colorScheme.error.withValues(alpha: 0.12),
+                    foregroundColor: theme.colorScheme.error,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Symbols.delete_rounded),
+                  onPressed: _delete,
+                ),
               const SizedBox(width: 8),
             ],
           ),

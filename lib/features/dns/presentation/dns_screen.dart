@@ -335,26 +335,54 @@ class _ProviderMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return PopupMenuButton<_ProviderAction>(
-      tooltip: 'More',
-      icon: const Icon(Symbols.more_vert_rounded),
+      tooltip: 'Options',
+      icon: Icon(Symbols.more_vert_rounded, size: 20, color: colors.onSurfaceVariant),
+      style: IconButton.styleFrom(
+        backgroundColor: colors.surfaceContainerHighest.withValues(alpha: 0.35),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.all(6),
+        minimumSize: const Size(32, 32),
+      ),
       onSelected: (action) => _handle(context, action),
-      itemBuilder: (_) => [
-        const PopupMenuItem(
-          value: _ProviderAction.copy,
-          child: ListTile(leading: Icon(Symbols.content_copy_rounded), title: Text('Copy hostname')),
-        ),
-        if (provider.isCustom) ...[
-          const PopupMenuItem(
-            value: _ProviderAction.edit,
-            child: ListTile(leading: Icon(Symbols.edit_rounded), title: Text('Edit')),
+      itemBuilder: (ctx) {
+        final scheme = Theme.of(ctx).colorScheme;
+        return [
+          PopupMenuItem(
+            value: _ProviderAction.copy,
+            child: Row(
+              children: [
+                Icon(Symbols.content_copy_rounded, size: 20, color: scheme.primary),
+                const SizedBox(width: 12),
+                Text('Copy hostname', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w600)),
+              ],
+            ),
           ),
-          const PopupMenuItem(
-            value: _ProviderAction.delete,
-            child: ListTile(leading: Icon(Symbols.delete_rounded), title: Text('Delete')),
-          ),
-        ],
-      ],
+          if (provider.isCustom) ...[
+            PopupMenuItem(
+              value: _ProviderAction.edit,
+              child: Row(
+                children: [
+                  Icon(Symbols.edit_rounded, size: 20, color: scheme.primary),
+                  const SizedBox(width: 12),
+                  Text('Edit', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: _ProviderAction.delete,
+              child: Row(
+                children: [
+                  Icon(Symbols.delete_rounded, size: 20, color: scheme.error),
+                  const SizedBox(width: 12),
+                  Text('Delete', style: TextStyle(color: scheme.error, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+          ],
+        ];
+      },
     );
   }
 

@@ -208,19 +208,40 @@ class _QuickTextCard extends StatelessWidget {
                   ),
                 ),
                 PopupMenuButton<String>(
-                  tooltip: 'More',
-                  icon: const Icon(Symbols.more_vert_rounded),
+                  tooltip: 'Options',
+                  icon: Icon(Symbols.more_vert_rounded, size: 20, color: colors.onSurfaceVariant),
+                  style: IconButton.styleFrom(
+                    backgroundColor: colors.surfaceContainerHighest.withValues(alpha: 0.35),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.all(6),
+                    minimumSize: const Size(32, 32),
+                  ),
                   onSelected: (action) => action == 'edit' ? _edit(context) : _delete(context),
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: ListTile(leading: Icon(Symbols.edit_rounded), title: Text('Edit')),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: ListTile(leading: Icon(Symbols.delete_rounded), title: Text('Delete')),
-                    ),
-                  ],
+                  itemBuilder: (ctx) {
+                    final scheme = Theme.of(ctx).colorScheme;
+                    return [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Symbols.edit_rounded, size: 20, color: scheme.primary),
+                            const SizedBox(width: 12),
+                            Text('Edit', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Symbols.delete_rounded, size: 20, color: scheme.error),
+                            const SizedBox(width: 12),
+                            Text('Delete', style: TextStyle(color: scheme.error, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                    ];
+                  },
                 ),
               ],
             ),

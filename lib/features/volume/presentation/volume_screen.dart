@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -233,9 +234,9 @@ class VolumeScreen extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            scheme.primary.withValues(alpha: 0.18),
+            scheme.primary.withValues(alpha: 0.16),
             scheme.secondary.withValues(alpha: 0.08),
-            theme.cardColor,
+            scheme.surfaceContainerLow,
           ],
         ),
         border: Border.all(color: scheme.primary.withValues(alpha: 0.25)),
@@ -292,10 +293,11 @@ class VolumeScreen extends StatelessWidget {
           // Master Slider with Step Buttons
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Symbols.remove_rounded),
+              _buildVolumeStepper(
+                context: context,
+                icon: Symbols.remove_rounded,
                 tooltip: 'Decrease Media Volume',
-                visualDensity: VisualDensity.compact,
+                size: 36,
                 onPressed: music.current > music.min
                     ? () {
                         context.read<VolumeBloc>().add(
@@ -304,10 +306,15 @@ class VolumeScreen extends StatelessWidget {
                       }
                     : null,
               ),
+              const SizedBox(width: 6),
               Expanded(
                 child: SliderTheme(
                   data: SliderTheme.of(context).copyWith(
                     trackHeight: 8,
+                    activeTrackColor: scheme.primary,
+                    inactiveTrackColor: scheme.primary.withValues(alpha: 0.16),
+                    thumbColor: scheme.primary,
+                    overlayColor: scheme.primary.withValues(alpha: 0.12),
                     thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
                   ),
                   child: Slider(
@@ -323,10 +330,12 @@ class VolumeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Symbols.add_rounded),
+              const SizedBox(width: 6),
+              _buildVolumeStepper(
+                context: context,
+                icon: Symbols.add_rounded,
                 tooltip: 'Increase Media Volume',
-                visualDensity: VisualDensity.compact,
+                size: 36,
                 onPressed: music.current < music.max
                     ? () {
                         context.read<VolumeBloc>().add(
@@ -337,7 +346,7 @@ class VolumeScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Preset Chips Row
           Row(
@@ -345,23 +354,35 @@ class VolumeScreen extends StatelessWidget {
             children: [0, 25, 50, 75, 100].map((preset) {
               final isCurrent = (music.percent - preset).abs() <= 5;
               final label = preset == 0 ? 'Mute' : (preset == 100 ? 'Max' : '$preset%');
-              return ActionChip(
-                label: Text(label),
-                backgroundColor: isCurrent ? scheme.primary : theme.cardColor,
-                labelStyle: TextStyle(
-                  color: isCurrent ? scheme.onPrimary : scheme.onSurface,
-                  fontSize: 12,
-                  fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                ),
-                shape: RoundedRectangleBorder(
+              return Material(
+                color: isCurrent ? scheme.primary : scheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    context.read<VolumeBloc>().add(VolumePresetChanged(preset));
+                  },
                   borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: isCurrent ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.3),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isCurrent
+                            ? scheme.primary
+                            : scheme.outlineVariant.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: isCurrent ? scheme.onPrimary : scheme.onSurface,
+                        fontSize: 12,
+                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
-                onPressed: () {
-                  context.read<VolumeBloc>().add(VolumePresetChanged(preset));
-                },
               );
             }).toList(),
           ),
@@ -374,64 +395,68 @@ class VolumeScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Card(
-      elevation: 0,
-      color: theme.cardColor,
-      shape: RoundedRectangleBorder(
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.35)),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Symbols.notifications_active_rounded, size: 20, color: scheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'Ringer Mode',
-                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Symbols.notifications_active_rounded, size: 20, color: scheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Ringer Mode',
+                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              Text(
+                currentMode.label,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.primary,
+                  fontWeight: FontWeight.bold,
                 ),
-                const Spacer(),
-                Text(
-                  currentMode.label,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SegmentedButton<RingerMode>(
+            segments: const [
+              ButtonSegment(
+                value: RingerMode.normal,
+                label: Text('Sound'),
+                icon: Icon(Symbols.volume_up_rounded, size: 18),
+              ),
+              ButtonSegment(
+                value: RingerMode.vibrate,
+                label: Text('Vibrate'),
+                icon: Icon(Symbols.vibration_rounded, size: 18),
+              ),
+              ButtonSegment(
+                value: RingerMode.silent,
+                label: Text('Silent'),
+                icon: Icon(Symbols.volume_off_rounded, size: 18),
+              ),
+            ],
+            selected: {currentMode},
+            style: SegmentedButton.styleFrom(
+              selectedBackgroundColor: scheme.primary.withValues(alpha: 0.16),
+              selectedForegroundColor: scheme.primary,
+              foregroundColor: scheme.onSurfaceVariant,
+              side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            const SizedBox(height: 12),
-            SegmentedButton<RingerMode>(
-              segments: const [
-                ButtonSegment(
-                  value: RingerMode.normal,
-                  label: Text('Sound'),
-                  icon: Icon(Symbols.volume_up_rounded, size: 18),
-                ),
-                ButtonSegment(
-                  value: RingerMode.vibrate,
-                  label: Text('Vibrate'),
-                  icon: Icon(Symbols.vibration_rounded, size: 18),
-                ),
-                ButtonSegment(
-                  value: RingerMode.silent,
-                  label: Text('Silent'),
-                  icon: Icon(Symbols.volume_off_rounded, size: 18),
-                ),
-              ],
-              selected: {currentMode},
-              onSelectionChanged: (set) {
-                if (set.isNotEmpty) {
-                  context.read<VolumeBloc>().add(VolumeRingerModeChanged(set.first));
-                }
-              },
-            ),
-          ],
-        ),
+            onSelectionChanged: (set) {
+              if (set.isNotEmpty) {
+                context.read<VolumeBloc>().add(VolumeRingerModeChanged(set.first));
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -447,12 +472,11 @@ class VolumeScreen extends StatelessWidget {
     return Column(
       children: [
         // Quick Settings Tile
-        Card(
-          elevation: 0,
-          color: theme.cardColor,
-          shape: RoundedRectangleBorder(
+        Container(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.3)),
+            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
           ),
           child: ListTile(
             leading: Container(
@@ -527,6 +551,41 @@ class VolumeScreen extends StatelessWidget {
   }
 }
 
+Widget _buildVolumeStepper({
+  required BuildContext context,
+  required IconData icon,
+  required String tooltip,
+  required VoidCallback? onPressed,
+  double size = 34,
+}) {
+  final scheme = Theme.of(context).colorScheme;
+  final enabled = onPressed != null;
+  return Tooltip(
+    message: tooltip,
+    child: Material(
+      color: enabled
+          ? scheme.primary.withValues(alpha: 0.1)
+          : scheme.surfaceContainerHighest.withValues(alpha: 0.25),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(10),
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Icon(
+            icon,
+            size: 18,
+            color: enabled
+                ? scheme.primary
+                : scheme.onSurfaceVariant.withValues(alpha: 0.35),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class _StreamSliderTile extends StatelessWidget {
   const _StreamSliderTile({
     required this.stream,
@@ -543,11 +602,11 @@ class _StreamSliderTile extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.3)),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -575,29 +634,37 @@ class _StreamSliderTile extends StatelessWidget {
               ),
               Text(
                 '${stream.percent}%',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: scheme.primary,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Symbols.remove_rounded, size: 20),
+              _buildVolumeStepper(
+                context: context,
+                icon: Symbols.remove_rounded,
                 tooltip: 'Decrease ${stream.label}',
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                size: 32,
                 onPressed: stream.current > stream.min
                     ? () => onChanged((stream.current - 1)
                         .toDouble()
                         .clamp(stream.min.toDouble(), stream.max.toDouble()))
                     : null,
               ),
+              const SizedBox(width: 6),
               Expanded(
                 child: SliderTheme(
                   data: SliderTheme.of(context).copyWith(
                     trackHeight: 6,
+                    activeTrackColor: scheme.primary,
+                    inactiveTrackColor: scheme.primary.withValues(alpha: 0.16),
+                    thumbColor: scheme.primary,
+                    overlayColor: scheme.primary.withValues(alpha: 0.12),
                     thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
                   ),
                   child: Slider(
@@ -609,12 +676,12 @@ class _StreamSliderTile extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Symbols.add_rounded, size: 20),
+              const SizedBox(width: 6),
+              _buildVolumeStepper(
+                context: context,
+                icon: Symbols.add_rounded,
                 tooltip: 'Increase ${stream.label}',
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                size: 32,
                 onPressed: stream.current < stream.max
                     ? () => onChanged((stream.current + 1)
                         .toDouble()

@@ -79,6 +79,9 @@
         android:layout_height="wrap_content"
         android:paddingVertical="8dp"
         android:splitTrack="false"
+        android:progressTint="#4F46E5"
+        android:thumbTint="#818CF8"
+        android:progressBackgroundTint="#2E3142"
         android:max="100" />
 
     <View
@@ -117,6 +120,9 @@
         android:layout_height="wrap_content"
         android:paddingVertical="8dp"
         android:splitTrack="false"
+        android:progressTint="#4F46E5"
+        android:thumbTint="#818CF8"
+        android:progressBackgroundTint="#2E3142"
         android:max="100" />
 
     <View
@@ -155,6 +161,9 @@
         android:layout_height="wrap_content"
         android:paddingVertical="8dp"
         android:splitTrack="false"
+        android:progressTint="#4F46E5"
+        android:thumbTint="#818CF8"
+        android:progressBackgroundTint="#2E3142"
         android:max="100" />
 
     <View
@@ -193,6 +202,9 @@
         android:layout_height="wrap_content"
         android:paddingVertical="8dp"
         android:splitTrack="false"
+        android:progressTint="#4F46E5"
+        android:thumbTint="#818CF8"
+        android:progressBackgroundTint="#2E3142"
         android:max="100" />
 
     <View
@@ -230,8 +242,13 @@
         <Button
             android:id="@+id/dialog_volume_btn_done"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="38dp"
+            android:layout_marginStart="8dp"
+            android:paddingHorizontal="18dp"
+            android:background="@drawable/btn_primary_rounded"
             android:text="Done"
+            android:textSize="13sp"
+            android:textStyle="bold"
             android:textColor="#FFFFFF" />
     </LinearLayout>
 </LinearLayout>
