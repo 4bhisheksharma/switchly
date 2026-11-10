@@ -72,9 +72,13 @@ class NepaliDateCompactWidgetProvider : AppWidgetProvider() {
                 val weekdayStr = BikramSambat.weekday(today.dayOfWeek, nepali)
                 val adStr = today.format(DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH))
 
+                val patro = BikramSambat.patroInfo(bs)
+                val tithiText = patro?.tithi(nepali)
+                val subText = if (tithiText != null) "$weekdayStr · $tithiText" else "$weekdayStr · $adStr"
+
                 views.setTextViewText(R.id.widget_bs_month_year, "$monthName $yearStr")
                 views.setTextViewText(R.id.widget_bs_day, dayStr)
-                views.setTextViewText(R.id.widget_bs_subtitle, "$weekdayStr · $adStr")
+                views.setTextViewText(R.id.widget_bs_subtitle, subText)
 
                 val launchIntent = Intent(context, MainActivity::class.java).apply {
                     action = Intent.ACTION_VIEW

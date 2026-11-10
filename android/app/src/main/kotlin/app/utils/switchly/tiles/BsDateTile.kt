@@ -40,7 +40,16 @@ class BsDateTile : BaseTile() {
         val bs = BikramSambat.fromAd(today) ?: return
         tile.state = Tile.STATE_ACTIVE
         tile.label = "${BikramSambat.monthName(bs.month, nepali)} ${BikramSambat.digits(bs.day, nepali)}"
-        tile.subtitle = "${BikramSambat.weekday(today.dayOfWeek, nepali)} · ${BikramSambat.digits(bs.year, nepali)}"
+
+        val patro = BikramSambat.patroInfo(bs)
+        val tithiText = patro?.tithi(nepali)
+        val holidayText = if (patro?.isHoliday == true) patro.holiday(nepali) else null
+        val sub = when {
+            holidayText != null -> "${BikramSambat.weekday(today.dayOfWeek, nepali)} · $holidayText"
+            tithiText != null -> "${BikramSambat.weekday(today.dayOfWeek, nepali)} · $tithiText"
+            else -> "${BikramSambat.weekday(today.dayOfWeek, nepali)} · ${BikramSambat.digits(bs.year, nepali)}"
+        }
+        tile.subtitle = sub
         tile.icon = dayIcon(BikramSambat.digits(bs.day, nepali))
     }
 
@@ -48,14 +57,36 @@ class BsDateTile : BaseTile() {
         val nepali = BikramSambat.useNepali(this)
         val today = LocalDate.now()
         val bs = BikramSambat.fromAd(today) ?: return
-        val bsText = "${BikramSambat.weekday(today.dayOfWeek, nepali)}, ${BikramSambat.format(bs, nepali)}"
+        val bsDateFormatted = BikramSambat.format(bs, nepali)
+        val weekday = BikramSambat.weekday(today.dayOfWeek, nepali)
         val adText = today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale.ENGLISH))
+
+        val patro = BikramSambat.patroInfo(bs)
+        val tithi = patro?.tithi(nepali)
+        val isHoliday = patro?.isHoliday == true
+        val holiday = patro?.holiday(nepali)
+        val events = patro?.events(nepali).orEmpty()
+
+        val sb = StringBuilder()
+        sb.append("$weekday, $bsDateFormatted\n")
+        if (!tithi.isNullOrBlank()) {
+            sb.append(if (nepali) "तिथि: $tithi\n" else "Tithi: $tithi\n")
+        }
+        if (isHoliday && !holiday.isNullOrBlank()) {
+            sb.append(if (nepali) "सार्वजनिक बिदा: $holiday\n" else "Public Holiday: $holiday\n")
+        } else if (events.isNotEmpty()) {
+            sb.append(if (nepali) "चाडपर्व/दिवस: ${events.joinToString(", ")}\n" else "Events: ${events.joinToString(", ")}\n")
+        }
+        sb.append("AD: $adText")
+
+        val copyText = if (!tithi.isNullOrBlank()) "$bsDateFormatted ($tithi)" else bsDateFormatted
+
         val themed = ContextThemeWrapper(this, android.R.style.Theme_DeviceDefault_DayNight)
         dialog?.dismiss()
         dialog = AlertDialog.Builder(themed)
-            .setTitle(BikramSambat.format(bs, nepali))
-            .setMessage("$bsText\n$adText")
-            .setPositiveButton("Copy") { _, _ -> copy(BikramSambat.format(bs, nepali)) }
+            .setTitle(bsDateFormatted)
+            .setMessage(sb.toString().trimEnd())
+            .setPositiveButton("Copy") { _, _ -> copy(copyText) }
             .setNeutralButton("Calendar") { _, _ -> launchApp(LaunchRoutes.tile("bs_date")) }
             .create()
             .also(::showDialog)

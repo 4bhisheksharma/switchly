@@ -13,6 +13,22 @@ import java.time.temporal.ChronoUnit
 /** A Bikram Sambat date; [month] is 1..12 (Baishakh..Chaitra). */
 data class BsDate(val year: Int, val month: Int, val day: Int)
 
+/** Tithi, holiday, and event metadata for a BS date. */
+data class BsPatroInfo(
+    val tithiNp: String?,
+    val tithiEn: String?,
+    val isHoliday: Boolean,
+    val holidayNp: String?,
+    val holidayEn: String?,
+    val eventsNp: List<String>,
+    val eventsEn: List<String>,
+) {
+    fun tithi(nepali: Boolean): String? = if (nepali) tithiNp else tithiEn
+    fun holiday(nepali: Boolean): String? = if (nepali) holidayNp else holidayEn
+    fun events(nepali: Boolean): List<String> = if (nepali) eventsNp else eventsEn
+}
+
+
 /** AD → BS conversion and Nepali/English formatting. Matches `nepali_utils` in Flutter. */
 object BikramSambat {
     /** BS 1970/01/01 is AD 1913-04-13. */
@@ -70,6 +86,33 @@ object BikramSambat {
     /** "कात्तिक ११, २०८३" / "Kartik 11, 2083". */
     fun format(date: BsDate, nepali: Boolean): String =
         "${monthName(date.month, nepali)} ${digits(date.day, nepali)}, ${digits(date.year, nepali)}"
+
+    /** Looks up tithi, holiday, and cultural events for [date]. */
+    fun patroInfo(date: BsDate): BsPatroInfo? {
+        return try {
+            val nepaliDate = io.github.sanamhub.nepdate.NepaliDate.of(date.year, date.month, date.day)
+            val info = io.github.sanamhub.nepdate.patro.Patro.info(nepaliDate)
+            val tithiNp = info.tithi?.nepali
+            val tithiEn = info.tithi?.english
+            val isHoliday = info.isPublicHoliday
+            val eventsNp = info.events.map { it.nepali }
+            val eventsEn = info.events.map { it.english }
+            val holidayNp = eventsNp.firstOrNull()
+            val holidayEn = eventsEn.firstOrNull()
+            BsPatroInfo(
+                tithiNp = tithiNp,
+                tithiEn = tithiEn,
+                isHoliday = isHoliday,
+                holidayNp = holidayNp,
+                holidayEn = holidayEn,
+                eventsNp = eventsNp,
+                eventsEn = eventsEn,
+            )
+        } catch (e: Throwable) {
+            Log.w("BikramSambat", "Error loading patro for $date", e)
+            null
+        }
+    }
 
     /** Whether to show Devanagari; set in the app, defaults to Nepali script. */
     fun useNepali(context: Context): Boolean {

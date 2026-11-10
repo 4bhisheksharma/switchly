@@ -106,4 +106,8 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.4.2")
     implementation("androidx.camera:camera-view:1.4.2")
     implementation("com.google.zxing:core:3.5.3")
+
+    // Nepali calendar patro (tithi, holidays, events)
+    implementation("io.github.sanamhub:nepdate:0.1.0-beta.1")
+    implementation("io.github.sanamhub:nepdate-patro:0.1.0-beta.1")
 }

@@ -109,9 +109,15 @@ class NepaliDateWidgetProvider : AppWidgetProvider() {
             val weekdayStr = BikramSambat.weekday(today.dayOfWeek, nepali)
             val adStr = today.format(DateTimeFormatter.ofPattern("EEE, d MMM yyyy", Locale.ENGLISH))
 
+            val patro = BikramSambat.patroInfo(bs)
+            val tithiText = patro?.tithi(nepali)
+            val holidayText = if (patro?.isHoliday == true) patro.holiday(nepali) else null
+            val extraText = holidayText ?: tithiText
+            val displayWeekday = if (extraText != null) "$weekdayStr · $extraText" else weekdayStr
+
             views.setTextViewText(R.id.widget_bs_day, dayStr)
             views.setTextViewText(R.id.widget_bs_month_year, "$monthName $yearStr")
-            views.setTextViewText(R.id.widget_weekday, weekdayStr)
+            views.setTextViewText(R.id.widget_weekday, displayWeekday)
             views.setTextViewText(R.id.widget_ad_date, adStr)
 
             val launchIntent = Intent(context, MainActivity::class.java).apply {
@@ -143,9 +149,13 @@ class NepaliDateWidgetProvider : AppWidgetProvider() {
             val weekdayStr = BikramSambat.weekday(today.dayOfWeek, nepali)
             val adStr = today.format(DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH))
 
+            val patro = BikramSambat.patroInfo(bs)
+            val tithiText = patro?.tithi(nepali)
+            val subText = if (tithiText != null) "$weekdayStr · $tithiText" else "$weekdayStr · $adStr"
+
             views.setTextViewText(R.id.widget_bs_month_year, "$monthName $yearStr")
             views.setTextViewText(R.id.widget_bs_day, dayStr)
-            views.setTextViewText(R.id.widget_bs_subtitle, "$weekdayStr · $adStr")
+            views.setTextViewText(R.id.widget_bs_subtitle, subText)
 
             val launchIntent = Intent(context, MainActivity::class.java).apply {
                 action = Intent.ACTION_VIEW

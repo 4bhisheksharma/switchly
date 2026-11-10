@@ -12,6 +12,7 @@ import '../../../core/widgets/select_chip.dart';
 import '../../../core/widgets/tile_icon.dart';
 import '../../setup/presentation/add_tiles.dart';
 import '../data/bs_format.dart';
+import '../data/bs_patro.dart';
 
 /// Today's BS date, a month grid, and AD → BS conversion.
 class CalendarScreen extends StatefulWidget {
@@ -55,30 +56,162 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   void _showDate(NepaliDateTime bs, DateTime ad, bool nepali) {
     final text = BsFormat.date(bs, nepali);
+    final patro = BsPatro.get(bs.year, bs.month, bs.day);
+    final tithi = patro.tithi(nepali);
+    final holiday = patro.holiday(nepali);
+    final isHoliday = patro.isHoliday;
+    final events = patro.events(nepali);
+
+    final copyFull = [
+      text,
+      if (tithi != null) (nepali ? 'तिथि: $tithi' : 'Tithi: $tithi'),
+      if (isHoliday && holiday != null) (nepali ? 'सार्वजनिक बिदा: $holiday' : 'Public Holiday: $holiday'),
+      if (!isHoliday && events.isNotEmpty) (nepali ? 'चाडपर्व: ${events.join(", ")}' : 'Events: ${events.join(", ")}'),
+      'AD: ${MaterialLocalizations.of(context).formatFullDate(ad)}',
+    ].join('\n');
+
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       builder: (context) {
         final theme = Theme.of(context);
+        final colors = theme.colorScheme;
         return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(text, style: theme.textTheme.headlineMedium),
-              const SizedBox(height: 4),
-              Text(
-                '${BsFormat.weekday(bs, nepali)} · ${MaterialLocalizations.of(context).formatFullDate(ad)}',
-                style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(text, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${BsFormat.weekday(bs, nepali)} · ${MaterialLocalizations.of(context).formatFullDate(ad)}',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isHoliday)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: colors.errorContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        nepali ? 'सार्वजनिक बिदा' : 'Public Holiday',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colors.onErrorContainer,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: text));
-                  Navigator.of(context).pop();
-                },
-                icon: const Icon(Symbols.content_copy_rounded, size: 20),
-                label: const Text('Copy BS date'),
+              const SizedBox(height: 16),
+              if (tithi != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: colors.outlineVariant.withValues(alpha: 0.5)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Symbols.nights_stay_rounded, size: 20, color: colors.primary),
+                      const SizedBox(width: 10),
+                      Text(
+                        nepali ? 'तिथि' : 'Tithi',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        tithi,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+              if (events.isNotEmpty) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isHoliday ? colors.errorContainer.withValues(alpha: 0.3) : colors.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isHoliday ? colors.error.withValues(alpha: 0.4) : colors.outlineVariant.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            isHoliday ? Symbols.event_busy_rounded : Symbols.celebration_rounded,
+                            size: 20,
+                            color: isHoliday ? colors.error : colors.secondary,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            isHoliday
+                                ? (nepali ? 'सार्वजनिक बिदा' : 'Public Holiday')
+                                : (nepali ? 'चाडपर्व तथा दिवस' : 'Events & Festivals'),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: isHoliday ? colors.error : colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      for (final event in events)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 30, bottom: 4),
+                          child: Text(
+                            '• $event',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: isHoliday ? FontWeight.bold : FontWeight.w500,
+                              color: isHoliday ? colors.error : colors.onSurface,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: copyFull));
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(nepali ? 'मिति तथा विवरण प्रतिलिपि गरियो' : 'Date details copied')),
+                    );
+                  },
+                  icon: const Icon(Symbols.content_copy_rounded, size: 20),
+                  label: Text(nepali ? 'विवरण प्रतिलिपि गर्नुहोस्' : 'Copy Details'),
+                ),
               ),
             ],
           ),
@@ -192,6 +325,30 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final nepali = context.watch<BsScriptCubit>().state;
     final adToday = MaterialLocalizations.of(context).formatFullDate(DateTime.now());
 
+    final todayPatro = BsPatro.get(_today.year, _today.month, _today.day);
+    final todayTithi = todayPatro.tithi(nepali);
+    final todayHoliday = todayPatro.holiday(nepali);
+    final todayEvents = todayPatro.events(nepali);
+
+    final heroLabel = [
+      BsFormat.weekday(_today, nepali),
+      ?todayTithi,
+    ].join(' · ');
+
+    final heroDetail = [
+      if (todayPatro.isHoliday && todayHoliday != null)
+        (nepali ? 'सार्वजनिक बिदा: $todayHoliday' : 'Holiday: $todayHoliday')
+      else if (todayEvents.isNotEmpty)
+        todayEvents.first,
+      adToday,
+    ].join(' · ');
+
+    final copyFullToday = [
+      BsFormat.date(_today, nepali),
+      if (todayTithi != null) '($todayTithi)',
+      if (todayHoliday != null) '· $todayHoliday',
+    ].join(' ');
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -202,9 +359,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
               children: [
                 HeroStatusCard(
                   icon: Symbols.calendar_month_rounded,
-                  label: BsFormat.weekday(_today, nepali),
+                  label: heroLabel,
                   value: BsFormat.date(_today, nepali),
-                  detail: adToday,
+                  detail: heroDetail,
                   active: true,
                   action: Wrap(
                     spacing: 10,
@@ -216,7 +373,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           foregroundColor: const Color(0xFF4F46E5),
                         ),
                         onPressed: () {
-                          Clipboard.setData(ClipboardData(text: BsFormat.date(_today, nepali)));
+                          Clipboard.setData(ClipboardData(text: copyFullToday));
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Date copied')));
                         },
                         icon: const Icon(Symbols.content_copy_rounded, size: 20),
@@ -271,6 +428,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       onDayTap: (day) => _showDate(day, day.toDateTime(), nepali),
                     ),
                   ),
+                ),
+                _MonthEventsList(
+                  month: _month,
+                  nepali: nepali,
+                  onDayTap: (day) => _showDate(day, day.toDateTime(), nepali),
                 ),
                 const SectionHeader(
                   'Home screen widgets',
@@ -483,19 +645,27 @@ class _MonthGrid extends StatelessWidget {
         const SizedBox(height: 8),
         GridView.count(
           crossAxisCount: 7,
+          childAspectRatio: 0.82,
           shrinkWrap: true,
           // Otherwise the grid adds the status-bar inset as an empty first row.
           padding: EdgeInsets.zero,
           physics: const NeverScrollableScrollPhysics(),
           children: [
             for (var i = 0; i < leading; i++) const SizedBox.shrink(),
-            for (var day = 1; day <= days; day++)
-              _DayCell(
-                label: BsFormat.digits(day, nepali),
-                isToday: month.year == today.year && month.month == today.month && day == today.day,
-                isSaturday: (leading + day - 1) % 7 == 6,
-                onTap: () => onDayTap(NepaliDateTime(month.year, month.month, day)),
-              ),
+            for (var day = 1; day <= days; day++) ...[
+              () {
+                final patro = BsPatro.get(month.year, month.month, day);
+                final isSat = (leading + day - 1) % 7 == 6;
+                return _DayCell(
+                  label: BsFormat.digits(day, nepali),
+                  tithi: patro.tithi(nepali),
+                  isToday: month.year == today.year && month.month == today.month && day == today.day,
+                  isSaturday: isSat,
+                  isHoliday: patro.isHoliday,
+                  onTap: () => onDayTap(NepaliDateTime(month.year, month.month, day)),
+                );
+              }(),
+            ],
           ],
         ),
       ],
@@ -504,36 +674,199 @@ class _MonthGrid extends StatelessWidget {
 }
 
 class _DayCell extends StatelessWidget {
-  const _DayCell({required this.label, required this.isToday, required this.isSaturday, required this.onTap});
+  const _DayCell({
+    required this.label,
+    this.tithi,
+    required this.isToday,
+    required this.isSaturday,
+    required this.isHoliday,
+    required this.onTap,
+  });
 
   final String label;
+  final String? tithi;
   final bool isToday;
   final bool isSaturday;
+  final bool isHoliday;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final isOffDay = isSaturday || isHoliday;
+
+    Color textColor;
+    if (isToday) {
+      textColor = colors.onPrimary;
+    } else if (isOffDay) {
+      textColor = colors.error;
+    } else {
+      textColor = colors.onSurface;
+    }
+
+    Color? tithiColor;
+    if (isToday) {
+      tithiColor = colors.onPrimary.withValues(alpha: 0.85);
+    } else if (isOffDay) {
+      tithiColor = colors.error.withValues(alpha: 0.8);
+    } else {
+      tithiColor = colors.onSurfaceVariant;
+    }
+
     return Padding(
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.symmetric(horizontal: 1.5, vertical: 2),
       child: Material(
-        color: isToday ? colors.primary : Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
+        color: isToday
+            ? colors.primary
+            : (isHoliday && !isSaturday ? colors.errorContainer.withValues(alpha: 0.25) : Colors.transparent),
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: Center(
-            child: Text(
-              label,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: isToday ? FontWeight.w700 : null,
-                color: isToday ? colors.onPrimary : (isSaturday ? colors.error : colors.onSurface),
+          borderRadius: BorderRadius.circular(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: isToday || isHoliday ? FontWeight.w700 : FontWeight.w500,
+                  color: textColor,
+                ),
               ),
-            ),
+              if (tithi != null)
+                Text(
+                  tithi!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontSize: 8.5,
+                    fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
+                    color: tithiColor,
+                    height: 1.05,
+                  ),
+                ),
+            ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _MonthEventsList extends StatelessWidget {
+  const _MonthEventsList({
+    required this.month,
+    required this.nepali,
+    required this.onDayTap,
+  });
+
+  final NepaliDateTime month;
+  final bool nepali;
+  final ValueChanged<NepaliDateTime> onDayTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final items = <({int day, String tithi, String title, bool isHoliday, List<String> events})>[];
+
+    for (var d = 1; d <= month.totalDays; d++) {
+      final p = BsPatro.get(month.year, month.month, d);
+      final evs = p.events(nepali);
+      if (p.isHoliday || evs.isNotEmpty) {
+        items.add((
+          day: d,
+          tithi: p.tithi(nepali) ?? '',
+          title: evs.isNotEmpty ? evs.first : (p.tithi(nepali) ?? ''),
+          isHoliday: p.isHoliday,
+          events: evs,
+        ));
+      }
+    }
+
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          nepali ? 'यस महिनाका चाडपर्व तथा बिदाहरू' : 'Holidays & Events this Month',
+          subtitle: nepali
+              ? '${BsFormat.month(month.month, nepali)} महिनाका प्रमुख दिवस तथा सांस्कृतिक पर्वहरू'
+              : 'Important days & cultural events in ${BsFormat.month(month.month, false)}',
+        ),
+        Card(
+          child: ListView.separated(
+            shrinkWrap: true,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: items.length,
+            separatorBuilder: (_, _) => Divider(
+              height: 1,
+              indent: 56,
+              color: colors.outlineVariant.withValues(alpha: 0.3),
+            ),
+            itemBuilder: (context, index) {
+              final item = items[index];
+              final dayDate = NepaliDateTime(month.year, month.month, item.day);
+              final weekdayStr = BsFormat.weekday(dayDate, nepali);
+
+              return ListTile(
+                onTap: () => onDayTap(dayDate),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: item.isHoliday ? colors.errorContainer : colors.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    BsFormat.digits(item.day, nepali),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: item.isHoliday ? colors.onErrorContainer : colors.onSurface,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  item.title,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: item.isHoliday ? FontWeight.bold : FontWeight.w600,
+                    color: item.isHoliday ? colors.error : colors.onSurface,
+                  ),
+                ),
+                subtitle: Text(
+                  [
+                    weekdayStr,
+                    if (item.tithi.isNotEmpty) item.tithi,
+                  ].join(' · '),
+                  style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                ),
+                trailing: item.isHoliday
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: colors.error.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: colors.error.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          nepali ? 'बिदा' : 'Holiday',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colors.error,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                      )
+                    : const Icon(Symbols.chevron_right_rounded, size: 18),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -551,6 +884,10 @@ class _NepaliDateStandardPreview extends StatelessWidget {
     final dayStr = BsFormat.digits(today.day, nepali);
     final monthYearStr = '${BsFormat.month(today.month, nepali)} ${BsFormat.digits(today.year, nepali)}';
     final weekdayStr = BsFormat.weekday(today, nepali);
+
+    final patro = BsPatro.get(today.year, today.month, today.day);
+    final extra = (patro.isHoliday ? patro.holiday(nepali) : null) ?? patro.tithi(nepali);
+    final displayWeekday = extra != null ? '$weekdayStr · $extra' : weekdayStr;
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 340),
@@ -607,7 +944,7 @@ class _NepaliDateStandardPreview extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  weekdayStr,
+                  displayWeekday,
                   style: const TextStyle(
                     color: Color(0xFFC4C2D6),
                     fontSize: 13,
@@ -644,7 +981,11 @@ class _NepaliDateCompactPreview extends StatelessWidget {
     final now = DateTime.now();
     final dayStr = BsFormat.digits(today.day, nepali);
     final monthYearStr = '${BsFormat.month(today.month, nepali)} ${BsFormat.digits(today.year, nepali)}';
-    final subtitle = '${BsFormat.weekday(today, nepali)} · ${now.day} ${MaterialLocalizations.of(context).formatMonthYear(now).split(' ').first}';
+    final weekdayStr = BsFormat.weekday(today, nepali);
+    final patro = BsPatro.get(today.year, today.month, today.day);
+    final tithiStr = patro.tithi(nepali);
+    final displayExtra = tithiStr ?? '${now.day} ${MaterialLocalizations.of(context).formatMonthYear(now).split(' ').first}';
+    final subtitle = '$weekdayStr · $displayExtra';
 
     return Container(
       width: 130,
