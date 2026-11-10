@@ -77,7 +77,7 @@ Switchly respects your privacy. It contains no analytics, no telemetry, and no a
 | **Payment QR** | Shows your saved payment QR codes (eSewa, Khalti, Fonepay, bank and others) full screen at maximum brightness, without opening any other app. Works from the lock screen. |
 | **Scan QR** | Opens a QR scanner from anywhere. Links, phone numbers, email addresses and locations get an Open button, and Wi-Fi codes show the network name and password. Links are shown in full and are never opened automatically. Scanning happens entirely on the phone. |
 | **Quick texts** | Saves text you type often, such as an address, account number or a standard reply. Tap the tile, pick a text, and it is copied to the clipboard. |
-| **Nepali date** | Shows today's Bikram Sambat (BS) date on the tile, in Nepali or English script. The app includes a full BS calendar and an AD to BS converter. |
+| **Nepali date & Patro** | Shows today's Bikram Sambat (BS) date, Tithi, and public holidays directly on the Quick Settings tile and in a native dialog with one-tap copy. The in-app calendar includes complete month grids with daily Tithis, gazetted public holiday highlights, monthly festival schedules, and AD ↔ BS date conversion. |
 | **Profiles** | Applies several settings at once, for example "Focus" = AdGuard DNS + Grayscale + faster animations. A "Restore" option puts everything back as it was. |
 
 ### Home Screen Widgets
@@ -86,7 +86,7 @@ Switchly respects your privacy. It contains no analytics, no telemetry, and no a
 | --- | --- |
 | **Volume & Compact Volume** | Change volume streams and toggle ringer modes directly from your home screen launcher. |
 | **Payment QR** | One-tap access to your essential payment and merchant QR codes. |
-| **Nepali Date & Compact Date** | Shows today's Bikram Sambat date with automatic daily rollover. |
+| **Nepali Date & Compact Date** | Shows today's Bikram Sambat date with automatic daily rollover, live Tithi, and holiday indicators. |
 | **Quick Actions** | Shortcut bar for essential Switchly functions and quick toggles. |
 
 ### Preferences & System
