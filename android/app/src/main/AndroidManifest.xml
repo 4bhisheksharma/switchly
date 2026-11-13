@@ -16,6 +16,7 @@
     <!-- QR scanner. Asked for the first time the scanner opens; only used while it is open. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
     <!-- Screen Time: allows reading foreground usage time for the user-selected app. -->
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"

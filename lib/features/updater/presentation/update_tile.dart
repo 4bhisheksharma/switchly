@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:in_app_update/in_app_update.dart' as play_update;
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/widgets/tile_icon.dart';
@@ -15,6 +16,10 @@ class UpdateCheckTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (appFlavor == 'play') {
+      return const _PlayStoreUpdateTile();
+    }
+
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final state = context.watch<UpdateCubit>().state;
@@ -203,6 +208,9 @@ class UpdateNotificationBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (appFlavor == 'play') {
+      return const SizedBox.shrink();
+    }
     final state = context.watch<UpdateCubit>().state;
     if (state is! UpdateAvailable && state is! UpdateDownloaded) {
       return const SizedBox.shrink();
@@ -295,6 +303,125 @@ class UpdateNotificationBanner extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlayStoreUpdateTile extends StatefulWidget {
+  const _PlayStoreUpdateTile();
+
+  @override
+  State<_PlayStoreUpdateTile> createState() => _PlayStoreUpdateTileState();
+}
+
+class _PlayStoreUpdateTileState extends State<_PlayStoreUpdateTile> {
+  bool _isChecking = false;
+
+  Future<void> _checkUpdate(BuildContext context) async {
+    if (_isChecking) return;
+    setState(() => _isChecking = true);
+    HapticFeedback.selectionClick();
+
+    try {
+      final info = await play_update.InAppUpdate.checkForUpdate();
+      if (!context.mounted) return;
+
+      if (info.updateAvailability == play_update.UpdateAvailability.updateAvailable) {
+        if (info.immediateUpdateAllowed) {
+          await play_update.InAppUpdate.performImmediateUpdate();
+        } else if (info.flexibleUpdateAllowed) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text('Downloading update from Google Play in background...'),
+            ),
+          );
+          await play_update.InAppUpdate.startFlexibleUpdate();
+          await play_update.InAppUpdate.completeFlexibleUpdate();
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Switchly is up to date on Google Play.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            e.toString().contains('ERROR_API_NOT_AVAILABLE') ||
+                    e.toString().contains('ERROR_APP_NOT_OWNED')
+                ? 'Updates are managed by Google Play once installed from the Play Store.'
+                : 'Unable to check Google Play: ${e.toString().replaceFirst("PlatformException(", "").replaceFirst(")", "")}',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isChecking = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return InkWell(
+      onTap: () => _checkUpdate(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            const TileIcon(
+              Symbols.verified_user_rounded,
+              active: false,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Check for Updates',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _isChecking
+                        ? 'Checking Google Play...'
+                        : 'Google Play Edition · Tap to check',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (_isChecking)
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: scheme.primary,
+                ),
+              )
+            else
+              Icon(
+                Symbols.check_circle_rounded,
+                size: 20,
+                color: scheme.primary,
+              ),
+          ],
         ),
       ),
     );

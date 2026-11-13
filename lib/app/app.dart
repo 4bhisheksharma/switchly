@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:in_app_update/in_app_update.dart' as play_update;
 
 import '../core/platform/qs_channel.dart';
 import '../features/display/bloc/display_bloc.dart';
@@ -65,7 +67,7 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
   late final CaffeineCubit _caffeineCubit = CaffeineCubit(_powerRepository)..load();
   late final BatteryCubit _batteryCubit = BatteryCubit(_powerRepository)..resume();
   late final UpdateRepository _updateRepository = UpdateRepository(channel: widget.channel);
-  late final UpdateCubit _updateCubit = UpdateCubit(repository: _updateRepository)..checkForUpdate();
+  late final UpdateCubit _updateCubit = UpdateCubit(repository: _updateRepository);
   late final ScreenTimeRepository _screenTimeRepository = ScreenTimeRepository(widget.channel);
   late final ScreenTimeBloc _screenTimeBloc = ScreenTimeBloc(_screenTimeRepository)..add(const ScreenTimeStarted());
   late final PublicModeRepository _publicModeRepository = PublicModeRepository(widget.channel);
@@ -81,6 +83,11 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
   @override
   void initState() {
     super.initState();
+    if (appFlavor == 'play') {
+      _checkPlayStoreUpdate();
+    } else {
+      _updateCubit.checkForUpdate();
+    }
     _launchSub = widget.channel.launchRoutes.listen(_handleLaunchRoute);
     // Permission grants and tile taps happen outside the app, so re-read on every return.
     _lifecycle = AppLifecycleListener(
@@ -92,9 +99,13 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
         _profilesBloc.add(const ProfilesRefreshed());
         _caffeineCubit.refresh();
         _batteryCubit.resume();
-        _updateCubit.checkInstallPermission();
-        if (_updateCubit.state is UpdateOffline) {
-          _updateCubit.checkForUpdate();
+        if (appFlavor == 'play') {
+          play_update.InAppUpdate.completeFlexibleUpdate().catchError((_) {});
+        } else {
+          _updateCubit.checkInstallPermission();
+          if (_updateCubit.state is UpdateOffline) {
+            _updateCubit.checkForUpdate();
+          }
         }
         _screenTimeBloc.add(const ScreenTimePermissionCheckRequested());
         _screenTimeBloc.add(const ScreenTimeRefreshed());
@@ -108,6 +119,22 @@ class _SwitchlyAppState extends State<SwitchlyApp> {
       final route = await widget.channel.takeLaunchRoute();
       if (route != null) _handleLaunchRoute(route);
     });
+  }
+
+  Future<void> _checkPlayStoreUpdate() async {
+    try {
+      final info = await play_update.InAppUpdate.checkForUpdate();
+      if (info.updateAvailability == play_update.UpdateAvailability.updateAvailable) {
+        if (info.flexibleUpdateAllowed) {
+          await play_update.InAppUpdate.startFlexibleUpdate();
+          await play_update.InAppUpdate.completeFlexibleUpdate();
+        } else if (info.immediateUpdateAllowed) {
+          await play_update.InAppUpdate.performImmediateUpdate();
+        }
+      }
+    } catch (_) {
+      // Normal when sideloaded / developing locally / offline
+    }
   }
 
   /// Handles a tile tap (`/setup`) or long-press (`/tile/<id>`) that opened the app.

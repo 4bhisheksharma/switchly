@@ -53,10 +53,17 @@ class CaffeineService : Service() {
 
         val stopOnLock = Caffeine.config(this).stopOnLock
         if (stopOnLock && !screenOffRegistered) {
-            registerReceiver(screenOff, IntentFilter(Intent.ACTION_SCREEN_OFF))
+            val filter = IntentFilter(Intent.ACTION_SCREEN_OFF)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(screenOff, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                registerReceiver(screenOff, filter)
+            }
             screenOffRegistered = true
         } else if (!stopOnLock && screenOffRegistered) {
-            unregisterReceiver(screenOff)
+            try {
+                unregisterReceiver(screenOff)
+            } catch (_: Exception) {}
             screenOffRegistered = false
         }
         TileRefresher.refresh(this, CaffeineTile::class.java)
@@ -67,7 +74,12 @@ class CaffeineService : Service() {
     override fun onDestroy() {
         handler.removeCallbacks(timeUp)
         wakeLock?.takeIf { it.isHeld }?.release()
-        if (screenOffRegistered) unregisterReceiver(screenOff)
+        if (screenOffRegistered) {
+            try {
+                unregisterReceiver(screenOff)
+            } catch (_: Exception) {}
+            screenOffRegistered = false
+        }
         Caffeine.clear()
         TileRefresher.refresh(this, CaffeineTile::class.java)
         super.onDestroy()

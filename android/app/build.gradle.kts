@@ -39,6 +39,16 @@ android {
         versionName = flutter.versionName
     }
 
+    flavorDimensions += "version"
+    productFlavors {
+        create("play") {
+            dimension = "version"
+        }
+        create("github") {
+            dimension = "version"
+        }
+    }
+
     packaging {
         resources {
             excludes += setOf(

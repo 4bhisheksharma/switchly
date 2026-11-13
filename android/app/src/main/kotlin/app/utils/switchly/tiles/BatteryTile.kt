@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.service.quicksettings.Tile
@@ -27,19 +28,34 @@ class BatteryTile : BaseTile() {
             handler.postDelayed(this, POLL_MS)
         }
     }
+    private var isBatteryReceiverRegistered = false
     private val batteryChanged = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) = refresh()
     }
 
     override fun onStartListening() {
         super.onStartListening()
-        registerReceiver(batteryChanged, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        if (!isBatteryReceiverRegistered) {
+            val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(batteryChanged, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                registerReceiver(batteryChanged, filter)
+            }
+            isBatteryReceiverRegistered = true
+        }
+        handler.removeCallbacks(poll)
         handler.postDelayed(poll, POLL_MS)
     }
 
     override fun onStopListening() {
         handler.removeCallbacks(poll)
-        unregisterReceiver(batteryChanged)
+        if (isBatteryReceiverRegistered) {
+            try {
+                unregisterReceiver(batteryChanged)
+            } catch (_: Exception) {}
+            isBatteryReceiverRegistered = false
+        }
         super.onStopListening()
     }
 
