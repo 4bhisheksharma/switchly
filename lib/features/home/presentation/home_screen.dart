@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:nepali_utils/nepali_utils.dart';
 import '../../../app/router.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/platform/qs_channel.dart';
 import '../../../core/tiles/tile_catalog.dart';
 import '../../../core/widgets/section_header.dart';
@@ -1333,35 +1334,198 @@ class _ThemeOption extends StatelessWidget {
   }
 }
 
-class _PrivacyFooter extends StatelessWidget {
+class _PrivacyFooter extends StatefulWidget {
   const _PrivacyFooter();
+
+  @override
+  State<_PrivacyFooter> createState() => _PrivacyFooterState();
+}
+
+class _PrivacyFooterState extends State<_PrivacyFooter> {
+  String _version = AppConfig.versionName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final info = await context.read<QsChannel>().getAppVersion();
+      if (mounted && info.versionName.isNotEmpty) {
+        setState(() => _version = info.versionName);
+      }
+    } catch (_) {
+      // Keep AppConfig.versionName fallback
+    }
+  }
+
+  Future<void> _launchUrl(String url) async {
+    HapticFeedback.selectionClick();
+    final channel = context.read<QsChannel>();
+    final success = await channel.openUrl(url);
+    if (!success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open $url'),
+          action: SnackBarAction(
+            label: 'Copy',
+            onPressed: () => Clipboard.setData(ClipboardData(text: url)),
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.65);
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Symbols.shield_rounded, size: 15, color: color),
-            const SizedBox(width: 6),
-            Text(
-              '100% Offline · Zero Data Collection',
-              style: theme.textTheme.labelSmall?.copyWith(color: color, letterSpacing: 0.3),
+    final scheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          // Trust Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4)),
             ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Switchly v0.0.4 · GPL-3.0 License',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: color.withValues(alpha: 0.7),
-            fontSize: 11,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Symbols.shield_rounded, size: 15, color: scheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  '100% Offline · Zero Data Collection',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Version String dynamically matching pubspec.yaml
+          Text(
+            'Switchly v$_version',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withValues(alpha: 0.85),
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Action Links Row: Privacy Policy, GPL-3.0 License, Source Code
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _FooterLinkChip(
+                icon: Symbols.policy_rounded,
+                label: 'Privacy Policy',
+                onTap: () => _launchUrl(AppConfig.privacyPolicyUrl),
+              ),
+              Text(
+                '·',
+                style: TextStyle(
+                  color: scheme.outlineVariant,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              _FooterLinkChip(
+                icon: Symbols.balance_rounded,
+                label: 'GPL-3.0 License',
+                onTap: () => _launchUrl(AppConfig.licenseUrl),
+              ),
+              Text(
+                '·',
+                style: TextStyle(
+                  color: scheme.outlineVariant,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              _FooterLinkChip(
+                icon: Symbols.code_rounded,
+                label: 'Source',
+                onTap: () => _launchUrl(AppConfig.githubRepoUrl),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Free and open-source software for Android',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FooterLinkChip extends StatelessWidget {
+  const _FooterLinkChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        hoverColor: scheme.primary.withValues(alpha: 0.08),
+        splashColor: scheme.primary.withValues(alpha: 0.12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 15, color: scheme.primary),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: scheme.primary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(width: 3),
+              Icon(
+                Symbols.open_in_new_rounded,
+                size: 12,
+                color: scheme.primary.withValues(alpha: 0.65),
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

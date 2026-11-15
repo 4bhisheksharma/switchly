@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/config/app_config.dart';
 import '../data/update_repository.dart';
 import '../models/update_info.dart';
 import 'update_state.dart';
@@ -14,7 +15,7 @@ class UpdateCubit extends Cubit<UpdateState> {
   }
 
   final UpdateRepository repository;
-  String _cachedCurrentVersion = '0.0.3';
+  String _cachedCurrentVersion = AppConfig.versionName;
 
   Future<void> _initVersion() async {
     try {

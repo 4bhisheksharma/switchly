@@ -19,10 +19,10 @@ Switchly ("we", "our", or "the app") is committed to protecting your privacy. Th
 
 Switchly uses Android system features and permissions solely to provide on-device Quick Settings utility toggles. Below is a detailed breakdown of each permission:
 
-#### 1. VPN Service (`VpnService`)
-- **Feature:** Internet Kill Switch tile.
-- **Usage:** Switchly establishes a **local blackhole VPN interface** on your device to drop outgoing and incoming network packets when you tap the Kill Switch tile, allowing you to instantly sever network connectivity for selected or all apps.
-- **Data Policy:** No traffic is inspected, decrypted, routed to external servers, logged, or collected. The local tunnel interface operates purely on-device as a local circuit breaker.
+#### 1. Accessibility Service (`AccessibilityService`)
+- **Feature:** Screenshot Quick Settings tile.
+- **Usage:** Switchly uses an on-device `AccessibilityService` solely to invoke the native Android screenshot action (`GLOBAL_ACTION_TAKE_SCREENSHOT`, available on Android 9+) when you tap the Screenshot tile in your Quick Settings panel.
+- **Data Policy:** The accessibility service does not monitor, inspect, read, log, or collect any on-screen content, text, keystrokes, gestures, or user interactions. It is configured with zero event types (`accessibilityEventTypes=""`) and zero feedback types to guarantee complete user privacy.
 
 #### 2. Usage Access (`PACKAGE_USAGE_STATS`)
 - **Feature:** Screen Time Quick Settings tiles and Public Mode app protection.
