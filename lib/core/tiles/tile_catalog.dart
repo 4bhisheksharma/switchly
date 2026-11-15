@@ -23,11 +23,11 @@ const privateDnsTile = TileDefinition(
   icon: Symbols.dns_rounded,
 );
 
-const killSwitchTile = TileDefinition(
-  id: 'kill_switch',
-  name: 'Internet kill switch',
-  description: 'Block all traffic instantly.',
-  icon: Symbols.public_off_rounded,
+const screenshotTile = TileDefinition(
+  id: 'screenshot',
+  name: 'Take screenshot',
+  description: 'Capture your screen in one tap from Quick Settings.',
+  icon: Symbols.screenshot_monitor_rounded,
 );
 
 const wirelessDebuggingTile = TileDefinition(

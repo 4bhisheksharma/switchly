@@ -15,7 +15,6 @@ import java.util.Locale
 import app.utils.switchly.core.PrefKeys
 import app.utils.switchly.core.SharedConfig
 import app.utils.switchly.display.Grayscale
-import app.utils.switchly.network.KillSwitch
 import app.utils.switchly.network.WirelessDebugging
 import app.utils.switchly.profiles.Profiles
 import app.utils.switchly.tiles.TileRefresher
@@ -29,7 +28,6 @@ data class PublicModeConfig(
     val blockedPackages: List<String> = emptyList(),
     val enableDnd: Boolean = true,
     val enableGrayscale: Boolean = false,
-    val enableKillSwitch: Boolean = false,
     val pin: String? = null,
 )
 
@@ -73,7 +71,6 @@ object PublicMode {
                 blockedPackages = blockedList,
                 enableDnd = json.optBoolean("enableDnd", true),
                 enableGrayscale = json.optBoolean("enableGrayscale", false),
-                enableKillSwitch = json.optBoolean("enableKillSwitch", false),
                 pin = json.optString("pin").takeIf { it.isNotBlank() },
             )
         } catch (e: JSONException) {
@@ -299,7 +296,7 @@ object PublicMode {
     /**
      * Activates Public Mode:
      * 1. Snapshots current active profile and system settings.
-     * 2. Enables requested protection settings (DND, grayscale, kill switch, etc.).
+     * 2. Enables requested protection settings (DND, grayscale, etc.).
      * 3. Calculates timeout and persists active state.
      * 4. Starts the foreground monitoring service.
      */
@@ -320,7 +317,6 @@ object PublicMode {
         }
 
         snapshot.put("grayscale", Grayscale.isOn(context))
-        snapshot.put("killSwitch", KillSwitch.isOn())
         snapshot.put("wirelessDebugging", WirelessDebugging.isOn(context))
 
         state.edit().putString(SNAPSHOT_KEY, snapshot.toString()).apply()
@@ -336,12 +332,6 @@ object PublicMode {
 
         if (currentCfg.enableGrayscale) {
             Grayscale.set(context, true)
-        }
-
-        if (currentCfg.enableKillSwitch && !KillSwitch.isOn()) {
-            if (KillSwitch.hasConsent(context)) {
-                KillSwitch.start(context)
-            }
         }
 
         if (WirelessDebugging.isOn(context)) {
@@ -412,13 +402,6 @@ object PublicMode {
 
             if (snapshot?.has("grayscale") == true) {
                 Grayscale.set(context, snapshot.getBoolean("grayscale"))
-            }
-
-            if (snapshot?.has("killSwitch") == true) {
-                val prevKill = snapshot.getBoolean("killSwitch")
-                if (!prevKill && KillSwitch.isOn()) {
-                    KillSwitch.stop(context)
-                }
             }
 
             if (snapshot?.has("wirelessDebugging") == true) {

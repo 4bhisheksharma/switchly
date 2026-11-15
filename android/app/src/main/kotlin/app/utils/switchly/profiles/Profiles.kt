@@ -7,7 +7,6 @@ import app.utils.switchly.core.SharedConfig
 import app.utils.switchly.display.AnimationScale
 import app.utils.switchly.display.Grayscale
 import app.utils.switchly.dns.PrivateDns
-import app.utils.switchly.network.KillSwitch
 import app.utils.switchly.network.WirelessDebugging
 import org.json.JSONArray
 import org.json.JSONException
@@ -25,7 +24,6 @@ data class Profile(
     val grayscale: Boolean?,
     val animationSpeed: Float?,
     val wirelessDebugging: Boolean?,
-    val killSwitch: Boolean?,
 )
 
 /**
@@ -68,7 +66,6 @@ object Profiles {
             grayscale = profile.grayscale,
             animationSpeed = profile.animationSpeed,
             wirelessDebugging = profile.wirelessDebugging,
-            killSwitch = profile.killSwitch,
         )
         state.edit().putString(SNAPSHOT, snapshot.toString()).putString(ACTIVE_ID, profile.id).apply()
         return ok
@@ -85,7 +82,6 @@ object Profiles {
             grayscale = snapshot.optBooleanOrNull("grayscale"),
             animationSpeed = snapshot.optDoubleOrNull("animationSpeed")?.toFloat(),
             wirelessDebugging = snapshot.optBooleanOrNull("wirelessDebugging"),
-            killSwitch = snapshot.optBooleanOrNull("killSwitch"),
         )
         state.edit().remove(SNAPSHOT).remove(ACTIVE_ID).apply()
         return ok
@@ -105,9 +101,6 @@ object Profiles {
         if (profile.wirelessDebugging != null && !snapshot.has("wirelessDebugging")) {
             snapshot.put("wirelessDebugging", WirelessDebugging.isOn(context))
         }
-        if (profile.killSwitch != null && !snapshot.has("killSwitch")) {
-            snapshot.put("killSwitch", KillSwitch.isOn())
-        }
     }
 
     private fun applyValues(
@@ -117,7 +110,6 @@ object Profiles {
         grayscale: Boolean?,
         animationSpeed: Float?,
         wirelessDebugging: Boolean?,
-        killSwitch: Boolean?,
     ): Boolean {
         var ok = true
         when (dnsMode) {
@@ -130,11 +122,6 @@ object Profiles {
         if (wirelessDebugging != null && WirelessDebugging.supported) {
             ok = WirelessDebugging.set(context, wirelessDebugging) && ok
         }
-        when (killSwitch) {
-            true -> ok = KillSwitch.hasConsent(context) && KillSwitch.start(context) && ok
-            false -> if (KillSwitch.isOn()) ok = KillSwitch.stop(context) && ok
-            null -> Unit
-        }
         return ok
     }
 
@@ -146,7 +133,6 @@ object Profiles {
         grayscale = json.optBooleanOrNull("grayscale"),
         animationSpeed = json.optDoubleOrNull("animationSpeed")?.toFloat(),
         wirelessDebugging = json.optBooleanOrNull("wirelessDebugging"),
-        killSwitch = json.optBooleanOrNull("killSwitch"),
     )
 
     private fun JSONObject.optStringOrNull(key: String): String? =

@@ -6,7 +6,7 @@ import '../features/display/presentation/font_size_screen.dart';
 import '../features/dns/presentation/dns_screen.dart';
 import '../features/volume/presentation/volume_screen.dart';
 import '../features/home/presentation/home_screen.dart';
-import '../features/network/presentation/kill_switch_screen.dart';
+import '../features/screenshot/presentation/screenshot_screen.dart';
 import '../features/payment_qr/presentation/payment_qr_screen.dart';
 import '../features/power/presentation/caffeine_screen.dart';
 import '../features/profiles/data/profile_models.dart';
@@ -20,7 +20,7 @@ abstract final class AppRouter {
   static const root = '/';
   static const dns = '/dns';
   static const animation = '/animation';
-  static const killSwitch = '/kill-switch';
+  static const screenshot = '/screenshot';
   static const quickTexts = '/quick-texts';
   static const profiles = '/profiles';
   static const calendar = '/calendar';
@@ -42,7 +42,7 @@ abstract final class AppRouter {
   static String? routeForTile(String tileId) => switch (tileId) {
         'private_dns' => dns,
         'animation_speed' => animation,
-        'kill_switch' => killSwitch,
+        'screenshot' => screenshot,
         'quick_texts' => quickTexts,
         'profiles' => profiles,
         'bs_date' => calendar,
@@ -60,7 +60,7 @@ abstract final class AppRouter {
       root => const HomeScreen(),
       dns => const DnsScreen(),
       animation => const AnimationScreen(),
-      killSwitch => const KillSwitchScreen(),
+      screenshot => const ScreenshotScreen(),
       quickTexts => const QuickTextsScreen(),
       profiles => const ProfilesScreen(),
       calendar => const CalendarScreen(),

@@ -24,28 +24,3 @@ final class WirelessDebuggingSet extends NetworkEvent {
   @override
   List<Object?> get props => [on];
 }
-
-/// Turning on may show Android's one-time VPN consent dialog.
-final class KillSwitchSet extends NetworkEvent {
-  const KillSwitchSet(this.on);
-
-  final bool on;
-
-  @override
-  List<Object?> get props => [on];
-}
-
-/// Replaces the list of apps that stay online while the kill switch is on.
-final class AllowedAppsChanged extends NetworkEvent {
-  const AllowedAppsChanged(this.packages);
-
-  final List<String> packages;
-
-  @override
-  List<Object?> get props => [packages];
-}
-
-/// Loads installed apps once, for the exception picker.
-final class InstalledAppsRequested extends NetworkEvent {
-  const InstalledAppsRequested();
-}

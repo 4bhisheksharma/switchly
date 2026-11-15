@@ -195,10 +195,10 @@
         </service>
 
         <service
-            android:name=".tiles.KillSwitchTile"
+            android:name=".tiles.ScreenshotTile"
             android:exported="true"
-            android:icon="@drawable/ic_tile_block"
-            android:label="@string/tile_kill_switch"
+            android:icon="@drawable/ic_tile_screenshot"
+            android:label="@string/tile_screenshot"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
@@ -206,9 +206,6 @@
             <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
             <meta-data
                 android:name="android.service.quicksettings.ACTIVE_TILE"
-                android:value="true" />
-            <meta-data
-                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
                 android:value="true" />
         </service>
 
@@ -413,15 +410,27 @@
             </intent-filter>
         </receiver>
 
-        <!-- Kill switch: a local VPN that drops all traffic. -->
+        <!-- Screenshot: Accessibility service for 1-tap capture without physical buttons. -->
         <service
-            android:name=".network.KillSwitchVpnService"
-            android:exported="false"
-            android:permission="android.permission.BIND_VPN_SERVICE">
+            android:name=".accessibility.SwitchlyAccessibilityService"
+            android:exported="true"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
-                <action android:name="android.net.VpnService"/>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
         </service>
+
+        <!-- Trampoline to collapse shade and capture screenshot cleanly. -->
+        <activity
+            android:name=".accessibility.ScreenshotActionActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <!-- Home Screen Widgets -->
         <receiver
@@ -539,7 +548,7 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
-        <!-- Lists launchable apps for the kill switch exceptions (no QUERY_ALL_PACKAGES). -->
+        <!-- Lists launchable apps for app pickers (no QUERY_ALL_PACKAGES). -->
         <intent>
             <action android:name="android.intent.action.MAIN"/>
             <category android:name="android.intent.category.LAUNCHER"/>

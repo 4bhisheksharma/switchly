@@ -13,6 +13,7 @@ import '../../../core/widgets/tile_icon.dart';
 import '../../setup/presentation/add_tiles.dart';
 import '../data/bs_format.dart';
 import '../data/bs_patro.dart';
+import 'age_calculator_card.dart';
 
 /// Today's BS date, a month grid, and AD → BS conversion.
 class CalendarScreen extends StatefulWidget {
@@ -52,6 +53,42 @@ class _CalendarScreenState extends State<CalendarScreen> {
     if (picked == null || !mounted) return;
     final bs = picked.toNepaliDateTime();
     _showDate(bs, picked, nepali);
+  }
+
+  void _openAgeCalculatorSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        final nepali = context.watch<BsScriptCubit>().state;
+        return SingleChildScrollView(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                AgeCalculatorCard(nepali: nepali),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _showDate(NepaliDateTime bs, DateTime ad, bool nepali) {
@@ -410,10 +447,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
                 SectionHeader(
                   'Calendar',
-                  trailing: TextButton.icon(
-                    onPressed: _convert,
-                    icon: const Icon(Symbols.swap_horiz_rounded, size: 18),
-                    label: const Text('Convert AD'),
+                  trailing: Wrap(
+                    spacing: 4,
+                    children: [
+                      TextButton.icon(
+                        onPressed: _openAgeCalculatorSheet,
+                        icon: const Icon(Symbols.cake_rounded, size: 18),
+                        label: Text(nepali ? 'उमेर' : 'Age'),
+                      ),
+                      TextButton.icon(
+                        onPressed: _convert,
+                        icon: const Icon(Symbols.swap_horiz_rounded, size: 18),
+                        label: const Text('Convert AD'),
+                      ),
+                    ],
                   ),
                 ),
                 Card(
@@ -434,6 +481,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   nepali: nepali,
                   onDayTap: (day) => _showDate(day, day.toDateTime(), nepali),
                 ),
+                const SizedBox(height: 8),
+                SectionHeader(
+                  nepali ? 'उमेर क्यालकुलेटर' : 'Age calculator',
+                  subtitle: nepali
+                      ? 'वि.सं. तथा ई.सं. दुवैमा यकिन उमेर, आगामी जन्मदिन र जीवन तथ्याङ्क।'
+                      : 'Exact age, upcoming birthday countdown & life statistics in BS or AD.',
+                ),
+                AgeCalculatorCard(nepali: nepali),
                 const SectionHeader(
                   'Home screen widgets',
                   subtitle: 'Live interactive widgets for your launcher. Freely resizable & auto-updating.',

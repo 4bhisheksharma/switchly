@@ -28,7 +28,6 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
   late bool? _grayscale = widget.editing?.grayscale;
   late double? _animationSpeed = widget.editing?.animationSpeed;
   late bool? _wirelessDebugging = widget.editing?.wirelessDebugging;
-  late bool? _killSwitch = widget.editing?.killSwitch;
 
   @override
   void initState() {
@@ -53,7 +52,6 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
               grayscale: _grayscale,
               animationSpeed: _animationSpeed,
               wirelessDebugging: _wirelessDebugging,
-              killSwitch: _killSwitch,
             ),
           ),
         );
@@ -172,12 +170,6 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
                     onChanged: (v) => setState(() => _wirelessDebugging = v),
                   ),
                 ],
-                const SectionHeader('Internet kill switch'),
-                _Options(
-                  options: const [("Don't change", null), ('Block internet', true), ('Allow internet', false)],
-                  value: _killSwitch,
-                  onChanged: (v) => setState(() => _killSwitch = v),
-                ),
                 const SizedBox(height: 24),
                 Text(
                   'Restoring puts back each setting this profile changed, exactly as it was before.',

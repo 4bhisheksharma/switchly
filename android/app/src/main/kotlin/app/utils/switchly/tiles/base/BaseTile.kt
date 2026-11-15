@@ -54,7 +54,7 @@ abstract class BaseTile : TileService() {
     private var noticeText: TextView? = null
     private val hideNotice = Runnable { dismissNotice() }
 
-    /** Set to false for tiles that don't touch Settings (e.g. the VPN kill switch). */
+    /** Set to false for tiles that don't touch Secure Settings (e.g. screenshot, payment QR). */
     protected open val requiresSecureSettings: Boolean = true
 
     /** Ask for unlock before acting from the lock screen. Off for harmless display tweaks. */

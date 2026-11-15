@@ -14,9 +14,6 @@ abstract final class PrefKeys {
   /// JSON array of `{"id", "title", "text"}`.
   static const quickTexts = 'quick_texts';
 
-  /// JSON: `{"allowedApps": [packageName]}`: apps that stay online.
-  static const killSwitchConfig = 'kill_switch_config';
-
   /// JSON array of profiles; see lib/features/profiles/data/profile_models.dart.
   static const profiles = 'profiles';
 

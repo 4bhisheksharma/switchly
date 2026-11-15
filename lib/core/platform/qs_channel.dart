@@ -156,14 +156,13 @@ class QsChannel {
     );
   }
 
-  /// Wireless debugging and kill switch state. [address] is `ip:port`, just the IP, or null.
+  /// Wireless debugging state. [address] is `ip:port`, just the IP, or null.
   Future<
       ({
         bool wirelessSupported,
         bool wirelessDebugging,
         bool devOptions,
         String? address,
-        bool killSwitch,
       })> getNetworkState() async {
     final state = await _channel.invokeMapMethod<String, Object?>('getNetworkState');
     return (
@@ -171,20 +170,23 @@ class QsChannel {
       wirelessDebugging: state['wirelessDebugging']! as bool,
       devOptions: state['devOptions']! as bool,
       address: state['address'] as String?,
-      killSwitch: state['killSwitch']! as bool,
     );
   }
 
   Future<bool> setWirelessDebugging(bool on) async =>
       await _channel.invokeMethod<bool>('setWirelessDebugging', {'on': on}) ?? false;
 
-  /// Shows Android's one-time VPN consent dialog if needed. False if declined or refused.
-  Future<bool> startKillSwitch() async => await _channel.invokeMethod<bool>('startKillSwitch') ?? false;
+  /// Whether Switchly's accessibility service for screenshots is enabled and active.
+  Future<bool> isAccessibilityServiceEnabled() async =>
+      await _channel.invokeMethod<bool>('isAccessibilityServiceEnabled') ?? false;
 
-  Future<bool> stopKillSwitch() async => await _channel.invokeMethod<bool>('stopKillSwitch') ?? false;
+  /// Opens system Accessibility settings.
+  Future<void> openAccessibilitySettings() async =>
+      await _channel.invokeMethod<void>('openAccessibilitySettings');
 
-  /// Re-applies the exception list to a running kill switch.
-  Future<bool> reloadKillSwitch() async => await _channel.invokeMethod<bool>('reloadKillSwitch') ?? false;
+  /// Takes a screenshot using the system accessibility service.
+  Future<bool> takeScreenshot() async =>
+      await _channel.invokeMethod<bool>('takeScreenshot') ?? false;
 
   /// Apps with a launcher icon, sorted by label. Icons are 96px PNGs.
   Future<List<({String package, String label, Uint8List icon})>> getLaunchableApps() async {

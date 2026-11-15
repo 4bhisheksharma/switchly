@@ -43,6 +43,7 @@ android {
     productFlavors {
         create("play") {
             dimension = "version"
+            isDefault = true
         }
         create("github") {
             dimension = "version"
@@ -120,4 +121,27 @@ dependencies {
     // Nepali calendar patro (tithi, holidays, events)
     implementation("io.github.sanamhub:nepdate:0.1.0-beta.1")
     implementation("io.github.sanamhub:nepdate-patro:0.1.0-beta.1")
+}
+
+// Fallback so running `flutter run` without `--flavor` finds the debug APK.
+tasks.configureEach {
+    if (name == "assembleDebug" || name == "assemblePlayDebug") {
+        doLast {
+            val buildDir = layout.buildDirectory.get().asFile
+            val flutterApkDir = File(buildDir, "outputs/flutter-apk")
+            val playApkInFlutter = File(flutterApkDir, "app-play-debug.apk")
+            val playApkInApk = File(buildDir, "outputs/apk/play/debug/app-play-debug.apk")
+            val fallbackApk = File(flutterApkDir, "app-debug.apk")
+
+            val source = when {
+                playApkInFlutter.exists() -> playApkInFlutter
+                playApkInApk.exists() -> playApkInApk
+                else -> null
+            }
+            if (source != null) {
+                flutterApkDir.mkdirs()
+                source.copyTo(fallbackApk, overwrite = true)
+            }
+        }
+    }
 }

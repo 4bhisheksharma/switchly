@@ -4,7 +4,9 @@
     <string name="tile_grayscale">Grayscale</string>
     <string name="tile_animation_speed">Animations</string>
     <string name="tile_wireless_debugging">Wireless debugging</string>
-    <string name="tile_kill_switch">Kill switch</string>
+    <string name="tile_screenshot">Take screenshot</string>
+    <string name="accessibility_service_label">Switchly Screenshot Service</string>
+    <string name="accessibility_service_description">Allows Switchly’s Screenshot Quick Settings tile to capture the screen in one tap.</string>
     <string name="tile_profiles">Profiles</string>
     <string name="tile_quick_texts">Quick texts</string>
     <string name="tile_bs_date">Nepali date</string>

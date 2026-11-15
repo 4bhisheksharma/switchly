@@ -14,7 +14,6 @@ class PublicModeConfig extends Equatable {
     this.blockedPackages = const [],
     this.enableDnd = true,
     this.enableGrayscale = false,
-    this.enableKillSwitch = false,
     this.pin,
     this.recoveryAnswer,
   });
@@ -28,7 +27,6 @@ class PublicModeConfig extends Equatable {
           (json['blockedPackages'] as List?)?.map((e) => e.toString()).toList() ?? const [],
       enableDnd: json['enableDnd'] as bool? ?? true,
       enableGrayscale: json['enableGrayscale'] as bool? ?? false,
-      enableKillSwitch: json['enableKillSwitch'] as bool? ?? false,
       pin: (json['pin'] as String?)?.takeIfNotEmpty,
       recoveryAnswer: (json['recoveryAnswer'] as String?)?.takeIfNotEmpty,
     );
@@ -39,7 +37,6 @@ class PublicModeConfig extends Equatable {
   final List<String> blockedPackages;
   final bool enableDnd;
   final bool enableGrayscale;
-  final bool enableKillSwitch;
   final String? pin;
   final String? recoveryAnswer;
 
@@ -49,7 +46,6 @@ class PublicModeConfig extends Equatable {
         'blockedPackages': blockedPackages,
         'enableDnd': enableDnd,
         'enableGrayscale': enableGrayscale,
-        'enableKillSwitch': enableKillSwitch,
         'pin': pin,
         'recoveryAnswer': recoveryAnswer,
       };
@@ -60,7 +56,6 @@ class PublicModeConfig extends Equatable {
     List<String>? blockedPackages,
     bool? enableDnd,
     bool? enableGrayscale,
-    bool? enableKillSwitch,
     String? pin,
     bool clearPin = false,
     String? recoveryAnswer,
@@ -72,7 +67,6 @@ class PublicModeConfig extends Equatable {
       blockedPackages: blockedPackages ?? this.blockedPackages,
       enableDnd: enableDnd ?? this.enableDnd,
       enableGrayscale: enableGrayscale ?? this.enableGrayscale,
-      enableKillSwitch: enableKillSwitch ?? this.enableKillSwitch,
       pin: clearPin ? null : (pin ?? this.pin),
       recoveryAnswer:
           clearRecoveryAnswer ? null : (recoveryAnswer ?? this.recoveryAnswer),
@@ -86,7 +80,6 @@ class PublicModeConfig extends Equatable {
         blockedPackages,
         enableDnd,
         enableGrayscale,
-        enableKillSwitch,
         pin,
         recoveryAnswer,
       ];

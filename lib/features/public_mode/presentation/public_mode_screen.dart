@@ -53,11 +53,6 @@ class _PublicModeScreenState extends State<PublicModeScreen> {
       desc: 'Hide profile switching tile',
       icon: Symbols.tune_rounded,
     ),
-    'kill_switch': (
-      label: 'Internet Kill Switch',
-      desc: 'Hide network kill switch',
-      icon: Symbols.public_off_rounded,
-    ),
     'qr_scanner': (
       label: 'Scan QR',
       desc: 'Hide camera QR scanner',
@@ -419,16 +414,6 @@ class _PublicModeScreenState extends State<PublicModeScreen> {
                   onChanged: isActive
                       ? null
                       : (val) => _updateConfig(config.copyWith(enableGrayscale: val)),
-                ),
-                Divider(height: 1, indent: 64, color: scheme.outlineVariant.withValues(alpha: 0.3)),
-                SwitchListTile(
-                  value: config.enableKillSwitch,
-                  secondary: const Icon(Symbols.public_off_rounded),
-                  title: const Text('Internet Kill Switch', style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Block all internet traffic so no data can be downloaded or leaked.'),
-                  onChanged: isActive
-                      ? null
-                      : (val) => _updateConfig(config.copyWith(enableKillSwitch: val)),
                 ),
               ],
             ),

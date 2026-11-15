@@ -33,7 +33,7 @@ object WirelessDebugging {
 
     private fun wifiIpv4(context: Context): String? {
         val cm = context.getSystemService(ConnectivityManager::class.java)
-        // Scan all networks: with the kill switch (a VPN) on, the active network isn't Wi-Fi.
+        // Scan all networks: with a VPN on, the active network isn't Wi-Fi.
         @Suppress("DEPRECATION")
         val wifi = cm.allNetworks.firstOrNull {
             cm.getNetworkCapabilities(it)?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true

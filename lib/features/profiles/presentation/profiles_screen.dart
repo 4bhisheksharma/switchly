@@ -30,7 +30,7 @@ class ProfilesScreen extends StatelessWidget {
       listenWhen: (prev, next) => next.failures > prev.failures,
       listener: (context, _) => ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Some settings couldn't be changed. Finish setup, or turn on the kill switch once to allow it."),
+          content: Text("Some settings couldn't be changed. Finish setup to allow it."),
         ),
       ),
       child: Scaffold(
@@ -102,7 +102,6 @@ class _ProfileCard extends StatelessWidget {
   final bool isTemplate;
 
   void _apply(BuildContext context) {
-    // Everything except the kill switch needs WRITE_SECURE_SETTINGS.
     final needsPermission = profile.dns != null ||
         profile.grayscale != null ||
         profile.animationSpeed != null ||

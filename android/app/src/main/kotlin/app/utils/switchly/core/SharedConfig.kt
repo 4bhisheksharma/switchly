@@ -14,9 +14,6 @@ object PrefKeys {
     /** JSON array of `{"id", "title", "text"}`. */
     const val QUICK_TEXTS = "quick_texts"
 
-    /** JSON: `{"allowedApps": [packageName]}`: apps that stay online. */
-    const val KILL_SWITCH_CONFIG = "kill_switch_config"
-
     /** JSON array of profiles; see profiles/Profiles.kt for the shape. */
     const val PROFILES = "profiles"
 

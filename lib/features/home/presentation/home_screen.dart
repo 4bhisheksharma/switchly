@@ -74,7 +74,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Active status counts for the quick stats pill
     final dnsActive = context.select((DnsBloc b) => b.state.live?.isEncrypted ?? false);
-    final killActive = context.select((NetworkBloc b) => b.state.killSwitchOn);
     final adbActive = context.select((NetworkBloc b) => b.state.status?.wirelessDebugging ?? false);
     final grayscaleActive = context.select((DisplayBloc b) => b.state.grayscale ?? false);
     final animActive = context.select((DisplayBloc b) => b.state.animationModified);
@@ -86,7 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final activeCount = [
       dnsActive,
-      killActive,
       adbActive,
       grayscaleActive,
       animActive,
@@ -95,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
       profileActive,
       screenTimeActive,
       publicActive,
-    ].where((a) => a).length;
+    ].where((bool a) => a).length;
 
     final themeMode = context.watch<ThemeCubit>().state;
     final isDark = themeMode == ThemeMode.dark ||
@@ -317,21 +315,21 @@ class _HomeScreenState extends State<HomeScreen> {
         if (showAll || _selectedCategory == _Category.network)
           _GroupedSection(
             title: 'Network',
-            subtitle: 'Encrypted DNS, kill switch and wireless debugging',
+            subtitle: 'Encrypted DNS and wireless debugging',
             children: [
               const _PrivateDnsTileRow(),
-              if (!hiddenTiles.contains('kill_switch')) const _KillSwitchTileRow(),
               if (!hiddenTiles.contains('wireless_debugging')) const _WirelessDebuggingTileRow(),
             ],
           ),
         if (showAll || _selectedCategory == _Category.display)
-          const _GroupedSection(
+          _GroupedSection(
             title: 'Display',
-            subtitle: 'Focus mode, transition scales and text sizing',
+            subtitle: 'Focus mode, transition scales, text sizing and screenshot',
             children: [
-              _GrayscaleTileRow(),
-              _AnimationTileRow(),
-              _FontSizeTileRow(),
+              const _GrayscaleTileRow(),
+              const _AnimationTileRow(),
+              const _FontSizeTileRow(),
+              if (!hiddenTiles.contains('screenshot')) const _ScreenshotTileRow(),
             ],
           ),
         if (showAll || _selectedCategory == _Category.power)
@@ -407,8 +405,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (matches('private dns', 'encrypted network doh provider cycle')) {
       list.add(const _PrivateDnsTileRow());
     }
-    if (matches('internet kill switch', 'block traffic disconnect drop vpn')) {
-      list.add(const _KillSwitchTileRow());
+    if (matches('screenshot', 'take screen capture snapshot record display')) {
+      list.add(const _ScreenshotTileRow());
     }
     if (matches('wireless debugging', 'adb wifi port developer')) {
       list.add(const _WirelessDebuggingTileRow());
@@ -767,19 +765,29 @@ class _PrivateDnsTileRow extends StatelessWidget {
   }
 }
 
-class _KillSwitchTileRow extends StatelessWidget {
-  const _KillSwitchTileRow();
+class _ScreenshotTileRow extends StatelessWidget {
+  const _ScreenshotTileRow();
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<NetworkBloc>().state;
-    final on = state.killSwitchOn;
-    final allowed = state.allowedApps.length;
     return _TileRow(
-      tile: killSwitchTile,
-      status: on ? (allowed == 0 ? 'Internet blocked' : 'Blocked · $allowed allowed') : 'Internet online',
-      active: on,
-      onTap: () => Navigator.of(context).pushNamed(AppRouter.killSwitch),
+      tile: screenshotTile,
+      status: '1-tap screen capture from Quick Settings',
+      active: true,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.screenshot),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'Add to Quick Settings',
+            icon: const Icon(Symbols.add_circle_outline_rounded, size: 22),
+            onPressed: () => canRequestAddTile(context)
+                ? requestAddTile(context, screenshotTile)
+                : showAddTilesHelp(context),
+          ),
+          const Icon(Symbols.chevron_right_rounded, size: 20),
+        ],
+      ),
     );
   }
 }

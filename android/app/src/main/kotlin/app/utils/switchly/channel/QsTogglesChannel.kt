@@ -26,8 +26,8 @@ import app.utils.switchly.core.Permissions
 import app.utils.switchly.display.AnimationScale
 import app.utils.switchly.display.FontScale
 import app.utils.switchly.display.Grayscale
+import app.utils.switchly.accessibility.SwitchlyAccessibilityService
 import app.utils.switchly.dns.PrivateDns
-import app.utils.switchly.network.KillSwitch
 import app.utils.switchly.network.LaunchableApps
 import app.utils.switchly.network.WirelessDebugging
 import app.utils.switchly.power.BatteryInfo
@@ -148,18 +148,17 @@ class QsTogglesChannel(
                     "wirelessDebugging" to WirelessDebugging.isOn(activity),
                     "devOptions" to WirelessDebugging.devOptionsEnabled(activity),
                     "address" to WirelessDebugging.address(activity),
-                    "killSwitch" to KillSwitch.isOn(),
                 )
             }
             "setWirelessDebugging" -> result.success(
                 WirelessDebugging.set(activity, call.argument<Boolean>("on") == true).alsoRefresh(),
             )
-            "startKillSwitch" -> startKillSwitch(result)
-            "stopKillSwitch" -> background(result) {
-                KillSwitch.stop(activity).also { KillSwitch.awaitState(false) }.alsoRefresh()
+            "isAccessibilityServiceEnabled" -> result.success(SwitchlyAccessibilityService.isRunning())
+            "openAccessibilitySettings" -> {
+                SwitchlyAccessibilityService.openSettings(activity)
+                result.success(null)
             }
-            // Re-applies the exception list if the VPN is running.
-            "reloadKillSwitch" -> result.success(!KillSwitch.isOn() || KillSwitch.start(activity))
+            "takeScreenshot" -> result.success(SwitchlyAccessibilityService.takeScreenshot(delayMs = 200L))
             "getLaunchableApps" -> background(result) { LaunchableApps.load(activity) }
             "getActiveProfile" -> result.success(Profiles.activeId(activity))
             "applyProfile" -> {
@@ -516,26 +515,7 @@ class QsTogglesChannel(
         }
     }
 
-    private var pendingVpnConsent: MethodChannel.Result? = null
     private var pendingDeviceAuth: MethodChannel.Result? = null
-
-    /** Starts the kill switch, showing Android's one-time VPN consent dialog first if needed. */
-    private fun startKillSwitch(result: MethodChannel.Result) {
-        val consent = VpnService.prepare(activity)
-        if (consent == null) {
-            background(result) {
-                KillSwitch.start(activity) && run {
-                    KillSwitch.awaitState(true)
-                    KillSwitch.isOn().alsoRefresh()
-                }
-            }
-            return
-        }
-        pendingVpnConsent?.success(false)
-        pendingVpnConsent = result
-        @Suppress("DEPRECATION")
-        activity.startActivityForResult(consent, REQUEST_VPN_CONSENT)
-    }
 
     /** Forwarded from MainActivity. Returns true if the result was ours. */
     fun onActivityResult(requestCode: Int, resultCode: Int): Boolean {
@@ -545,11 +525,7 @@ class QsTogglesChannel(
             res.success(resultCode == Activity.RESULT_OK)
             return true
         }
-        if (requestCode != REQUEST_VPN_CONSENT) return false
-        val result = pendingVpnConsent ?: return true
-        pendingVpnConsent = null
-        if (resultCode == Activity.RESULT_OK) startKillSwitch(result) else result.success(false)
-        return true
+        return false
     }
 
     private fun setPrivateDns(mode: String?, host: String?): Boolean = when (mode) {
@@ -631,7 +607,6 @@ class QsTogglesChannel(
 
     companion object {
         const val NAME = "qs_toggles"
-        private const val REQUEST_VPN_CONSENT = 4711
         private const val REQUEST_DEVICE_CREDENTIAL = 4712
     }
 }

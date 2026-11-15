@@ -7,8 +7,8 @@ import android.graphics.Canvas
 import java.io.ByteArrayOutputStream
 
 /**
- * Apps with a launcher icon, for the kill switch exception picker. Uses a <queries> intent
- * filter in the manifest instead of QUERY_ALL_PACKAGES.
+ * Apps with a launcher icon, for app picker lists (Public Mode, Screen Time, etc.).
+ * Uses a <queries> intent filter in the manifest instead of QUERY_ALL_PACKAGES.
  */
 object LaunchableApps {
     private const val ICON_PX = 96

@@ -35,7 +35,6 @@ class Profile extends Equatable {
     this.grayscale,
     this.animationSpeed,
     this.wirelessDebugging,
-    this.killSwitch,
   });
 
   factory Profile.fromJson(Map<String, Object?> json) {
@@ -48,7 +47,6 @@ class Profile extends Equatable {
       grayscale: json['grayscale'] as bool?,
       animationSpeed: (json['animationSpeed'] as num?)?.toDouble(),
       wirelessDebugging: json['wirelessDebugging'] as bool?,
-      killSwitch: json['killSwitch'] as bool?,
     );
   }
 
@@ -59,12 +57,11 @@ class Profile extends Equatable {
   final bool? grayscale;
   final double? animationSpeed;
   final bool? wirelessDebugging;
-  final bool? killSwitch;
 
   IconData get iconData => profileIcons[icon] ?? Symbols.tune_rounded;
 
   bool get changesNothing =>
-      dns == null && grayscale == null && animationSpeed == null && wirelessDebugging == null && killSwitch == null;
+      dns == null && grayscale == null && animationSpeed == null && wirelessDebugging == null;
 
   /// Short descriptions of each change, e.g. "DNS: AdGuard", "Grayscale on".
   List<String> summary(DnsConfig dnsConfig) => [
@@ -77,7 +74,6 @@ class Profile extends Equatable {
         if (grayscale case final g?) g ? 'Grayscale on' : 'Grayscale off',
         if (animationSpeed case final s?) sameSpeed(s, 0) ? 'No animations' : 'Animations ${speedLabel(s)}',
         if (wirelessDebugging case final w?) w ? 'Wireless debugging on' : 'Wireless debugging off',
-        if (killSwitch case final k?) k ? 'Internet blocked' : 'Internet on',
       ];
 
   Map<String, Object?> toJson() => {
@@ -88,11 +84,10 @@ class Profile extends Equatable {
         'grayscale': grayscale,
         'animationSpeed': animationSpeed,
         'wirelessDebugging': wirelessDebugging,
-        'killSwitch': killSwitch,
       };
 
   @override
-  List<Object?> get props => [id, name, icon, dns, grayscale, animationSpeed, wirelessDebugging, killSwitch];
+  List<Object?> get props => [id, name, icon, dns, grayscale, animationSpeed, wirelessDebugging];
 }
 
 /// Starting points offered when the user has no profiles yet.
@@ -109,7 +104,7 @@ List<Profile> profileTemplates() {
     ),
     Profile(id: 'p$seed-night', name: 'Wind down', icon: 'night', grayscale: true),
     Profile(id: 'p$seed-dev', name: 'Developer', icon: 'code', wirelessDebugging: true, animationSpeed: 0.5),
-    Profile(id: 'p$seed-offline', name: 'Offline', icon: 'calm', killSwitch: true),
+    Profile(id: 'p$seed-calm', name: 'Minimal', icon: 'calm', grayscale: true, animationSpeed: 0),
   ];
 }
 
