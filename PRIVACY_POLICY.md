@@ -86,5 +86,5 @@ We may update this Privacy Policy from time to time. Any changes will be reflect
 ### Contact Us
 
 If you have any questions or feedback about this Privacy Policy or Switchly's data practices, please contact:
-- **Email:** abhisheks024@gmail.com
+- **Email:** developer@abhishek-sharma.com.np
 - **GitHub:** https://github.com/4bhisheksharma/switchly
