@@ -31,6 +31,8 @@ import '../../setup/presentation/permission_sheet.dart';
 import '../../updater/presentation/update_tile.dart';
 import '../../public_mode/bloc/public_mode_bloc.dart';
 import '../../public_mode/presentation/widgets/hand_over_card.dart';
+import '../../reminders/bloc/reminders_bloc.dart';
+import '../../reminders/presentation/reminders_screen.dart';
 import '../../screen_time/bloc/screen_time_bloc.dart';
 
 enum _Category {
@@ -349,6 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const _PublicModeTileRow(),
               const _BsDateTileRow(),
+              const _RemindersTileRow(),
               if (!hiddenTiles.contains('volume')) const _VolumeTileRow(),
               const _AppScreenTimeTileRow(),
               if (!hiddenTiles.contains('qr_scanner'))
@@ -482,6 +485,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (matches('public mode hand phone over guest borrow lock private apps', 'prepare device temporary profile block private apps hide tiles')) {
       list.add(const _PublicModeTileRow());
+    }
+    if (matches('reminders notification alert schedule alarm todo', 'push notification date time reminder schedule repeat')) {
+      list.add(const _RemindersTileRow());
     }
 
     return list;
@@ -1080,6 +1086,43 @@ class _PublicModeTileRow extends StatelessWidget {
             icon: const Icon(Symbols.add_circle_outline_rounded, size: 22),
             onPressed: () =>
                 canAddTiles ? requestAddTile(context, publicModeTile) : showAddTilesHelp(context),
+          ),
+          const Icon(Symbols.chevron_right_rounded, size: 20),
+        ],
+      ),
+    );
+  }
+}
+
+class _RemindersTileRow extends StatelessWidget {
+  const _RemindersTileRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<RemindersBloc>().state;
+    final canAddTiles = canRequestAddTile(context);
+    final next = state.nextUpcoming;
+    final count = state.upcomingCount;
+
+    final status = next == null
+        ? 'No upcoming reminders'
+        : (count == 1
+            ? '${next.title} · ${formatReminderDateTime(context, next.scheduledAt)}'
+            : '${next.title} · ${formatReminderDateTime(context, next.scheduledAt)} (+${count - 1})');
+
+    return _TileRow(
+      tile: remindersTile,
+      status: status,
+      active: count > 0,
+      onTap: () => Navigator.of(context).pushNamed(AppRouter.reminders),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'Add to Quick Settings',
+            icon: const Icon(Symbols.add_circle_outline_rounded, size: 22),
+            onPressed: () =>
+                canAddTiles ? requestAddTile(context, remindersTile) : showAddTilesHelp(context),
           ),
           const Icon(Symbols.chevron_right_rounded, size: 20),
         ],

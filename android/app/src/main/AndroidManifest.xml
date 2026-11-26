@@ -25,8 +25,12 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- Public Mode: silence incoming notifications and previews while device is handed over. -->
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
-    <!-- Android 13+ runtime notification permission for foreground services. -->
+    <!-- Android 13+ runtime notification permission for foreground services and reminders. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Reminders: exact timed notifications and reboot rescheduling. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Volume control: allows increasing, decreasing, and setting stream volume. -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
@@ -98,6 +102,16 @@
         <!-- Opened by the Quick texts tile; transparent dialog activity for reliable display on MIUI and all OEMs. -->
         <activity
             android:name=".texts.QuickTextsActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:theme="@style/TransparentDialogActivityTheme" />
+
+        <!-- Opened by the Reminders tile; transparent dialog activity for reliable display on all OEMs. -->
+        <activity
+            android:name=".reminders.ReminderQuickActivity"
             android:exported="false"
             android:excludeFromRecents="true"
             android:noHistory="true"
@@ -264,6 +278,21 @@
         </service>
 
         <service
+            android:name=".tiles.ReminderTile"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_reminder"
+            android:label="@string/tile_reminders"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+            <!-- Bound only on tap or refresh; see tiles/TileRefresher.kt. -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
             android:name=".tiles.PaymentQrTile"
             android:exported="true"
             android:icon="@drawable/ic_tile_qr"
@@ -407,6 +436,26 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Reminders: alarm triggers, notification action buttons, and reboot/time recovery. -->
+        <receiver
+            android:name=".reminders.ReminderReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".reminders.ReminderActionReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".reminders.ReminderBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
 

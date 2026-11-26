@@ -43,4 +43,7 @@ abstract final class PrefKeys {
 
   /// JSON: Public mode config (blocked apps, hidden tiles, timeout, protection toggles).
   static const publicModeConfig = 'public_mode_config';
+
+  /// JSON array of reminders; see lib/features/reminders/data/reminder_models.dart.
+  static const reminders = 'reminders';
 }

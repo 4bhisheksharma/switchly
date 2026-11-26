@@ -29,12 +29,16 @@ class QsChannel {
   final MethodChannel _channel;
   final _launchRoutes = StreamController<String>.broadcast();
   final _volumeChanged = StreamController<Map<String, dynamic>>.broadcast();
+  final _remindersChanged = StreamController<void>.broadcast();
 
   /// Routes requested by native code while the app is running (tile tap / long-press).
   Stream<String> get launchRoutes => _launchRoutes.stream;
 
   /// Live volume updates emitted by Android when physical volume keys or system UI changes levels.
   Stream<Map<String, dynamic>> get onVolumeChanged => _volumeChanged.stream;
+
+  /// Emitted when reminders are updated natively (e.g. alarm triggered or notification action tapped).
+  Stream<void> get onRemindersChanged => _remindersChanged.stream;
 
   Future<bool> hasWriteSecureSettings() async =>
       await _channel.invokeMethod<bool>('hasWriteSecureSettings') ?? false;
@@ -381,12 +385,52 @@ class QsChannel {
     return await _channel.invokeMethod<bool>('openSoundSettings') ?? false;
   }
 
+  /// Synchronizes scheduled native alarms and Quick Settings tile state with saved reminders.
+  Future<bool> syncReminders() async {
+    return await _channel.invokeMethod<bool>('syncReminders') ?? false;
+  }
+
+  /// Checks notification, exact alarm, and battery permissions needed for reliable reminders.
+  Future<
+      ({
+        bool notificationsAllowed,
+        bool canScheduleExactAlarms,
+        bool isIgnoringBattery,
+        int sdkInt,
+      })> getReminderPermissions() async {
+    final map = await _channel.invokeMapMethod<String, Object?>('getReminderPermissions');
+    return (
+      notificationsAllowed: map?['notificationsAllowed'] as bool? ?? true,
+      canScheduleExactAlarms: map?['canScheduleExactAlarms'] as bool? ?? true,
+      isIgnoringBattery: map?['isIgnoringBattery'] as bool? ?? true,
+      sdkInt: (map?['sdkInt'] as num?)?.toInt() ?? 33,
+    );
+  }
+
+  /// Requests Android 13+ notification permission or opens notification settings if denied.
+  Future<bool> requestNotificationPermission() async =>
+      await _channel.invokeMethod<bool>('requestNotificationPermission') ?? false;
+
+  /// Opens Switchly's system notification settings.
+  Future<bool> openNotificationSettings() async =>
+      await _channel.invokeMethod<bool>('openNotificationSettings') ?? false;
+
+  /// Opens Android 12+ "Alarms & reminders" exact alarm permission screen for Switchly.
+  Future<bool> openExactAlarmSettings() async =>
+      await _channel.invokeMethod<bool>('openExactAlarmSettings') ?? false;
+
+  /// Sends an immediate test reminder notification so the user can verify alerts work.
+  Future<bool> sendTestReminderNotification() async =>
+      await _channel.invokeMethod<bool>('sendTestReminderNotification') ?? false;
+
   Future<Object?> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onLaunchRoute') {
       _launchRoutes.add(call.arguments as String);
     } else if (call.method == 'onVolumeChanged') {
       final map = (call.arguments as Map?)?.cast<String, dynamic>() ?? {};
       _volumeChanged.add(map);
+    } else if (call.method == 'onRemindersChanged') {
+      _remindersChanged.add(null);
     }
     return null;
   }
@@ -394,5 +438,6 @@ class QsChannel {
   void dispose() {
     _launchRoutes.close();
     _volumeChanged.close();
+    _remindersChanged.close();
   }
 }

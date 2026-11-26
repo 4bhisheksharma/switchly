@@ -14,6 +14,7 @@ import '../features/profiles/presentation/profile_editor_screen.dart';
 import '../features/profiles/presentation/profiles_screen.dart';
 import '../features/quick_texts/presentation/quick_texts_screen.dart';
 import '../features/public_mode/presentation/public_mode_screen.dart';
+import '../features/reminders/presentation/reminders_screen.dart';
 import '../features/screen_time/presentation/screen_time_screen.dart';
 
 abstract final class AppRouter {
@@ -30,6 +31,7 @@ abstract final class AppRouter {
   static const appScreenTime = '/app-screen-time';
   static const publicMode = '/public-mode';
   static const volume = '/volume';
+  static const reminders = '/reminders';
 
   /// Pass the [Profile] to edit as `arguments`, or nothing to create one.
   static const profileEditor = '/profiles/edit';
@@ -52,6 +54,7 @@ abstract final class AppRouter {
         'app_screen_time' => appScreenTime,
         'public_mode' => publicMode,
         'volume' => volume,
+        'reminders' => reminders,
         _ => null,
       };
 
@@ -70,6 +73,7 @@ abstract final class AppRouter {
       appScreenTime => const AppScreenTimeScreen(),
       publicMode => const PublicModeScreen(),
       volume => const VolumeScreen(),
+      reminders => const RemindersScreen(),
       profileEditor => ProfileEditorScreen(editing: settings.arguments as Profile?),
       _ => null,
     };

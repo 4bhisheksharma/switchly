@@ -38,6 +38,7 @@
 -keep class app.utils.switchly.dns.** { *; }
 -keep class app.utils.switchly.profiles.** { *; }
 -keep class app.utils.switchly.screentime.** { *; }
+-keep class app.utils.switchly.reminders.** { *; }
 
 # Google Play Core and In-App Update
 -keep class com.google.android.play.core.appupdate.** { *; }

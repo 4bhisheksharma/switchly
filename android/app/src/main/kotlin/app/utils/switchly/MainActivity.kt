@@ -7,6 +7,7 @@ import android.content.IntentFilter
 import android.media.AudioManager
 import android.os.Build
 import app.utils.switchly.channel.QsTogglesChannel
+import app.utils.switchly.reminders.Reminders
 import app.utils.switchly.tiles.TileRefresher
 import app.utils.switchly.volume.VolumeController
 import app.utils.switchly.widgets.WidgetRefresher
@@ -20,10 +21,17 @@ import io.flutter.embedding.engine.FlutterEngine
 class MainActivity : FlutterActivity() {
     private var channel: QsTogglesChannel? = null
     private var isVolumeReceiverRegistered = false
+    private var isRemindersReceiverRegistered = false
 
     private val volumeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             channel?.pushVolumeChanged(VolumeController.getAllLevels(this@MainActivity))
+        }
+    }
+
+    private val remindersReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            channel?.pushRemindersChanged()
         }
     }
 
@@ -50,6 +58,17 @@ class MainActivity : FlutterActivity() {
                 isVolumeReceiverRegistered = true
             } catch (_: Exception) {}
         }
+        if (!isRemindersReceiverRegistered) {
+            try {
+                val filter = IntentFilter(Reminders.ACTION_REMINDERS_CHANGED)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    registerReceiver(remindersReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+                } else {
+                    registerReceiver(remindersReceiver, filter)
+                }
+                isRemindersReceiverRegistered = true
+            } catch (_: Exception) {}
+        }
     }
 
     @Deprecated("Needed for the VpnService consent dialog")
@@ -59,12 +78,27 @@ class MainActivity : FlutterActivity() {
         super.onActivityResult(requestCode, resultCode, data)
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        if (channel?.onRequestPermissionsResult(requestCode, grantResults) == true) return
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
     override fun onPause() {
         if (isVolumeReceiverRegistered) {
             try {
                 unregisterReceiver(volumeReceiver)
             } catch (_: Exception) {}
             isVolumeReceiverRegistered = false
+        }
+        if (isRemindersReceiverRegistered) {
+            try {
+                unregisterReceiver(remindersReceiver)
+            } catch (_: Exception) {}
+            isRemindersReceiverRegistered = false
         }
         super.onPause()
         // Push config edits (provider names, saved texts, profiles) to the active tiles and widgets.

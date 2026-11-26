@@ -40,6 +40,9 @@ object PrefKeys {
 
     /** JSON: Public mode config. */
     const val PUBLIC_MODE_CONFIG = "public_mode_config"
+
+    /** JSON array of reminders; see reminders/Reminders.kt for the shape. */
+    const val REMINDERS = "reminders"
 }
 
 /**

@@ -151,6 +151,13 @@ const volumeTile = TileDefinition(
   icon: Symbols.volume_up_rounded,
 );
 
+const remindersTile = TileDefinition(
+  id: 'reminders',
+  name: 'Reminders',
+  description: 'Schedule offline reminder notifications at any date and time.',
+  icon: Symbols.notifications_active_rounded,
+);
+
 TileDefinition appScreenTimeTileForSlot(int slot) {
   return switch (slot) {
     2 => appScreenTimeTile2,

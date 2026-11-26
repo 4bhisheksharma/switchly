@@ -34,4 +34,5 @@
     <string name="widget_volume_description">Quick volume loudness controls and mute shortcuts</string>
     <string name="widget_volume_compact">Volume (Compact)</string>
     <string name="widget_volume_compact_description">Compact volume loudness badge</string>
+    <string name="tile_reminders">Reminders</string>
 </resources>

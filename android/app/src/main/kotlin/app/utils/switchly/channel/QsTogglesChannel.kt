@@ -23,6 +23,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import java.io.File
 import app.utils.switchly.core.Permissions
+import app.utils.switchly.core.SharedConfig
 import app.utils.switchly.display.AnimationScale
 import app.utils.switchly.display.FontScale
 import app.utils.switchly.display.Grayscale
@@ -34,6 +35,8 @@ import app.utils.switchly.power.BatteryInfo
 import app.utils.switchly.power.Caffeine
 import app.utils.switchly.profiles.Profiles
 import app.utils.switchly.publicmode.PublicMode
+import app.utils.switchly.reminders.ReminderNotifier
+import app.utils.switchly.reminders.ReminderScheduler
 import app.utils.switchly.scanner.ScannerActivity
 import app.utils.switchly.screentime.AppScreenTime
 import app.utils.switchly.tiles.AppScreenTimeTile
@@ -82,6 +85,11 @@ class QsTogglesChannel(
     /** Pushes live volume updates to Flutter while activity is in foreground. */
     fun pushVolumeChanged(levels: Map<String, Any>) {
         channel.invokeMethod("onVolumeChanged", levels)
+    }
+
+    /** Notifies Flutter when reminders change natively (alarm fired, Done/Snooze notification action). */
+    fun pushRemindersChanged() {
+        channel.invokeMethod("onRemindersChanged", null)
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -492,6 +500,22 @@ class QsTogglesChannel(
                     result.success(false)
                 }
             }
+            "syncReminders" -> background(result) {
+                ReminderScheduler.syncAll(activity)
+                true
+            }
+            "getReminderPermissions" -> result.success(
+                mapOf(
+                    "notificationsAllowed" to ReminderNotifier.areNotificationsAllowed(activity),
+                    "canScheduleExactAlarms" to ReminderScheduler.canScheduleExactAlarms(activity),
+                    "isIgnoringBattery" to PublicMode.isIgnoringBatteryOptimizations(activity),
+                    "sdkInt" to Build.VERSION.SDK_INT,
+                ),
+            )
+            "requestNotificationPermission" -> requestNotificationPermission(result)
+            "openNotificationSettings" -> result.success(openNotificationSettings())
+            "openExactAlarmSettings" -> result.success(openExactAlarmSettings())
+            "sendTestReminderNotification" -> result.success(ReminderNotifier.showTest(activity))
             else -> result.notImplemented()
         }
     }
@@ -516,6 +540,7 @@ class QsTogglesChannel(
     }
 
     private var pendingDeviceAuth: MethodChannel.Result? = null
+    private var pendingNotificationPermission: MethodChannel.Result? = null
 
     /** Forwarded from MainActivity. Returns true if the result was ours. */
     fun onActivityResult(requestCode: Int, resultCode: Int): Boolean {
@@ -524,6 +549,89 @@ class QsTogglesChannel(
             pendingDeviceAuth = null
             res.success(resultCode == Activity.RESULT_OK)
             return true
+        }
+        return false
+    }
+
+    /** Forwarded from MainActivity for runtime permission prompts. */
+    fun onRequestPermissionsResult(requestCode: Int, grantResults: IntArray): Boolean {
+        if (requestCode == REQUEST_POST_NOTIFICATIONS) {
+            val res = pendingNotificationPermission ?: return true
+            pendingNotificationPermission = null
+            val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            res.success(granted && ReminderNotifier.areNotificationsAllowed(activity))
+            return true
+        }
+        return false
+    }
+
+    private fun requestNotificationPermission(result: MethodChannel.Result) {
+        if (ReminderNotifier.areNotificationsAllowed(activity)) {
+            result.success(true)
+            return
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            openNotificationSettings()
+            result.success(false)
+            return
+        }
+        val state = SharedConfig.nativeState(activity)
+        val hasRuntimePerm = activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        if (hasRuntimePerm) {
+            // Runtime permission granted, but channel/app notifications disabled in system settings.
+            openNotificationSettings()
+            result.success(false)
+            return
+        }
+        val askedBefore = state.getBoolean(KEY_ASKED_NOTIF_PERM, false)
+        val shouldShowRationale = activity.shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)
+        if (askedBefore && !shouldShowRationale) {
+            openNotificationSettings()
+            result.success(false)
+            return
+        }
+        state.edit().putBoolean(KEY_ASKED_NOTIF_PERM, true).apply()
+        pendingNotificationPermission?.success(false)
+        pendingNotificationPermission = result
+        activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_POST_NOTIFICATIONS)
+    }
+
+    private fun openNotificationSettings(): Boolean {
+        val intents = listOf(
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
+            },
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", activity.packageName, null)
+            },
+        )
+        for (intent in intents) {
+            try {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                activity.startActivity(intent)
+                return true
+            } catch (_: Exception) {}
+        }
+        return false
+    }
+
+    private fun openExactAlarmSettings(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
+        val intents = listOf(
+            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                data = Uri.parse("package:${activity.packageName}")
+            },
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", activity.packageName, null)
+            },
+        )
+        for (intent in intents) {
+            try {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                activity.startActivity(intent)
+                return true
+            } catch (_: Exception) {}
         }
         return false
     }
@@ -608,5 +716,7 @@ class QsTogglesChannel(
     companion object {
         const val NAME = "qs_toggles"
         private const val REQUEST_DEVICE_CREDENTIAL = 4712
+        private const val REQUEST_POST_NOTIFICATIONS = 4713
+        private const val KEY_ASKED_NOTIF_PERM = "asked_post_notifications"
     }
 }
