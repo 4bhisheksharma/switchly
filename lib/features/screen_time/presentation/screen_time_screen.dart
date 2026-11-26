@@ -54,7 +54,9 @@ class _AppScreenTimeScreenState extends State<AppScreenTimeScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          SliverAppBar.large(
+          SliverAppBar(
+            pinned: true,
+            toolbarHeight: 60,
             title: const Text('App Screen Time'),
             actions: [
               IconButton(

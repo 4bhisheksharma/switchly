@@ -26,9 +26,13 @@ class CaffeineScreen extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const SliverAppBar.large(title: Text('Caffeine')),
+          const SliverAppBar(
+            pinned: true,
+            toolbarHeight: 60,
+            title: Text('Caffeine'),
+          ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 48),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 48),
             sliver: SliverList.list(
               children: [
                 HeroStatusCard(
@@ -43,10 +47,6 @@ class CaffeineScreen extends StatelessWidget {
                     children: [
                       if (status.on)
                         FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFF4F46E5),
-                          ),
                           onPressed: () {
                             HapticFeedback.selectionClick();
                             cubit.stop();

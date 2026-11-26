@@ -5,7 +5,7 @@ import '../features/display/presentation/animation_screen.dart';
 import '../features/display/presentation/font_size_screen.dart';
 import '../features/dns/presentation/dns_screen.dart';
 import '../features/volume/presentation/volume_screen.dart';
-import '../features/home/presentation/home_screen.dart';
+import '../features/home/presentation/main_shell.dart';
 import '../features/screenshot/presentation/screenshot_screen.dart';
 import '../features/payment_qr/presentation/payment_qr_screen.dart';
 import '../features/power/presentation/caffeine_screen.dart';
@@ -60,7 +60,7 @@ abstract final class AppRouter {
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final Widget? page = switch (settings.name) {
-      root => const HomeScreen(),
+      root => const MainShell(),
       dns => const DnsScreen(),
       animation => const AnimationScreen(),
       screenshot => const ScreenshotScreen(),

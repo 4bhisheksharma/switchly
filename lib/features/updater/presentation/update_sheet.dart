@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../app/theme.dart';
+import '../../../core/widgets/tile_icon.dart';
 import '../cubit/update_cubit.dart';
 import '../models/update_info.dart';
 
@@ -116,19 +116,7 @@ class UpdateSheet extends StatelessWidget {
 
     return Row(
       children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            gradient: AppTheme.brandGradient,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Icon(
-            Symbols.system_update_rounded,
-            color: Colors.white,
-            size: 26,
-          ),
-        ),
+        const TileIcon(Symbols.system_update_rounded, active: true, size: 48),
         const SizedBox(width: 14),
         Expanded(
           child: Column(

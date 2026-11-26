@@ -229,19 +229,11 @@ class VolumeScreen extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            scheme.primary.withValues(alpha: 0.16),
-            scheme.secondary.withValues(alpha: 0.08),
-            scheme.surfaceContainerLow,
-          ],
-        ),
-        border: Border.all(color: scheme.primary.withValues(alpha: 0.25)),
+        borderRadius: BorderRadius.circular(16),
+        color: scheme.surfaceContainerLow,
+        border: Border.all(color: scheme.outlineVariant),
       ),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

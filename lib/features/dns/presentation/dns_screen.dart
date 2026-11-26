@@ -37,9 +37,13 @@ class DnsScreen extends StatelessWidget {
       child: Scaffold(
         body: CustomScrollView(
           slivers: [
-            const SliverAppBar.large(title: Text('Private DNS')),
+            const SliverAppBar(
+              pinned: true,
+              toolbarHeight: 60,
+              title: Text('Private DNS'),
+            ),
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               sliver: SliverList.list(
                 children: [
                   const _LiveCard(),

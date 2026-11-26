@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:nepali_utils/nepali_utils.dart';
+
 import '../../../app/router.dart';
-import '../../../core/config/app_config.dart';
 import '../../../core/platform/qs_channel.dart';
 import '../../../core/tiles/tile_catalog.dart';
 import '../../../core/widgets/section_header.dart';
@@ -14,34 +14,31 @@ import '../../calendar/data/bs_format.dart';
 import '../../display/bloc/display_bloc.dart';
 import '../../display/data/display_models.dart';
 import '../../dns/bloc/dns_bloc.dart';
-import '../../volume/bloc/volume_bloc.dart';
 import '../../network/bloc/network_bloc.dart';
 import '../../payment_qr/bloc/payment_qr_bloc.dart';
 import '../../power/bloc/power_cubits.dart';
 import '../../power/data/power_models.dart';
 import '../../power/presentation/caffeine_screen.dart';
 import '../../profiles/bloc/profiles_bloc.dart';
+import '../../public_mode/bloc/public_mode_bloc.dart';
+import '../../public_mode/presentation/widgets/hand_over_card.dart';
 import '../../quick_texts/bloc/quick_texts_bloc.dart';
-import '../../settings/theme_cubit.dart';
-import '../../settings/tile_message_cubit.dart';
+import '../../reminders/bloc/reminders_bloc.dart';
+import '../../reminders/presentation/reminders_screen.dart';
+import '../../screen_time/bloc/screen_time_bloc.dart';
 import '../../setup/bloc/setup_bloc.dart';
 import '../../setup/data/setup_repository.dart';
 import '../../setup/presentation/add_tiles.dart';
 import '../../setup/presentation/permission_sheet.dart';
 import '../../updater/presentation/update_tile.dart';
-import '../../public_mode/bloc/public_mode_bloc.dart';
-import '../../public_mode/presentation/widgets/hand_over_card.dart';
-import '../../reminders/bloc/reminders_bloc.dart';
-import '../../reminders/presentation/reminders_screen.dart';
-import '../../screen_time/bloc/screen_time_bloc.dart';
+import '../../volume/bloc/volume_bloc.dart';
 
 enum _Category {
   all('All'),
   network('Network'),
   display('Display'),
   power('Power'),
-  everyday('Everyday'),
-  settings('Settings');
+  everyday('Everyday');
 
   const _Category(this.label);
   final String label;
@@ -49,7 +46,16 @@ enum _Category {
 
 /// Overview of every tile with live status, clean grouped sections, and quick search.
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    this.onOpenCalendarTab,
+    this.onOpenPayQrTab,
+    this.onOpenRemindersTab,
+  });
+
+  final VoidCallback? onOpenCalendarTab;
+  final VoidCallback? onOpenPayQrTab;
+  final VoidCallback? onOpenRemindersTab;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -75,7 +81,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final needsSetup = setup.status == SetupStatus.ready && !hasPermission;
     final canAddTiles = canRequestAddTile(context);
 
-    // Active status counts for the quick stats pill
     final dnsActive = context.select((DnsBloc b) => b.state.live?.isEncrypted ?? false);
     final adbActive = context.select((NetworkBloc b) => b.state.status?.wirelessDebugging ?? false);
     final grayscaleActive = context.select((DisplayBloc b) => b.state.grayscale ?? false);
@@ -98,11 +103,6 @@ class _HomeScreenState extends State<HomeScreen> {
       publicActive,
     ].where((bool a) => a).length;
 
-    final themeMode = context.watch<ThemeCubit>().state;
-    final isDark = themeMode == ThemeMode.dark ||
-        (themeMode == ThemeMode.system &&
-            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
-
     final isSearching = _searchQuery.isNotEmpty;
 
     return Scaffold(
@@ -110,12 +110,12 @@ class _HomeScreenState extends State<HomeScreen> {
         slivers: [
           SliverAppBar(
             pinned: true,
-            toolbarHeight: 68,
+            toolbarHeight: 60,
             title: Row(
               children: [
                 Image.asset(
                   'assets/logo/logo_mark.png',
-                  height: 28,
+                  height: 26,
                   color: scheme.onSurface,
                   semanticLabel: 'Switchly logo',
                 ),
@@ -129,39 +129,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 if (activeCount > 0) ...[
                   const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: scheme.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(
-                        color: scheme.primary.withValues(alpha: 0.3),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Text(
-                      '$activeCount active',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: scheme.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
+                  StatusPill('$activeCount active', highlighted: true),
                 ],
               ],
             ),
             actions: [
-              IconButton(
-                tooltip: isDark ? 'Switch to light theme' : 'Switch to dark theme',
-                icon: Icon(
-                  isDark ? Symbols.light_mode_rounded : Symbols.dark_mode_rounded,
-                  size: 22,
-                ),
-                onPressed: () {
-                  HapticFeedback.selectionClick();
-                  context.read<ThemeCubit>().toggleTheme();
-                },
-              ),
               IconButton(
                 tooltip: 'How to add tiles',
                 icon: const Icon(Symbols.help_outline_rounded, size: 22),
@@ -171,29 +143,31 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 48),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 36),
             sliver: SliverList.list(
               children: [
-                // In-app update alert banner (shown when an update is available)
                 const UpdateNotificationBanner(),
 
-                // Search Bar
-                Material(
-                  color: scheme.surfaceContainerHigh.withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(16),
+                // Search bar
+                Container(
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: scheme.outlineVariant),
+                  ),
                   child: TextField(
                     controller: _searchController,
                     style: theme.textTheme.bodyMedium,
                     decoration: InputDecoration(
                       filled: false,
-                      hintText: 'Search toggles (DNS, battery, caffeine...)',
+                      hintText: 'Search tiles & tools...',
                       hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
                       ),
                       prefixIcon: Icon(
                         Symbols.search_rounded,
                         size: 20,
-                        color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+                        color: scheme.onSurfaceVariant,
                       ),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
@@ -208,13 +182,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       border: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       enabledBorder: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                     onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
                   ),
                 ),
 
-                // Category filter chips (when not actively searching)
                 if (!isSearching) ...[
                   const SizedBox(height: 12),
                   SingleChildScrollView(
@@ -228,7 +201,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: _CategoryPill(
                               label: cat.label,
                               selected: _selectedCategory == cat,
-                              badge: cat == _Category.all && activeCount > 0 ? activeCount : null,
                               onTap: () {
                                 HapticFeedback.selectionClick();
                                 setState(() => _selectedCategory = cat);
@@ -240,9 +212,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
 
-                // Setup banner (if permission still needed)
                 AnimatedSize(
-                  duration: const Duration(milliseconds: 300),
+                  duration: const Duration(milliseconds: 260),
                   curve: Curves.easeOutCubic,
                   child: needsSetup && !isSearching
                       ? const Padding(
@@ -257,14 +228,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   const HandOverCard(),
                 ],
 
-                // Tile Groups
                 if (isSearching)
                   _buildSearchResults(context, canAddTiles)
                 else
                   _buildCategorizedSections(context, canAddTiles),
-
-                const SizedBox(height: 36),
-                const _PrivacyFooter(),
               ],
             ),
           ),
@@ -283,11 +250,11 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Icon(
                 Symbols.search_off_rounded,
-                size: 44,
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                size: 40,
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.45),
               ),
               const SizedBox(height: 12),
-              Text('No toggles match "$_searchQuery"', style: Theme.of(context).textTheme.titleSmall),
+              Text('No tools match "$_searchQuery"', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () {
@@ -310,7 +277,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCategorizedSections(BuildContext context, bool canAddTiles) {
     final showAll = _selectedCategory == _Category.all;
     final publicModeState = context.watch<PublicModeBloc>().state;
-    final hiddenTiles = publicModeState.active ? publicModeState.config.hiddenTiles : const <String>[];
+    final hiddenTiles =
+        publicModeState.active ? publicModeState.config.hiddenTiles : const <String>[];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,8 +318,8 @@ class _HomeScreenState extends State<HomeScreen> {
             subtitle: 'Quick tools accessible from any screen',
             children: [
               const _PublicModeTileRow(),
-              const _BsDateTileRow(),
-              const _RemindersTileRow(),
+              _BsDateTileRow(onTap: widget.onOpenCalendarTab),
+              _RemindersTileRow(onTap: widget.onOpenRemindersTab),
               if (!hiddenTiles.contains('volume')) const _VolumeTileRow(),
               const _AppScreenTimeTileRow(),
               if (!hiddenTiles.contains('qr_scanner'))
@@ -372,7 +340,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   tile: paymentQrTile,
                   status: _countLabel(context.select((PaymentQrBloc b) => b.state.qrs.length), 'QR code'),
                   active: false,
-                  onTap: () => Navigator.of(context).pushNamed(AppRouter.paymentQr),
+                  onTap: widget.onOpenPayQrTab ??
+                      () => Navigator.of(context).pushNamed(AppRouter.paymentQr),
                   trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
                 ),
               if (!hiddenTiles.contains('quick_texts'))
@@ -383,17 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTap: () => Navigator.of(context).pushNamed(AppRouter.quickTexts),
                   trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
                 ),
-              if (!hiddenTiles.contains('profiles'))
-                const _ProfilesTileRow(),
-            ],
-          ),
-        if (showAll || _selectedCategory == _Category.settings)
-          const _GroupedSection(
-            title: 'Preferences',
-            children: [
-              _ThemePreferenceTileRow(),
-              _TileMessageTileRow(),
-              UpdateCheckTile(),
+              if (!hiddenTiles.contains('profiles')) const _ProfilesTileRow(),
             ],
           ),
       ],
@@ -431,9 +390,14 @@ class _HomeScreenState extends State<HomeScreen> {
       list.add(const _BatteryTileRow());
     }
     if (matches('nepali date', 'calendar bikram sambat bs ad')) {
-      list.add(const _BsDateTileRow());
+      list.add(_BsDateTileRow(onTap: widget.onOpenCalendarTab));
     }
-    if (matches('volume slider loudness sound audio ring media mute silent', 'volume slider control loudness media ringtone notification alarm sound audio levels')) {
+    if (matches('reminders notification alert schedule alarm todo',
+        'push notification date time reminder schedule repeat')) {
+      list.add(_RemindersTileRow(onTap: widget.onOpenRemindersTab));
+    }
+    if (matches('volume slider loudness sound audio ring media mute silent',
+        'volume slider control loudness media ringtone notification alarm sound audio levels')) {
       list.add(const _VolumeTileRow());
     }
     if (matches('scan qr', 'camera scanner barcode offline')) {
@@ -455,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
         tile: paymentQrTile,
         status: _countLabel(context.select((PaymentQrBloc b) => b.state.qrs.length), 'QR code'),
         active: false,
-        onTap: () => Navigator.of(context).pushNamed(AppRouter.paymentQr),
+        onTap: widget.onOpenPayQrTab ?? () => Navigator.of(context).pushNamed(AppRouter.paymentQr),
         trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
       ));
     }
@@ -471,93 +435,57 @@ class _HomeScreenState extends State<HomeScreen> {
     if (matches('profiles', 'preset focus bundle toggle apply')) {
       list.add(const _ProfilesTileRow());
     }
-    if (matches('theme appearance dark light mode', 'appearance dark mode theme colors')) {
-      list.add(const _ThemePreferenceTileRow());
-    }
-    if (matches('preferences message', 'show message after tap toast notify')) {
-      list.add(const _TileMessageTileRow());
-    }
-    if (matches('check for updates', 'github releases new version download install upgrade')) {
-      list.add(const UpdateCheckTile());
-    }
     if (matches('screen time app usage timer', 'screen time track app usage digital wellbeing')) {
       list.add(const _AppScreenTimeTileRow());
     }
-    if (matches('public mode hand phone over guest borrow lock private apps', 'prepare device temporary profile block private apps hide tiles')) {
+    if (matches('public mode hand phone over guest borrow lock private apps',
+        'prepare device temporary profile block private apps hide tiles')) {
       list.add(const _PublicModeTileRow());
-    }
-    if (matches('reminders notification alert schedule alarm todo', 'push notification date time reminder schedule repeat')) {
-      list.add(const _RemindersTileRow());
     }
 
     return list;
   }
 }
 
-/// Minimal category filter pill with native touch feedback.
 class _CategoryPill extends StatelessWidget {
   const _CategoryPill({
     required this.label,
     required this.selected,
     required this.onTap,
-    this.badge,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  final int? badge;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
 
     return Material(
-      color: selected ? scheme.primary : scheme.surfaceContainerLow,
+      color: selected
+          ? scheme.primary.withValues(alpha: dark ? 0.18 : 0.10)
+          : scheme.surfaceContainerLow,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(10),
         side: BorderSide(
-          color: selected ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.7),
-          width: 1,
+          color: selected ? scheme.primary.withValues(alpha: 0.55) : scheme.outlineVariant,
+          width: selected ? 1.2 : 1,
         ),
       ),
       child: InkWell(
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
-              if (badge != null && badge! > 0) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? scheme.onPrimary.withValues(alpha: 0.22)
-                        : scheme.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                  child: Text(
-                    '$badge',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: selected ? scheme.onPrimary : scheme.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ],
+          child: Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: selected ? scheme.primary : scheme.onSurfaceVariant,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            ),
           ),
         ),
       ),
@@ -565,7 +493,6 @@ class _CategoryPill extends StatelessWidget {
   }
 }
 
-/// Clean container holding a group of related tiles with subtle hairlines.
 class _GroupedSection extends StatelessWidget {
   const _GroupedSection({
     required this.title,
@@ -579,8 +506,7 @@ class _GroupedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final scheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -590,8 +516,8 @@ class _GroupedSection extends StatelessWidget {
           color: scheme.surfaceContainerLow,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-            side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.65)),
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: scheme.outlineVariant),
           ),
           child: Column(
             children: [
@@ -599,8 +525,8 @@ class _GroupedSection extends StatelessWidget {
                 if (i > 0)
                   Divider(
                     height: 1,
-                    indent: 74,
-                    color: scheme.outlineVariant.withValues(alpha: 0.45),
+                    indent: 70,
+                    color: scheme.outlineVariant,
                   ),
                 children[i],
               ],
@@ -612,7 +538,6 @@ class _GroupedSection extends StatelessWidget {
   }
 }
 
-/// Single tile row inside a grouped section.
 class _TileRow extends StatelessWidget {
   const _TileRow({
     required this.tile,
@@ -636,28 +561,30 @@ class _TileRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          child: Row(
-            children: [
-              TileIcon(tile.icon, active: active, size: 44),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tile.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            TileIcon(tile.icon, active: active, size: 42),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tile.name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
                     ),
-                    const SizedBox(height: 2),
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
+                  ),
+                  const SizedBox(height: 2),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Align(
+                      key: ValueKey(status),
+                      alignment: Alignment.centerLeft,
                       child: Text(
                         status,
-                        key: ValueKey(status),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -666,29 +593,30 @@ class _TileRow extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              if (trailing != null)
-                trailing!
-              else
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    StatusPill(active ? 'On' : 'Off', highlighted: active),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Symbols.chevron_right_rounded,
-                      size: 20,
-                      color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
-                    ),
-                  ],
-                ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            if (trailing != null)
+              trailing!
+            else
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  StatusPill(active ? 'On' : 'Off', highlighted: active),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Symbols.chevron_right_rounded,
+                    size: 20,
+                    color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
+                  ),
+                ],
+              ),
+          ],
         ),
-      );
+      ),
+    );
   }
 }
 
@@ -701,24 +629,16 @@ class _SetupBanner extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.8)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(Symbols.key_rounded, color: scheme.primary, size: 22),
-          ),
+          const TileIcon(Symbols.key_rounded, active: true, size: 42),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -741,7 +661,7 @@ class _SetupBanner extends StatelessWidget {
                 const SizedBox(height: 12),
                 FilledButton.tonal(
                   style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     textStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
                   ),
                   onPressed: () => showPermissionSheet(context),
@@ -824,7 +744,9 @@ class _WirelessDebuggingTileRow extends StatelessWidget {
     Future<void> copyAddress() async {
       await Clipboard.setData(ClipboardData(text: 'adb connect ${status!.address}'));
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Copied adb connect ${status.address}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Copied adb connect ${status.address}')),
+      );
     }
 
     return _TileRow(
@@ -970,7 +892,9 @@ class _BatteryTileRow extends StatelessWidget {
 }
 
 class _BsDateTileRow extends StatelessWidget {
-  const _BsDateTileRow();
+  const _BsDateTileRow({this.onTap});
+
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -980,7 +904,7 @@ class _BsDateTileRow extends StatelessWidget {
       tile: bsDateTile,
       status: '${BsFormat.weekday(today, nepali)}, ${BsFormat.date(today, nepali)}',
       active: true,
-      onTap: () => Navigator.of(context).pushNamed(AppRouter.calendar),
+      onTap: onTap ?? () => Navigator.of(context).pushNamed(AppRouter.calendar),
       trailing: const Icon(Symbols.chevron_right_rounded, size: 20),
     );
   }
@@ -1095,7 +1019,9 @@ class _PublicModeTileRow extends StatelessWidget {
 }
 
 class _RemindersTileRow extends StatelessWidget {
-  const _RemindersTileRow();
+  const _RemindersTileRow({this.onTap});
+
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1114,7 +1040,7 @@ class _RemindersTileRow extends StatelessWidget {
       tile: remindersTile,
       status: status,
       active: count > 0,
-      onTap: () => Navigator.of(context).pushNamed(AppRouter.reminders),
+      onTap: onTap ?? () => Navigator.of(context).pushNamed(AppRouter.reminders),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1126,448 +1052,6 @@ class _RemindersTileRow extends StatelessWidget {
           ),
           const Icon(Symbols.chevron_right_rounded, size: 20),
         ],
-      ),
-    );
-  }
-}
-
-class _TileMessageTileRow extends StatelessWidget {
-  const _TileMessageTileRow();
-
-  @override
-  Widget build(BuildContext context) {
-    final show = context.watch<TileMessageCubit>().state;
-    final theme = Theme.of(context);
-    return SwitchListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      secondary: const TileIcon(Symbols.notifications_rounded, size: 44),
-      title: Text(
-        'Show confirmation message',
-        style: theme.textTheme.titleMedium?.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text(
-        'Displays brief banner feedback when toggling tiles from Quick Settings.',
-        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-      ),
-      value: show,
-      onChanged: (v) {
-        HapticFeedback.selectionClick();
-        context.read<TileMessageCubit>().set(v);
-      },
-    );
-  }
-}
-
-class _ThemePreferenceTileRow extends StatelessWidget {
-  const _ThemePreferenceTileRow();
-
-  @override
-  Widget build(BuildContext context) {
-    final themeMode = context.watch<ThemeCubit>().state;
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    final label = switch (themeMode) {
-      ThemeMode.dark => 'Dark (Default)',
-      ThemeMode.light => 'Light',
-      ThemeMode.system => 'Follow system',
-    };
-
-    return InkWell(
-      onTap: () => _showThemePicker(context, themeMode),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        child: Row(
-          children: [
-            const TileIcon(Symbols.contrast_rounded, size: 44),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Appearance',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    label,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerHigh.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: scheme.outlineVariant.withValues(alpha: 0.5),
-                  width: 0.8,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    switch (themeMode) {
-                      ThemeMode.dark => Symbols.dark_mode_rounded,
-                      ThemeMode.light => Symbols.light_mode_rounded,
-                      ThemeMode.system => Symbols.settings_suggest_rounded,
-                    },
-                    size: 16,
-                    color: scheme.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    switch (themeMode) {
-                      ThemeMode.dark => 'Dark',
-                      ThemeMode.light => 'Light',
-                      ThemeMode.system => 'Auto',
-                    },
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: scheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(Symbols.unfold_more_rounded, size: 16, color: scheme.onSurfaceVariant),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showThemePicker(BuildContext context, ThemeMode current) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Choose appearance',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 16),
-                _ThemeOption(
-                  icon: Symbols.dark_mode_rounded,
-                  title: 'Dark theme',
-                  subtitle: 'Default · Tailored for battery and night comfort',
-                  selected: current == ThemeMode.dark,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    context.read<ThemeCubit>().setThemeMode(ThemeMode.dark);
-                    Navigator.of(ctx).pop();
-                  },
-                ),
-                const SizedBox(height: 8),
-                _ThemeOption(
-                  icon: Symbols.light_mode_rounded,
-                  title: 'Light theme',
-                  subtitle: 'Bright and high contrast',
-                  selected: current == ThemeMode.light,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    context.read<ThemeCubit>().setThemeMode(ThemeMode.light);
-                    Navigator.of(ctx).pop();
-                  },
-                ),
-                const SizedBox(height: 8),
-                _ThemeOption(
-                  icon: Symbols.settings_suggest_rounded,
-                  title: 'Follow system',
-                  subtitle: "Matches your device's display setting",
-                  selected: current == ThemeMode.system,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    context.read<ThemeCubit>().setThemeMode(ThemeMode.system);
-                    Navigator.of(ctx).pop();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ThemeOption extends StatelessWidget {
-  const _ThemeOption({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Material(
-      color: selected ? scheme.primary.withValues(alpha: 0.1) : scheme.surfaceContainerHigh.withValues(alpha: 0.4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: selected ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.5),
-          width: selected ? 1.5 : 1.0,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Icon(icon, color: selected ? scheme.primary : scheme.onSurfaceVariant, size: 22),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: selected ? scheme.primary : scheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-              if (selected)
-                Icon(Symbols.check_circle_rounded, color: scheme.primary, size: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PrivacyFooter extends StatefulWidget {
-  const _PrivacyFooter();
-
-  @override
-  State<_PrivacyFooter> createState() => _PrivacyFooterState();
-}
-
-class _PrivacyFooterState extends State<_PrivacyFooter> {
-  String _version = AppConfig.versionName;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadVersion();
-  }
-
-  Future<void> _loadVersion() async {
-    try {
-      final info = await context.read<QsChannel>().getAppVersion();
-      if (mounted && info.versionName.isNotEmpty) {
-        setState(() => _version = info.versionName);
-      }
-    } catch (_) {
-      // Keep AppConfig.versionName fallback
-    }
-  }
-
-  Future<void> _launchUrl(String url) async {
-    HapticFeedback.selectionClick();
-    final channel = context.read<QsChannel>();
-    final success = await channel.openUrl(url);
-    if (!success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Could not open $url'),
-          action: SnackBarAction(
-            label: 'Copy',
-            onPressed: () => Clipboard.setData(ClipboardData(text: url)),
-          ),
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          // Trust Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Symbols.shield_rounded, size: 15, color: scheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  '100% Offline · Zero Data Collection',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Version String dynamically matching pubspec.yaml
-          Text(
-            'Switchly v$_version',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: scheme.onSurface.withValues(alpha: 0.85),
-              letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Action Links Row: Privacy Policy, GPL-3.0 License, Source Code
-          Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              _FooterLinkChip(
-                icon: Symbols.policy_rounded,
-                label: 'Privacy Policy',
-                onTap: () => _launchUrl(AppConfig.privacyPolicyUrl),
-              ),
-              Text(
-                '·',
-                style: TextStyle(
-                  color: scheme.outlineVariant,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              _FooterLinkChip(
-                icon: Symbols.balance_rounded,
-                label: 'GPL-3.0 License',
-                onTap: () => _launchUrl(AppConfig.licenseUrl),
-              ),
-              Text(
-                '·',
-                style: TextStyle(
-                  color: scheme.outlineVariant,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              _FooterLinkChip(
-                icon: Symbols.code_rounded,
-                label: 'Source',
-                onTap: () => _launchUrl(AppConfig.githubRepoUrl),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Free and open-source software for Android',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FooterLinkChip extends StatelessWidget {
-  const _FooterLinkChip({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        hoverColor: scheme.primary.withValues(alpha: 0.08),
-        splashColor: scheme.primary.withValues(alpha: 0.12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 15, color: scheme.primary),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: scheme.primary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(width: 3),
-              Icon(
-                Symbols.open_in_new_rounded,
-                size: 12,
-                color: scheme.primary.withValues(alpha: 0.65),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

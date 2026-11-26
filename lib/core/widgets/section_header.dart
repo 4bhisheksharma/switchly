@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Small uppercase label above a group of cards, with optional supporting text.
+/// Restrained section label above a group of cards, with optional supporting text.
 class SectionHeader extends StatelessWidget {
   const SectionHeader(this.title, {super.key, this.subtitle, this.trailing});
 
@@ -13,7 +13,7 @@ class SectionHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(6, 22, 6, 8),
+      padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -26,15 +26,16 @@ class SectionHeader extends StatelessWidget {
                   style: theme.textTheme.titleSmall?.copyWith(
                     color: colors.onSurface,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
+                    fontSize: 13.5,
+                    letterSpacing: -0.1,
                   ),
                 ),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle!,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: colors.onSurfaceVariant.withValues(alpha: 0.85),
+                      color: colors.onSurfaceVariant,
                       height: 1.35,
                     ),
                   ),

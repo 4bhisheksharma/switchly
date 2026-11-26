@@ -135,7 +135,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
       ),
       body: CustomScrollView(
         slivers: [
-          SliverAppBar.large(
+          SliverAppBar(
+            pinned: true,
+            toolbarHeight: 60,
             title: const Text('Reminders'),
             actions: [
               IconButton(
@@ -147,7 +149,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
             ],
           ),
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
             sliver: SliverList.list(
               children: [
                 HeroStatusCard(
@@ -165,14 +167,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
                     runSpacing: 10,
                     children: [
                       FilledButton.icon(
-                        style: upcoming.isNotEmpty
-                            ? FilledButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF4F46E5),
-                              )
-                            : null,
                         onPressed: () => _addReminder(context),
-                        icon: const Icon(Symbols.add_alert_rounded, size: 20),
+                        icon: const Icon(Symbols.add_alert_rounded, size: 18),
                         label: const Text('New reminder'),
                       ),
                       if (canRequestAddTile(context))
@@ -268,14 +264,16 @@ class _PermissionBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final amber = dark ? const Color(0xFFFBBF24) : const Color(0xFFB45309);
     final repo = context.read<RemindersRepository>();
     final bloc = context.read<RemindersBloc>();
 
     return Card(
-      color: const Color(0xFFFEF3C7).withValues(alpha: 0.14),
+      color: amber.withValues(alpha: dark ? 0.10 : 0.06),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: Color(0xFFF59E0B), width: 1),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: amber.withValues(alpha: 0.45), width: 1),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -284,14 +282,14 @@ class _PermissionBanner extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Symbols.notification_important_rounded, color: Color(0xFFF59E0B)),
+                Icon(Symbols.notification_important_rounded, color: amber, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Permissions needed for timely reminders',
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFFF59E0B),
+                      color: amber,
                     ),
                   ),
                 ),
@@ -453,12 +451,12 @@ class _ReminderCard extends StatelessWidget {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
                                 color: isUpcoming
-                                    ? colors.primary.withValues(alpha: 0.1)
-                                    : colors.surfaceContainerHigh.withValues(alpha: 0.7),
-                                borderRadius: BorderRadius.circular(10),
+                                    ? colors.primary.withValues(alpha: 0.10)
+                                    : colors.surfaceContainer,
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -507,12 +505,6 @@ class _ReminderCard extends StatelessWidget {
                             Symbols.more_vert_rounded,
                             size: 20,
                             color: colors.onSurfaceVariant,
-                          ),
-                          style: IconButton.styleFrom(
-                            backgroundColor: colors.surfaceContainerHighest.withValues(alpha: 0.35),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            padding: const EdgeInsets.all(6),
-                            minimumSize: const Size(32, 32),
                           ),
                           onSelected: (action) {
                             switch (action) {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Compact rounded label, e.g. "Active", "Recommended", "Soon".
+/// Compact label badge, e.g. "Active", "Recommended", "On".
 class StatusPill extends StatelessWidget {
   const StatusPill(this.label, {super.key, this.highlighted = false});
 
@@ -11,22 +11,29 @@ class StatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: highlighted ? colors.primary.withValues(alpha: 0.12) : colors.surfaceContainerHigh.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(99),
+        color: highlighted
+            ? colors.primary.withValues(alpha: dark ? 0.16 : 0.10)
+            : colors.surfaceContainer,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: highlighted ? colors.primary.withValues(alpha: 0.3) : colors.outlineVariant.withValues(alpha: 0.5),
+          color: highlighted
+              ? colors.primary.withValues(alpha: 0.25)
+              : colors.outlineVariant,
           width: 0.8,
         ),
       ),
       child: Text(
         label,
         style: theme.textTheme.labelSmall?.copyWith(
-          fontWeight: FontWeight.w700,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
           color: highlighted ? colors.primary : colors.onSurfaceVariant,
-          letterSpacing: 0.2,
+          letterSpacing: 0.15,
         ),
       ),
     );

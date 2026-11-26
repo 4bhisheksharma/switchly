@@ -112,7 +112,9 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
       ),
       body: CustomScrollView(
         slivers: [
-          SliverAppBar.large(
+          SliverAppBar(
+            pinned: true,
+            toolbarHeight: 60,
             title: Text(widget.editing == null ? 'New profile' : 'Edit profile'),
             actions: [
               if (widget.editing != null)

@@ -77,9 +77,13 @@ class _ScreenshotScreenState extends State<ScreenshotScreen> with WidgetsBinding
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const SliverAppBar.large(title: Text('Take screenshot')),
+          const SliverAppBar(
+            pinned: true,
+            toolbarHeight: 60,
+            title: Text('Take screenshot'),
+          ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 48),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 48),
             sliver: SliverList.list(
               children: [
                 HeroStatusCard(
@@ -106,12 +110,8 @@ class _ScreenshotScreenState extends State<ScreenshotScreen> with WidgetsBinding
                         )
                       else ...[
                         FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFF4F46E5),
-                          ),
                           onPressed: _testScreenshot,
-                          icon: const Icon(Symbols.screenshot_rounded, size: 20),
+                          icon: const Icon(Symbols.screenshot_rounded, size: 18),
                           label: const Text('Test Capture'),
                         ),
                         if (canRequestAddTile(context))

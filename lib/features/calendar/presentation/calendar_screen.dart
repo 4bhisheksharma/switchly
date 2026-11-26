@@ -389,9 +389,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const SliverAppBar.large(title: Text('Nepali date')),
+          const SliverAppBar(
+            pinned: true,
+            toolbarHeight: 60,
+            title: Text('Nepali date'),
+          ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 48),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 48),
             sliver: SliverList.list(
               children: [
                 HeroStatusCard(
@@ -405,25 +409,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     runSpacing: 10,
                     children: [
                       FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF4F46E5),
-                        ),
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: copyFullToday));
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Date copied')));
                         },
-                        icon: const Icon(Symbols.content_copy_rounded, size: 20),
+                        icon: const Icon(Symbols.content_copy_rounded, size: 18),
                         label: const Text('Copy'),
                       ),
                       if (canRequestAddTile(context)) const AddTileButton(bsDateTile, onGradient: true),
                       OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(color: Colors.white70),
-                        ),
                         onPressed: () => _requestAddWidget(context, 'nepali_date'),
-                        icon: const Icon(Symbols.widgets_rounded, size: 20),
+                        icon: const Icon(Symbols.widgets_rounded, size: 18),
                         label: const Text('Add Widget'),
                       ),
                     ],

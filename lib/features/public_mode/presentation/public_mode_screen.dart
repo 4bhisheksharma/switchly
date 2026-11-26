@@ -218,15 +218,12 @@ class _PublicModeScreenState extends State<PublicModeScreen> {
             busy: state.loading,
             action: FilledButton.icon(
               style: FilledButton.styleFrom(
-                backgroundColor: isActive ? Colors.white : scheme.primary,
-                foregroundColor: isActive ? Colors.red.shade900 : scheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                backgroundColor: isActive ? scheme.error : scheme.primary,
+                foregroundColor: isActive ? scheme.onError : scheme.onPrimary,
               ),
-              icon: Icon(isActive ? Symbols.lock_open_rounded : Symbols.front_hand_rounded),
+              icon: Icon(isActive ? Symbols.lock_open_rounded : Symbols.front_hand_rounded, size: 18),
               label: Text(
                 isActive ? 'Exit & Restore Previous Profile' : 'Hand my phone over now',
-                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               onPressed: () {
                 if (isActive) {

@@ -41,9 +41,13 @@ class PaymentQrScreen extends StatelessWidget {
       ),
       body: CustomScrollView(
         slivers: [
-          const SliverAppBar.large(title: Text('Payment QR')),
+          const SliverAppBar(
+            pinned: true,
+            toolbarHeight: 60,
+            title: Text('Payment QR'),
+          ),
           const SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.fromLTRB(16, 4, 16, 0),
             sliver: SliverToBoxAdapter(child: _IntroCard()),
           ),
           SliverPadding(

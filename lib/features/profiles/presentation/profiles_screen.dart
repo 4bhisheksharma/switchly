@@ -41,9 +41,13 @@ class ProfilesScreen extends StatelessWidget {
         ),
         body: CustomScrollView(
           slivers: [
-            const SliverAppBar.large(title: Text('Profiles')),
+            const SliverAppBar(
+              pinned: true,
+              toolbarHeight: 60,
+              title: Text('Profiles'),
+            ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
               sliver: SliverList.list(
                 children: [
                   if (active != null)
@@ -55,14 +59,10 @@ class ProfilesScreen extends StatelessWidget {
                       active: true,
                       busy: state.busy,
                       action: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF4F46E5),
-                        ),
                         onPressed: state.busy
                             ? null
                             : () => context.read<ProfilesBloc>().add(const ProfileRestoreRequested()),
-                        icon: const Icon(Symbols.restart_alt_rounded, size: 20),
+                        icon: const Icon(Symbols.restart_alt_rounded, size: 18),
                         label: const Text('Restore previous settings'),
                       ),
                     )

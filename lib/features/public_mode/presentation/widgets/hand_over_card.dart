@@ -5,8 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../app/router.dart';
-import '../../../../app/theme.dart';
 import '../../../../core/platform/qs_channel.dart';
+import '../../../../core/widgets/tile_icon.dart';
 import '../../bloc/public_mode_bloc.dart';
 import '../../data/public_mode_models.dart';
 import 'public_mode_pin_dialogs.dart';
@@ -125,6 +125,7 @@ class _HandOverCardState extends State<HandOverCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
     final state = context.watch<PublicModeBloc>().state;
     final isActive = state.active;
 
@@ -134,46 +135,31 @@ class _HandOverCardState extends State<HandOverCard> {
       final hiddenCount = state.config.hiddenTiles.length;
 
       return Container(
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF2C1013), Color(0xFF1E101D)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          borderRadius: BorderRadius.circular(16),
+          color: scheme.error.withValues(alpha: dark ? 0.12 : 0.06),
           border: Border.all(
-            color: const Color(0xFFEF4444).withValues(alpha: 0.4),
-            width: 1.2,
+            color: scheme.error.withValues(alpha: 0.4),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFEF4444).withValues(alpha: 0.16),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
-            ),
-          ],
         ),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: const Color(0xFFEF4444).withValues(alpha: 0.5),
-                      width: 1,
-                    ),
+                    color: scheme.error.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(11),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Symbols.shield_person_rounded,
-                    color: Color(0xFFFCA5A5),
-                    size: 26,
+                    color: scheme.error,
+                    size: 22,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -185,18 +171,17 @@ class _HandOverCardState extends State<HandOverCard> {
                         children: [
                           Text(
                             'Public Mode Active',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: -0.2,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: scheme.onSurface,
                             ),
                           ),
                           const Spacer(),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEF4444).withValues(alpha: 0.25),
-                              borderRadius: BorderRadius.circular(99),
+                              color: scheme.error.withValues(alpha: 0.16),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -204,8 +189,8 @@ class _HandOverCardState extends State<HandOverCard> {
                                 Container(
                                   width: 6,
                                   height: 6,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFEF4444),
+                                  decoration: BoxDecoration(
+                                    color: scheme.error,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -213,7 +198,7 @@ class _HandOverCardState extends State<HandOverCard> {
                                 Text(
                                   state.endsAt > 0 ? timeLabel : 'Active',
                                   style: theme.textTheme.labelSmall?.copyWith(
-                                    color: const Color(0xFFFECACA),
+                                    color: scheme.error,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -222,11 +207,11 @@ class _HandOverCardState extends State<HandOverCard> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 2),
                       Text(
                         '$blockedCount private apps blocked · $hiddenCount tiles hidden',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.75),
+                          color: scheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -234,18 +219,12 @@ class _HandOverCardState extends State<HandOverCard> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    icon: const Icon(Symbols.settings_rounded, size: 18),
+                    icon: const Icon(Symbols.settings_rounded, size: 17),
                     label: const Text('Configure'),
                     onPressed: () => Navigator.of(context).pushNamed(AppRouter.publicMode),
                   ),
@@ -254,12 +233,10 @@ class _HandOverCardState extends State<HandOverCard> {
                 Expanded(
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFEF4444),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      backgroundColor: scheme.error,
+                      foregroundColor: scheme.onError,
                     ),
-                    icon: const Icon(Symbols.lock_open_rounded, size: 18),
+                    icon: const Icon(Symbols.lock_open_rounded, size: 17),
                     label: const Text('Exit & Restore'),
                     onPressed: () => _promptExit(context, state),
                   ),
@@ -271,86 +248,54 @@ class _HandOverCardState extends State<HandOverCard> {
       );
     }
 
-    // Inactive Hero Card
+    // Inactive compact quick-action card
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         color: scheme.surfaceContainerLow,
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.65),
-        ),
+        border: Border.all(color: scheme.outlineVariant),
       ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.all(14),
+      child: Row(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: AppTheme.brandGradient,
-                  borderRadius: BorderRadius.circular(16),
+          const TileIcon(Symbols.shield_person_rounded, active: true, size: 42),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Public Mode',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
                 ),
-                child: const Icon(
-                  Symbols.shield_person_rounded,
-                  color: Colors.white,
-                  size: 26,
+                const SizedBox(height: 2),
+                Text(
+                  'Lock private apps before handing over',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hand my phone over',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'One tap prepares your device before handing it to a friend, child, or colleague.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                tooltip: 'Configure Public Mode',
-                icon: Icon(Symbols.tune_rounded, color: scheme.onSurfaceVariant, size: 22),
-                onPressed: () => Navigator.of(context).pushNamed(AppRouter.publicMode),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: scheme.primary,
-                    foregroundColor: scheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  icon: const Icon(Symbols.front_hand_rounded, size: 20),
-                  label: const Text(
-                    'Hand my phone over',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  onPressed: () => _promptActivate(context, state),
-                ),
-              ),
-            ],
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: 'Configure Public Mode',
+            icon: Icon(Symbols.tune_rounded, color: scheme.onSurfaceVariant, size: 20),
+            onPressed: () => Navigator.of(context).pushNamed(AppRouter.publicMode),
+          ),
+          FilledButton.tonal(
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
+            onPressed: () => _promptActivate(context, state),
+            child: const Text('Hand over'),
           ),
         ],
       ),

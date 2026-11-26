@@ -44,9 +44,13 @@ class AnimationScreen extends StatelessWidget {
       child: Scaffold(
         body: CustomScrollView(
           slivers: [
-            const SliverAppBar.large(title: Text('Animation speed')),
+            const SliverAppBar(
+              pinned: true,
+              toolbarHeight: 60,
+              title: Text('Animation speed'),
+            ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 48),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 48),
               sliver: SliverList.list(
                 children: [
                   HeroStatusCard(

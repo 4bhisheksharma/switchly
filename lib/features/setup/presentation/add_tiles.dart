@@ -37,17 +37,14 @@ class AddTileButton extends StatelessWidget {
 
   final TileDefinition tile;
 
-  /// White button for use on the brand gradient.
+  /// Retained for API compatibility across feature screens.
   final bool onGradient;
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.icon(
-      style: onGradient
-          ? FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF4F46E5))
-          : null,
+    return OutlinedButton.icon(
       onPressed: () => requestAddTile(context, tile),
-      icon: const Icon(Symbols.add_to_home_screen_rounded, size: 20),
+      icon: const Icon(Symbols.add_to_home_screen_rounded, size: 18),
       label: const Text('Add to Quick Settings'),
     );
   }
